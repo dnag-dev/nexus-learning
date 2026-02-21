@@ -7,3 +7,7 @@ dist/
 .expo/
 *.tsbuildinfo
 .turbo/
+coverage/
+.DS_Store
+*.log
+packages/db/prisma/migrations/

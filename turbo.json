@@ -1,6 +1,29 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "globalDependencies": ["**/.env.*local"],
+  "globalPassThroughEnv": [
+    "DATABASE_URL",
+    "REDIS_URL",
+    "NEO4J_URI",
+    "NEO4J_USER",
+    "NEO4J_PASSWORD",
+    "NODE_ENV",
+    "AUTH0_SECRET",
+    "AUTH0_BASE_URL",
+    "AUTH0_ISSUER_BASE_URL",
+    "AUTH0_CLIENT_ID",
+    "AUTH0_CLIENT_SECRET",
+    "STRIPE_SECRET_KEY",
+    "STRIPE_WEBHOOK_SECRET",
+    "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY",
+    "ANTHROPIC_API_KEY",
+    "AAUTI_ANTHROPIC_KEY",
+    "HEYGEN_API_KEY",
+    "NEXT_PUBLIC_HEYGEN_AVATAR_ID",
+    "ELEVENLABS_API_KEY",
+    "SENDGRID_API_KEY",
+    "NEXT_PUBLIC_APP_URL"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

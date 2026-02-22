@@ -26,3 +26,18 @@
     @apply text-2xl font-bold text-aauti-text-primary tracking-tight;
   }
 }
+
+@layer utilities {
+  .text-gradient-gold {
+    background: linear-gradient(135deg, #FDCB6E 0%, #F8A500 50%, #FDCB6E 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .progress-ring-circle {
+    transition: stroke-dashoffset 0.8s ease-out;
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+  }
+}

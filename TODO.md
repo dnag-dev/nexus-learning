@@ -94,13 +94,13 @@
 - [x] Billing portal (PricingCard, UpgradePrompt, SubscriptionStatus)
 - [x] Free trial flow (7 days)
 
-## Phase 11: Teacher Dashboard (Week 11-12)
-- [ ] Teacher account type + school association
-- [ ] Class view (all students on knowledge graph)
-- [ ] Assignment mode
-- [ ] Intervention alerts
-- [ ] Progress export (CSV/PDF)
-- [ ] Lesson planning assistant
+## Phase 11: Teacher Dashboard (Week 11-12) ✅ COMPLETE
+- [x] Teacher account type + school association
+- [x] Class view (all students on knowledge graph)
+- [x] Assignment mode
+- [x] Intervention alerts
+- [x] Progress export (CSV/PDF)
+- [x] Lesson planning assistant
 
 ## Phase 12: Polish + Mobile Parity (Week 12-14)
 - [ ] Mobile feature parity

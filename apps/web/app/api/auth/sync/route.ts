@@ -7,7 +7,8 @@ import { prisma } from "@aauti/db";
  *
  * Syncs the Auth0 session user with the database.
  * Finds existing user by email or creates a new one.
- * Returns the database user ID + profile.
+ * Returns the database user ID + profile + role.
+ * For TEACHER role, also returns teacherProfileId + schoolName.
  */
 export async function GET() {
   const session = await getSession();
@@ -22,7 +23,13 @@ export async function GET() {
   // Find or create user
   let user = await prisma.user.findUnique({
     where: { email },
-    include: { subscription: true, children: true },
+    include: {
+      subscription: true,
+      children: true,
+      teacherProfile: {
+        include: { school: true },
+      },
+    },
   });
 
   if (!user) {
@@ -32,16 +39,32 @@ export async function GET() {
         passwordHash: "auth0", // Auth0 manages passwords
         role: "PARENT",
       },
-      include: { subscription: true, children: true },
+      include: {
+        subscription: true,
+        children: true,
+        teacherProfile: {
+          include: { school: true },
+        },
+      },
     });
   }
 
-  return NextResponse.json({
+  // Base response
+  const response: Record<string, unknown> = {
     id: user.id,
     email: user.email,
     name,
+    role: user.role,
     plan: user.subscription?.plan ?? "SPARK",
     childCount: user.children.length,
     createdAt: user.createdAt.toISOString(),
-  });
+  };
+
+  // Add teacher-specific data
+  if (user.role === "TEACHER" && user.teacherProfile) {
+    response.teacherProfileId = user.teacherProfile.id;
+    response.schoolName = user.teacherProfile.school?.name ?? null;
+  }
+
+  return NextResponse.json(response);
 }

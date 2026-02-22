@@ -228,6 +228,654 @@ const knowledgeNodes: NodeSeed[] = [
     difficulty: 6,
     prerequisiteCodes: ["1.NBT.5", "1.OA.4"],
   },
+
+  // ─── Grade 2 Operations & Algebraic Thinking (2.OA) ───
+  {
+    nodeCode: "2.OA.1",
+    title: "Add and Subtract Within 100 Word Problems",
+    description:
+      "Use addition and subtraction within 100 to solve one- and two-step word problems involving adding to, taking from, putting together, taking apart, and comparing.",
+    gradeLevel: GradeLevel.G2,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 4,
+    prerequisiteCodes: ["1.OA.1", "1.OA.6"],
+  },
+  {
+    nodeCode: "2.OA.2",
+    title: "Fluently Add and Subtract Within 20",
+    description:
+      "Fluently add and subtract within 20 using mental strategies. By end of Grade 2, know from memory all sums of two one-digit numbers.",
+    gradeLevel: GradeLevel.G2,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 3,
+    prerequisiteCodes: ["1.OA.6"],
+  },
+  {
+    nodeCode: "2.OA.3",
+    title: "Determine Odd or Even",
+    description:
+      "Determine whether a group of objects (up to 20) has an odd or even number of members by pairing objects or counting by 2s.",
+    gradeLevel: GradeLevel.G2,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 4,
+    prerequisiteCodes: ["2.OA.2"],
+  },
+  {
+    nodeCode: "2.OA.4",
+    title: "Use Addition for Rectangular Arrays",
+    description:
+      "Use addition to find the total number of objects arranged in rectangular arrays with up to 5 rows and up to 5 columns. Write an equation to express the total as a sum of equal addends.",
+    gradeLevel: GradeLevel.G2,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 5,
+    prerequisiteCodes: ["2.OA.2"],
+  },
+
+  // ─── Grade 2 Number & Operations in Base Ten (2.NBT) ───
+  {
+    nodeCode: "2.NBT.1",
+    title: "Understand Place Value: Hundreds, Tens, Ones",
+    description:
+      "Understand that the three digits of a three-digit number represent amounts of hundreds, tens, and ones. 100 can be thought of as a bundle of ten tens called a 'hundred.'",
+    gradeLevel: GradeLevel.G2,
+    domain: KnowledgeDomain.COUNTING,
+    difficulty: 5,
+    prerequisiteCodes: ["1.NBT.2"],
+  },
+  {
+    nodeCode: "2.NBT.2",
+    title: "Count Within 1000 and Skip-Count",
+    description:
+      "Count within 1000; skip-count by 5s, 10s, and 100s.",
+    gradeLevel: GradeLevel.G2,
+    domain: KnowledgeDomain.COUNTING,
+    difficulty: 4,
+    prerequisiteCodes: ["2.NBT.1", "1.NBT.1"],
+  },
+  {
+    nodeCode: "2.NBT.3",
+    title: "Read and Write Numbers to 1000",
+    description:
+      "Read and write numbers to 1000 using base-ten numerals, number names, and expanded form.",
+    gradeLevel: GradeLevel.G2,
+    domain: KnowledgeDomain.COUNTING,
+    difficulty: 5,
+    prerequisiteCodes: ["2.NBT.1"],
+  },
+  {
+    nodeCode: "2.NBT.4",
+    title: "Compare Two Three-Digit Numbers",
+    description:
+      "Compare two three-digit numbers based on meanings of the hundreds, tens, and ones digits, using >, =, and < symbols.",
+    gradeLevel: GradeLevel.G2,
+    domain: KnowledgeDomain.COUNTING,
+    difficulty: 5,
+    prerequisiteCodes: ["2.NBT.3", "1.NBT.3"],
+  },
+  {
+    nodeCode: "2.NBT.5",
+    title: "Fluently Add and Subtract Within 100",
+    description:
+      "Fluently add and subtract within 100 using strategies based on place value, properties of operations, and/or the relationship between addition and subtraction.",
+    gradeLevel: GradeLevel.G2,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 5,
+    prerequisiteCodes: ["1.NBT.4", "2.OA.2"],
+  },
+  {
+    nodeCode: "2.NBT.7",
+    title: "Add and Subtract Within 1000",
+    description:
+      "Add and subtract within 1000 using concrete models or drawings and strategies based on place value, properties of operations, and/or the relationship between addition and subtraction.",
+    gradeLevel: GradeLevel.G2,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 6,
+    prerequisiteCodes: ["2.NBT.5", "2.NBT.1"],
+  },
+
+  // ─── Grade 2 Measurement & Data (2.MD) ───
+  {
+    nodeCode: "2.MD.1",
+    title: "Measure Length Using Appropriate Tools",
+    description:
+      "Measure the length of an object by selecting and using appropriate tools such as rulers, yardsticks, meter sticks, and measuring tapes.",
+    gradeLevel: GradeLevel.G2,
+    domain: KnowledgeDomain.MEASUREMENT,
+    difficulty: 4,
+    prerequisiteCodes: ["2.NBT.3"],
+  },
+  {
+    nodeCode: "2.MD.8",
+    title: "Solve Word Problems Involving Money",
+    description:
+      "Solve word problems involving dollar bills, quarters, dimes, nickels, and pennies, using $ and ¢ symbols appropriately.",
+    gradeLevel: GradeLevel.G2,
+    domain: KnowledgeDomain.MEASUREMENT,
+    difficulty: 6,
+    prerequisiteCodes: ["2.OA.1", "2.NBT.5"],
+  },
+
+  // ─── Grade 2 Geometry (2.G) ───
+  {
+    nodeCode: "2.G.1",
+    title: "Recognize and Draw Shapes",
+    description:
+      "Recognize and draw shapes having specified attributes, such as a given number of angles or a given number of equal faces. Identify triangles, quadrilaterals, pentagons, hexagons, and cubes.",
+    gradeLevel: GradeLevel.G2,
+    domain: KnowledgeDomain.GEOMETRY,
+    difficulty: 3,
+    prerequisiteCodes: [],
+  },
+
+  // ─── Grade 3 Operations & Algebraic Thinking (3.OA) ───
+  {
+    nodeCode: "3.OA.1",
+    title: "Interpret Products of Whole Numbers",
+    description:
+      "Interpret products of whole numbers, e.g., interpret 5 × 7 as the total number of objects in 5 groups of 7 objects each.",
+    gradeLevel: GradeLevel.G3,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 4,
+    prerequisiteCodes: ["2.OA.4"],
+  },
+  {
+    nodeCode: "3.OA.2",
+    title: "Interpret Whole-Number Quotients",
+    description:
+      "Interpret whole-number quotients of whole numbers, e.g., interpret 56 ÷ 8 as the number of objects in each share when 56 objects are partitioned equally into 8 shares.",
+    gradeLevel: GradeLevel.G3,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 5,
+    prerequisiteCodes: ["3.OA.1"],
+  },
+  {
+    nodeCode: "3.OA.3",
+    title: "Multiply and Divide Word Problems",
+    description:
+      "Use multiplication and division within 100 to solve word problems in situations involving equal groups, arrays, and measurement quantities.",
+    gradeLevel: GradeLevel.G3,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 5,
+    prerequisiteCodes: ["3.OA.1", "3.OA.2"],
+  },
+  {
+    nodeCode: "3.OA.4",
+    title: "Determine Unknown in Multiplication/Division",
+    description:
+      "Determine the unknown whole number in a multiplication or division equation relating three whole numbers. For example, determine the unknown number that makes the equation true: 8 × ? = 48.",
+    gradeLevel: GradeLevel.G3,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 6,
+    prerequisiteCodes: ["3.OA.3"],
+  },
+  {
+    nodeCode: "3.OA.5",
+    title: "Apply Properties of Multiplication",
+    description:
+      "Apply properties of operations as strategies to multiply and divide. Examples: commutative property, associative property, distributive property.",
+    gradeLevel: GradeLevel.G3,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 6,
+    prerequisiteCodes: ["3.OA.1"],
+  },
+  {
+    nodeCode: "3.OA.7",
+    title: "Fluently Multiply and Divide Within 100",
+    description:
+      "Fluently multiply and divide within 100, using strategies such as the relationship between multiplication and division or properties of operations. By end of Grade 3, know from memory all products of two one-digit numbers.",
+    gradeLevel: GradeLevel.G3,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 6,
+    prerequisiteCodes: ["3.OA.3", "3.OA.5"],
+  },
+  {
+    nodeCode: "3.OA.8",
+    title: "Two-Step Word Problems",
+    description:
+      "Solve two-step word problems using the four operations. Represent these problems using equations with a letter standing for the unknown quantity.",
+    gradeLevel: GradeLevel.G3,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 7,
+    prerequisiteCodes: ["3.OA.7", "2.OA.1"],
+  },
+  {
+    nodeCode: "3.OA.9",
+    title: "Identify Arithmetic Patterns",
+    description:
+      "Identify arithmetic patterns (including patterns in the addition table or multiplication table), and explain them using properties of operations.",
+    gradeLevel: GradeLevel.G3,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 5,
+    prerequisiteCodes: ["3.OA.7"],
+  },
+
+  // ─── Grade 3 Number & Operations in Base Ten (3.NBT) ───
+  {
+    nodeCode: "3.NBT.1",
+    title: "Round Whole Numbers to Nearest 10 or 100",
+    description:
+      "Use place value understanding to round whole numbers to the nearest 10 or 100.",
+    gradeLevel: GradeLevel.G3,
+    domain: KnowledgeDomain.COUNTING,
+    difficulty: 4,
+    prerequisiteCodes: ["2.NBT.1"],
+  },
+  {
+    nodeCode: "3.NBT.2",
+    title: "Fluently Add and Subtract Within 1000",
+    description:
+      "Fluently add and subtract within 1000 using strategies and algorithms based on place value, properties of operations, and/or the relationship between addition and subtraction.",
+    gradeLevel: GradeLevel.G3,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 5,
+    prerequisiteCodes: ["2.NBT.7"],
+  },
+
+  // ─── Grade 3 Number & Operations — Fractions (3.NF) ───
+  {
+    nodeCode: "3.NF.1",
+    title: "Understand Fractions as Parts of a Whole",
+    description:
+      "Understand a fraction 1/b as the quantity formed by 1 part when a whole is partitioned into b equal parts. Understand a fraction a/b as the quantity formed by a parts of size 1/b.",
+    gradeLevel: GradeLevel.G3,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 5,
+    prerequisiteCodes: ["3.OA.2"],
+  },
+  {
+    nodeCode: "3.NF.2",
+    title: "Understand Fractions on a Number Line",
+    description:
+      "Understand a fraction as a number on the number line; represent fractions on a number line diagram.",
+    gradeLevel: GradeLevel.G3,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 6,
+    prerequisiteCodes: ["3.NF.1"],
+  },
+  {
+    nodeCode: "3.NF.3",
+    title: "Explain Fraction Equivalence and Comparison",
+    description:
+      "Explain equivalence of fractions and compare fractions by reasoning about their size. Two fractions are equivalent if they are the same size or the same point on a number line.",
+    gradeLevel: GradeLevel.G3,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 7,
+    prerequisiteCodes: ["3.NF.2"],
+  },
+
+  // ─── Grade 3 Measurement & Data (3.MD) ───
+  {
+    nodeCode: "3.MD.7",
+    title: "Relate Area to Multiplication and Addition",
+    description:
+      "Relate area to the operations of multiplication and addition. Find the area of a rectangle with whole-number side lengths by tiling it and show that the area is the same as multiplying the side lengths.",
+    gradeLevel: GradeLevel.G3,
+    domain: KnowledgeDomain.MEASUREMENT,
+    difficulty: 6,
+    prerequisiteCodes: ["3.OA.7"],
+  },
+
+  // ─── Grade 3 Geometry (3.G) ───
+  {
+    nodeCode: "3.G.1",
+    title: "Understand Categories of Shapes",
+    description:
+      "Understand that shapes in different categories may share attributes, and that the shared attributes can define a larger category (e.g., quadrilaterals).",
+    gradeLevel: GradeLevel.G3,
+    domain: KnowledgeDomain.GEOMETRY,
+    difficulty: 4,
+    prerequisiteCodes: ["2.G.1"],
+  },
+
+  // ─── Grade 4 Operations & Algebraic Thinking (4.OA) ───
+  {
+    nodeCode: "4.OA.1",
+    title: "Interpret Multiplication as Comparison",
+    description:
+      "Interpret a multiplication equation as a comparison, e.g., interpret 35 = 5 × 7 as a statement that 35 is 5 times as many as 7.",
+    gradeLevel: GradeLevel.G4,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 5,
+    prerequisiteCodes: ["3.OA.3"],
+  },
+  {
+    nodeCode: "4.OA.2",
+    title: "Multiplicative Comparison Word Problems",
+    description:
+      "Multiply or divide to solve word problems involving multiplicative comparison, distinguishing multiplicative comparison from additive comparison.",
+    gradeLevel: GradeLevel.G4,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 6,
+    prerequisiteCodes: ["4.OA.1"],
+  },
+  {
+    nodeCode: "4.OA.3",
+    title: "Multi-Step Word Problems",
+    description:
+      "Solve multistep word problems posed with whole numbers and having whole-number answers using the four operations, including problems in which remainders must be interpreted.",
+    gradeLevel: GradeLevel.G4,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 7,
+    prerequisiteCodes: ["3.OA.8", "4.OA.2"],
+  },
+  {
+    nodeCode: "4.OA.4",
+    title: "Factor Pairs and Prime/Composite Numbers",
+    description:
+      "Find all factor pairs for a whole number in the range 1-100. Determine whether a given whole number in the range 1-100 is prime or composite.",
+    gradeLevel: GradeLevel.G4,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 6,
+    prerequisiteCodes: ["3.OA.7"],
+  },
+
+  // ─── Grade 4 Number & Operations in Base Ten (4.NBT) ───
+  {
+    nodeCode: "4.NBT.1",
+    title: "Generalize Place Value Understanding",
+    description:
+      "Recognize that in a multi-digit whole number, a digit in one place represents ten times what it represents in the place to its right.",
+    gradeLevel: GradeLevel.G4,
+    domain: KnowledgeDomain.COUNTING,
+    difficulty: 5,
+    prerequisiteCodes: ["2.NBT.1", "3.NBT.1"],
+  },
+  {
+    nodeCode: "4.NBT.2",
+    title: "Read, Write, and Compare Multi-Digit Numbers",
+    description:
+      "Read and write multi-digit whole numbers using base-ten numerals, number names, and expanded form. Compare two multi-digit numbers based on meanings of the digits.",
+    gradeLevel: GradeLevel.G4,
+    domain: KnowledgeDomain.COUNTING,
+    difficulty: 5,
+    prerequisiteCodes: ["4.NBT.1"],
+  },
+  {
+    nodeCode: "4.NBT.3",
+    title: "Round Multi-Digit Whole Numbers",
+    description:
+      "Use place value understanding to round multi-digit whole numbers to any place.",
+    gradeLevel: GradeLevel.G4,
+    domain: KnowledgeDomain.COUNTING,
+    difficulty: 5,
+    prerequisiteCodes: ["4.NBT.2", "3.NBT.1"],
+  },
+  {
+    nodeCode: "4.NBT.4",
+    title: "Fluently Add and Subtract Multi-Digit Numbers",
+    description:
+      "Fluently add and subtract multi-digit whole numbers using the standard algorithm.",
+    gradeLevel: GradeLevel.G4,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 5,
+    prerequisiteCodes: ["3.NBT.2"],
+  },
+  {
+    nodeCode: "4.NBT.5",
+    title: "Multiply up to Four-Digit by One-Digit",
+    description:
+      "Multiply a whole number of up to four digits by a one-digit whole number, and multiply two two-digit numbers, using strategies based on place value and the properties of operations.",
+    gradeLevel: GradeLevel.G4,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 7,
+    prerequisiteCodes: ["3.OA.7", "4.NBT.1"],
+  },
+  {
+    nodeCode: "4.NBT.6",
+    title: "Divide up to Four-Digit by One-Digit",
+    description:
+      "Find whole-number quotients and remainders with up to four-digit dividends and one-digit divisors, using strategies based on place value, the properties of operations, and/or the relationship between multiplication and division.",
+    gradeLevel: GradeLevel.G4,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 7,
+    prerequisiteCodes: ["4.NBT.5"],
+  },
+
+  // ─── Grade 4 Number & Operations — Fractions (4.NF) ───
+  {
+    nodeCode: "4.NF.1",
+    title: "Explain Fraction Equivalence with Visual Models",
+    description:
+      "Explain why a fraction a/b is equivalent to a fraction (n×a)/(n×b) by using visual fraction models. Generate equivalent fractions.",
+    gradeLevel: GradeLevel.G4,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 6,
+    prerequisiteCodes: ["3.NF.3"],
+  },
+  {
+    nodeCode: "4.NF.2",
+    title: "Compare Fractions with Different Denominators",
+    description:
+      "Compare two fractions with different numerators and different denominators. Recognize that comparisons are valid only when the fractions refer to the same whole.",
+    gradeLevel: GradeLevel.G4,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 6,
+    prerequisiteCodes: ["4.NF.1"],
+  },
+  {
+    nodeCode: "4.NF.3",
+    title: "Add and Subtract Fractions (Same Denominator)",
+    description:
+      "Understand addition and subtraction of fractions as joining and separating parts referring to the same whole. Decompose a fraction into a sum of fractions with the same denominator.",
+    gradeLevel: GradeLevel.G4,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 6,
+    prerequisiteCodes: ["4.NF.2"],
+  },
+  {
+    nodeCode: "4.NF.4",
+    title: "Multiply a Fraction by a Whole Number",
+    description:
+      "Apply and extend previous understandings of multiplication to multiply a fraction by a whole number. Understand a multiple of a/b as a multiple of 1/b.",
+    gradeLevel: GradeLevel.G4,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 7,
+    prerequisiteCodes: ["4.NF.1", "4.NBT.5"],
+  },
+
+  // ─── Grade 4 Measurement & Data (4.MD) ───
+  {
+    nodeCode: "4.MD.3",
+    title: "Apply Area and Perimeter Formulas",
+    description:
+      "Apply the area and perimeter formulas for rectangles in real-world and mathematical problems.",
+    gradeLevel: GradeLevel.G4,
+    domain: KnowledgeDomain.MEASUREMENT,
+    difficulty: 6,
+    prerequisiteCodes: ["3.MD.7", "4.NBT.5"],
+  },
+
+  // ─── Grade 4 Geometry (4.G) ───
+  {
+    nodeCode: "4.G.1",
+    title: "Draw and Identify Lines, Angles, and Shapes",
+    description:
+      "Draw points, lines, line segments, rays, angles (right, acute, obtuse), and perpendicular and parallel lines. Identify these in two-dimensional figures.",
+    gradeLevel: GradeLevel.G4,
+    domain: KnowledgeDomain.GEOMETRY,
+    difficulty: 5,
+    prerequisiteCodes: ["3.G.1"],
+  },
+
+  // ─── Grade 5 Operations & Algebraic Thinking (5.OA) ───
+  {
+    nodeCode: "5.OA.1",
+    title: "Use Grouping Symbols in Expressions",
+    description:
+      "Use parentheses, brackets, or braces in numerical expressions, and evaluate expressions with these symbols.",
+    gradeLevel: GradeLevel.G5,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 6,
+    prerequisiteCodes: ["4.OA.3"],
+  },
+  {
+    nodeCode: "5.OA.2",
+    title: "Write and Interpret Numerical Expressions",
+    description:
+      "Write simple expressions that record calculations with numbers, and interpret numerical expressions without evaluating them.",
+    gradeLevel: GradeLevel.G5,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 6,
+    prerequisiteCodes: ["5.OA.1"],
+  },
+  {
+    nodeCode: "5.OA.3",
+    title: "Generate and Analyze Patterns",
+    description:
+      "Generate two numerical patterns using two given rules. Identify apparent relationships between corresponding terms. Form ordered pairs and graph on a coordinate plane.",
+    gradeLevel: GradeLevel.G5,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 7,
+    prerequisiteCodes: ["3.OA.9"],
+  },
+
+  // ─── Grade 5 Number & Operations in Base Ten (5.NBT) ───
+  {
+    nodeCode: "5.NBT.1",
+    title: "Understand the Place Value System",
+    description:
+      "Recognize that in a multi-digit number, a digit in one place represents 10 times as much as it represents in the place to its right and 1/10 of what it represents in the place to its left.",
+    gradeLevel: GradeLevel.G5,
+    domain: KnowledgeDomain.COUNTING,
+    difficulty: 6,
+    prerequisiteCodes: ["4.NBT.1"],
+  },
+  {
+    nodeCode: "5.NBT.2",
+    title: "Explain Powers of 10 Patterns",
+    description:
+      "Explain patterns in the number of zeros of the product when multiplying a number by powers of 10, and explain patterns in the placement of the decimal point.",
+    gradeLevel: GradeLevel.G5,
+    domain: KnowledgeDomain.COUNTING,
+    difficulty: 6,
+    prerequisiteCodes: ["5.NBT.1"],
+  },
+  {
+    nodeCode: "5.NBT.3",
+    title: "Read, Write, and Compare Decimals",
+    description:
+      "Read, write, and compare decimals to thousandths using base-ten numerals, number names, and expanded form. Compare two decimals to thousandths using >, =, and <.",
+    gradeLevel: GradeLevel.G5,
+    domain: KnowledgeDomain.COUNTING,
+    difficulty: 6,
+    prerequisiteCodes: ["5.NBT.2"],
+  },
+  {
+    nodeCode: "5.NBT.5",
+    title: "Fluently Multiply Multi-Digit Whole Numbers",
+    description:
+      "Fluently multiply multi-digit whole numbers using the standard algorithm.",
+    gradeLevel: GradeLevel.G5,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 6,
+    prerequisiteCodes: ["4.NBT.5"],
+  },
+  {
+    nodeCode: "5.NBT.6",
+    title: "Divide Multi-Digit Numbers",
+    description:
+      "Find whole-number quotients of whole numbers with up to four-digit dividends and two-digit divisors, using strategies based on place value and the relationship between multiplication and division.",
+    gradeLevel: GradeLevel.G5,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 7,
+    prerequisiteCodes: ["4.NBT.6", "5.NBT.5"],
+  },
+  {
+    nodeCode: "5.NBT.7",
+    title: "Add, Subtract, Multiply, and Divide Decimals",
+    description:
+      "Add, subtract, multiply, and divide decimals to hundredths, using concrete models or drawings and strategies based on place value, properties of operations, and/or the relationship between operations.",
+    gradeLevel: GradeLevel.G5,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 7,
+    prerequisiteCodes: ["5.NBT.3", "5.NBT.5"],
+  },
+
+  // ─── Grade 5 Number & Operations — Fractions (5.NF) ───
+  {
+    nodeCode: "5.NF.1",
+    title: "Add and Subtract Fractions (Unlike Denominators)",
+    description:
+      "Add and subtract fractions with unlike denominators (including mixed numbers) by replacing given fractions with equivalent fractions producing a common denominator.",
+    gradeLevel: GradeLevel.G5,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 7,
+    prerequisiteCodes: ["4.NF.3", "4.NF.1"],
+  },
+  {
+    nodeCode: "5.NF.2",
+    title: "Fraction Addition/Subtraction Word Problems",
+    description:
+      "Solve word problems involving addition and subtraction of fractions referring to the same whole, including cases of unlike denominators.",
+    gradeLevel: GradeLevel.G5,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 7,
+    prerequisiteCodes: ["5.NF.1"],
+  },
+  {
+    nodeCode: "5.NF.3",
+    title: "Interpret Fractions as Division",
+    description:
+      "Interpret a fraction as division of the numerator by the denominator (a/b = a ÷ b). Solve word problems involving division of whole numbers leading to answers in the form of fractions or mixed numbers.",
+    gradeLevel: GradeLevel.G5,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 7,
+    prerequisiteCodes: ["5.NF.1", "5.NBT.6"],
+  },
+  {
+    nodeCode: "5.NF.4",
+    title: "Multiply Fractions",
+    description:
+      "Apply and extend previous understandings of multiplication to multiply a fraction or whole number by a fraction. Find the area of a rectangle with fractional side lengths.",
+    gradeLevel: GradeLevel.G5,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 8,
+    prerequisiteCodes: ["4.NF.4", "5.NF.1"],
+  },
+  {
+    nodeCode: "5.NF.6",
+    title: "Real-World Fraction Multiplication Problems",
+    description:
+      "Solve real-world problems involving multiplication of fractions and mixed numbers using visual fraction models or equations.",
+    gradeLevel: GradeLevel.G5,
+    domain: KnowledgeDomain.OPERATIONS,
+    difficulty: 8,
+    prerequisiteCodes: ["5.NF.4"],
+  },
+
+  // ─── Grade 5 Measurement & Data (5.MD) ───
+  {
+    nodeCode: "5.MD.1",
+    title: "Convert Measurement Units",
+    description:
+      "Convert among different-sized standard measurement units within a given measurement system, and use these conversions in solving multi-step real-world problems.",
+    gradeLevel: GradeLevel.G5,
+    domain: KnowledgeDomain.MEASUREMENT,
+    difficulty: 6,
+    prerequisiteCodes: ["5.NBT.7"],
+  },
+  {
+    nodeCode: "5.MD.3",
+    title: "Understand Volume Concepts",
+    description:
+      "Recognize volume as an attribute of solid figures and understand concepts of volume measurement. A cube with side length 1 unit has 'one cubic unit' of volume.",
+    gradeLevel: GradeLevel.G5,
+    domain: KnowledgeDomain.MEASUREMENT,
+    difficulty: 7,
+    prerequisiteCodes: ["5.NBT.5", "4.MD.3"],
+  },
+
+  // ─── Grade 5 Geometry (5.G) ───
+  {
+    nodeCode: "5.G.1",
+    title: "Graph Points on a Coordinate Plane",
+    description:
+      "Use a pair of perpendicular number lines (axes) to define a coordinate system. Graph points in the first quadrant of the coordinate plane and interpret coordinate values in context.",
+    gradeLevel: GradeLevel.G5,
+    domain: KnowledgeDomain.GEOMETRY,
+    difficulty: 6,
+    prerequisiteCodes: ["5.OA.3"],
+  },
 ];
 
 async function seed() {
@@ -336,6 +984,177 @@ async function seed() {
     },
   });
   console.log("  Created demo SPARK subscription");
+
+  // ─── Teacher Dashboard Seed Data ───
+
+  // Create a demo school
+  const demoSchool = await prisma.school.upsert({
+    where: { id: "demo-school-1" },
+    update: {},
+    create: {
+      id: "demo-school-1",
+      name: "Demo Elementary School",
+      district: "Demo Unified School District",
+    },
+  });
+  console.log(`  Created demo school: ${demoSchool.name}`);
+
+  // Create a demo teacher user
+  const demoTeacher = await prisma.user.upsert({
+    where: { email: "teacher@test.com" },
+    update: { role: "TEACHER" },
+    create: {
+      email: "teacher@test.com",
+      passwordHash: "PLACEHOLDER_HASH_USE_AUTH0",
+      role: "TEACHER",
+    },
+  });
+  console.log(`  Created demo teacher user: ${demoTeacher.email}`);
+
+  // Create teacher profile
+  const teacherProfile = await prisma.teacherProfile.upsert({
+    where: { userId: demoTeacher.id },
+    update: { schoolId: demoSchool.id },
+    create: {
+      userId: demoTeacher.id,
+      schoolId: demoSchool.id,
+    },
+  });
+  console.log(`  Created teacher profile: ${teacherProfile.id}`);
+
+  // Create a demo class
+  const demoClass = await prisma.class.upsert({
+    where: { id: "demo-class-1" },
+    update: {},
+    create: {
+      id: "demo-class-1",
+      name: "Grade 1 - Section A",
+      gradeLevel: "G1",
+      teacherId: teacherProfile.id,
+    },
+  });
+  console.log(`  Created demo class: ${demoClass.name}`);
+
+  // Create a second class
+  const demoClass2 = await prisma.class.upsert({
+    where: { id: "demo-class-2" },
+    update: {},
+    create: {
+      id: "demo-class-2",
+      name: "Kindergarten - Section B",
+      gradeLevel: "K",
+      teacherId: teacherProfile.id,
+    },
+  });
+  console.log(`  Created demo class: ${demoClass2.name}`);
+
+  // Create additional demo students for the teacher's classes
+  const student2 = await prisma.student.upsert({
+    where: { id: "demo-student-2" },
+    update: {},
+    create: {
+      id: "demo-student-2",
+      displayName: "Aarav",
+      avatarPersonaId: "zara",
+      gradeLevel: "G1",
+      ageGroup: "EARLY_5_7",
+      parentId: demoParent.id,
+    },
+  });
+
+  const student3 = await prisma.student.upsert({
+    where: { id: "demo-student-3" },
+    update: {},
+    create: {
+      id: "demo-student-3",
+      displayName: "Maya",
+      avatarPersonaId: "pip",
+      gradeLevel: "G1",
+      ageGroup: "EARLY_5_7",
+      parentId: demoParent.id,
+    },
+  });
+
+  const student4 = await prisma.student.upsert({
+    where: { id: "demo-student-4" },
+    update: {},
+    create: {
+      id: "demo-student-4",
+      displayName: "Kai",
+      avatarPersonaId: "koda",
+      gradeLevel: "K",
+      ageGroup: "EARLY_5_7",
+      parentId: demoParent.id,
+    },
+  });
+  console.log("  Created additional demo students: Aarav, Maya, Kai");
+
+  // Create streak data for new students
+  for (const s of [student2, student3, student4]) {
+    await prisma.streakData.upsert({
+      where: { studentId: s.id },
+      update: {},
+      create: {
+        studentId: s.id,
+        currentStreak: 0,
+        longestStreak: 0,
+        totalDaysActive: 0,
+      },
+    });
+  }
+
+  // Enroll students in classes
+  // Sofia + Aarav + Maya in Grade 1 - Section A
+  for (const sid of [demoStudent.id, student2.id, student3.id]) {
+    await prisma.classStudent.upsert({
+      where: {
+        classId_studentId: { classId: demoClass.id, studentId: sid },
+      },
+      update: {},
+      create: {
+        classId: demoClass.id,
+        studentId: sid,
+      },
+    });
+  }
+  console.log("  Enrolled Sofia, Aarav, Maya in Grade 1 - Section A");
+
+  // Kai in Kindergarten - Section B
+  await prisma.classStudent.upsert({
+    where: {
+      classId_studentId: { classId: demoClass2.id, studentId: student4.id },
+    },
+    update: {},
+    create: {
+      classId: demoClass2.id,
+      studentId: student4.id,
+    },
+  });
+  console.log("  Enrolled Kai in Kindergarten - Section B");
+
+  // Create a demo assignment
+  const g1Nodes = await prisma.knowledgeNode.findMany({
+    where: { gradeLevel: "G1", domain: "OPERATIONS" },
+    take: 3,
+  });
+
+  if (g1Nodes.length > 0) {
+    await prisma.assignment.upsert({
+      where: { id: "demo-assignment-1" },
+      update: {},
+      create: {
+        id: "demo-assignment-1",
+        classId: demoClass.id,
+        title: "Addition and Subtraction Basics",
+        description:
+          "Practice addition and subtraction word problems within 20.",
+        nodeIds: g1Nodes.map((n) => n.id),
+        status: "ASSIGNMENT_ACTIVE",
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 1 week from now
+      },
+    });
+    console.log("  Created demo assignment: Addition and Subtraction Basics");
+  }
 
   console.log("PostgreSQL seed complete!");
 }

@@ -14,7 +14,9 @@
     "db:seed:pg": "ts-node --project packages/db/tsconfig.json packages/db/prisma/seed.ts",
     "db:seed:neo4j": "ts-node --project packages/db/tsconfig.json packages/db/neo4j/knowledge-graph.seed.ts",
     "db:studio": "prisma studio --schema=packages/db/prisma/schema.prisma",
-    "clean": "turbo clean && rm -rf node_modules"
+    "clean": "turbo clean && rm -rf node_modules",
+    "postinstall": "prisma generate --schema=packages/db/prisma/schema.prisma",
+    "vercel-build": "turbo build"
   },
   "devDependencies": {
     "ts-node": "^10.9.2",

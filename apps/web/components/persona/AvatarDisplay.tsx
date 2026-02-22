@@ -87,10 +87,10 @@ const SIZE_CLASSES: Record<AvatarSize, { container: string; emoji: string; video
 };
 
 const EMOTIONAL_GLOW: Record<AvatarEmotionalState, string> = {
-  happy: "ring-4 ring-aauti-success/30 bg-aauti-success/5",
-  neutral: "ring-2 ring-gray-200 bg-gray-50",
-  thinking: "ring-4 ring-aauti-accent/30 bg-aauti-accent/5",
-  encouraging: "ring-4 ring-aauti-primary/30 bg-aauti-primary/5",
+  happy: "ring-4 ring-aauti-success/30 bg-aauti-success/5 animate-glow-pulse",
+  neutral: "ring-2 ring-gray-200 bg-gray-50 animate-glow-pulse",
+  thinking: "ring-4 ring-aauti-accent/30 bg-aauti-accent/5 animate-glow-pulse",
+  encouraging: "ring-4 ring-aauti-primary/30 bg-aauti-primary/5 animate-glow-pulse",
 };
 
 const AvatarDisplay = forwardRef<AvatarDisplayHandle, AvatarDisplayProps>(

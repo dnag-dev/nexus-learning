@@ -8,11 +8,12 @@ import * as practicePrompt from "@/lib/prompts/practice.prompt";
 import * as celebratingPrompt from "@/lib/prompts/celebrating.prompt";
 import type { AgeGroupValue, EmotionalStateValue } from "@/lib/prompts/types";
 import { processCorrectAnswer, processNodeMastered } from "@/lib/gamification/gamification-service";
+import { startPrefetch } from "@/lib/session/question-prefetch";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { sessionId, selectedOptionId, isCorrect } = body;
+    const { sessionId, selectedOptionId, isCorrect, isComprehensionCheck } = body;
 
     if (!sessionId || isCorrect === undefined) {
       return NextResponse.json(
@@ -33,6 +34,60 @@ export async function POST(request: Request) {
       );
     }
 
+    const student = session.student;
+    const node = session.currentNode;
+
+    // ═══ COMPREHENSION CHECK: Skip BKT — just generate first real question ═══
+    if (isComprehensionCheck) {
+      // Transition TEACHING → PRACTICE without touching mastery
+      if (session.state === "TEACHING") {
+        await transitionState(sessionId, "PRACTICE", "SUBMIT_ANSWER", {
+          isCorrect: true,
+        });
+      }
+
+      // Get current mastery (read-only)
+      const existingMastery = await prisma.masteryScore.findUnique({
+        where: {
+          studentId_nodeId: { studentId: session.studentId, nodeId: node.id },
+        },
+      });
+      const currentMastery: MasteryData = existingMastery
+        ? {
+            bktProbability: existingMastery.bktProbability,
+            level: existingMastery.level as MasteryData["level"],
+            practiceCount: existingMastery.practiceCount,
+            correctCount: existingMastery.correctCount,
+            lastPracticed: existingMastery.lastPracticed,
+            nextReviewAt: existingMastery.nextReviewAt,
+          }
+        : {
+            bktProbability: 0.3,
+            level: "NOVICE" as const,
+            practiceCount: 0,
+            correctCount: 0,
+            lastPracticed: new Date(),
+            nextReviewAt: null,
+          };
+
+      // Kick off first real practice question generation in the background
+      const promptParams = buildPromptParams(student, node, currentMastery);
+      startPrefetch(sessionId, promptParams, node.nodeCode, node.title);
+
+      // Return feedback immediately — client fetches question via /api/session/next-question
+      return NextResponse.json({
+        state: "PRACTICE",
+        recommendedAction: "present_practice_problem",
+        isCorrect: true,
+        mastery: formatMastery(currentMastery),
+        feedback: {
+          message: "Great! Let's start practicing!",
+          type: "correct",
+        },
+        questionPrefetched: true, // Signal client to fetch from next-question endpoint
+      });
+    }
+
     // Update BKT mastery
     const updatedMastery = await updateMasteryInDB(
       session.studentId,
@@ -48,9 +103,6 @@ export async function POST(request: Request) {
         correctAnswers: { increment: isCorrect ? 1 : 0 },
       },
     });
-
-    const student = session.student;
-    const node = session.currentNode;
 
     // ═══ GAMIFICATION: Award XP for correct answer ═══
     let gamificationXP = null;
@@ -178,13 +230,11 @@ export async function POST(request: Request) {
         });
       }
 
+      // Start generating next question in the background
       const promptParams = buildPromptParams(student, node, updatedMastery);
-      const prompt = practicePrompt.buildPrompt(promptParams);
-      const claudeResponse = await callClaude(prompt);
-      const nextQuestion = claudeResponse
-        ? practicePrompt.parseResponse(claudeResponse)
-        : getFallbackPracticeQuestion(node.nodeCode, node.title);
+      startPrefetch(sessionId, promptParams, node.nodeCode, node.title);
 
+      // Return feedback immediately — client fetches question via /api/session/next-question
       return NextResponse.json({
         state: "PRACTICE",
         recommendedAction: "present_practice_problem",
@@ -196,7 +246,7 @@ export async function POST(request: Request) {
             : "Not quite — let's try again!",
           type: isCorrect ? "correct" : "incorrect",
         },
-        nextQuestion,
+        questionPrefetched: true, // Signal client to fetch from next-question endpoint
         gamification: gamificationXP,
       });
     }

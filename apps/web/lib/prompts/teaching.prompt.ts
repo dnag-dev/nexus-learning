@@ -29,16 +29,26 @@ CONCEPT DESCRIPTION: ${params.nodeDescription}
 GRADE: ${params.gradeLevel} | DOMAIN: ${params.domain} | DIFFICULTY: ${params.difficulty}/10
 
 INSTRUCTIONS:
-1. Start with a fun, relatable hook that connects the concept to ${params.studentName}'s world
-2. Explain the concept clearly with a concrete example
-3. Use a visual or hands-on analogy when possible
-4. End with a quick check-for-understanding question (one simple question with one correct answer)
+1. Pick a single emoji that best represents this concept (e.g. ⚖️ for equal sign, 🍕 for fractions)
+2. Write ONE hook sentence (max 20 words) that grabs ${params.studentName}'s attention and connects to their world
+3. Explain the core concept in exactly 2-3 sentences — clear, concrete, no fluff
+4. Give ONE real-world example ${params.studentName} can picture or try themselves
+5. End with a quick comprehension check question (one simple question with one correct answer)
+
+HARD LIMITS:
+- Hook: 1 sentence, max 20 words
+- Explanation: 2-3 sentences max
+- Example: 1-2 sentences max
+- Total under 150 words (excluding emoji and JSON keys)
 
 OUTPUT FORMAT (JSON):
 {
-  "explanation": "Your concept introduction (2-4 paragraphs, age-appropriate)",
-  "checkQuestion": "A simple yes/no or short-answer question to check understanding",
-  "checkAnswer": "The correct answer to the check question"
+  "emoji": "single emoji character",
+  "hook": "One attention-grabbing sentence",
+  "explanation": "Core concept in 2-3 short sentences",
+  "example": "One concrete real-world example",
+  "checkQuestion": "A simple comprehension check question",
+  "checkAnswer": "The correct answer"
 }
 
 Respond ONLY with valid JSON.`;
@@ -49,15 +59,22 @@ export function parseResponse(rawResponse: string): TeachingResponse {
     const cleaned = rawResponse.replace(/```json\n?|\n?```/g, "").trim();
     const parsed = JSON.parse(cleaned);
     return {
+      emoji: parsed.emoji || "📚",
+      hook: parsed.hook || "Let's learn something amazing!",
       explanation: parsed.explanation || "Let me explain this concept to you!",
+      example:
+        parsed.example || "You'll see this all around you in everyday life.",
       checkQuestion:
         parsed.checkQuestion || "Can you tell me what you just learned?",
       checkAnswer: parsed.checkAnswer || "Great thinking!",
     };
   } catch {
     return {
+      emoji: "📚",
+      hook: "Let's learn something new today!",
       explanation:
-        "Let's learn something new today! This is an exciting concept.",
+        "This is an exciting concept we're going to explore together.",
+      example: "You'll see this all around you in everyday life.",
       checkQuestion: "Are you ready to try a practice question?",
       checkAnswer: "Yes!",
     };

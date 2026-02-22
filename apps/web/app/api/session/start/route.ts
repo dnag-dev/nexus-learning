@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@aauti/db";
 import { transitionState } from "@/lib/session/state-machine";
-import { callClaude } from "@/lib/session/claude-client";
-import * as teachingPrompt from "@/lib/prompts/teaching.prompt";
-import type { AgeGroupValue, EmotionalStateValue } from "@/lib/prompts/types";
 import { checkReviewsOnSessionStart } from "@/lib/spaced-repetition/scheduler-job";
 
 export async function POST(request: Request) {
@@ -36,26 +33,42 @@ export async function POST(request: Request) {
         where: { nodeCode },
       });
     } else {
-      // Pick the first node without mastery, or lowest mastery
-      const allNodes = await prisma.knowledgeNode.findMany({
-        where: { gradeLevel: student.gradeLevel },
-        orderBy: { difficulty: "asc" },
-      });
+      // Pick the first unmastered node — starting at the student's grade,
+      // then advancing through higher grades when all are mastered.
+      const gradeLevels = ["K", "G1", "G2", "G3", "G4", "G5"];
+      const startIdx = gradeLevels.indexOf(student.gradeLevel);
+      const orderedGrades = [
+        ...gradeLevels.slice(startIdx),
+        ...gradeLevels.slice(0, startIdx),
+      ];
 
-      for (const node of allNodes) {
-        const mastery = await prisma.masteryScore.findUnique({
-          where: {
-            studentId_nodeId: { studentId, nodeId: node.id },
-          },
+      for (const grade of orderedGrades) {
+        if (targetNode) break;
+
+        const gradeNodes = await prisma.knowledgeNode.findMany({
+          where: { gradeLevel: grade as any },
+          orderBy: { difficulty: "asc" },
         });
-        if (!mastery || mastery.bktProbability < 0.9) {
-          targetNode = node;
-          break;
+
+        for (const node of gradeNodes) {
+          const mastery = await prisma.masteryScore.findUnique({
+            where: {
+              studentId_nodeId: { studentId, nodeId: node.id },
+            },
+          });
+          if (!mastery || mastery.bktProbability < 0.9) {
+            targetNode = node;
+            break;
+          }
         }
       }
 
-      if (!targetNode && allNodes.length > 0) {
-        targetNode = allNodes[0];
+      // Ultimate fallback: if literally every node is mastered
+      if (!targetNode) {
+        const anyNode = await prisma.knowledgeNode.findFirst({
+          orderBy: { difficulty: "asc" },
+        });
+        if (anyNode) targetNode = anyNode;
       }
     }
 
@@ -84,30 +97,6 @@ export async function POST(request: Request) {
       { nodeCode: targetNode.nodeCode }
     );
 
-    // Generate teaching content via Claude
-    const promptParams = {
-      nodeCode: targetNode.nodeCode,
-      nodeTitle: targetNode.title,
-      nodeDescription: targetNode.description,
-      gradeLevel: targetNode.gradeLevel,
-      domain: targetNode.domain,
-      difficulty: targetNode.difficulty,
-      studentName: student.displayName,
-      ageGroup: student.ageGroup as AgeGroupValue,
-      personaId: student.avatarPersonaId,
-      currentEmotionalState: "NEUTRAL" as EmotionalStateValue,
-    };
-
-    const prompt = teachingPrompt.buildPrompt(promptParams);
-    const claudeResponse = await callClaude(prompt);
-    const teaching = claudeResponse
-      ? teachingPrompt.parseResponse(claudeResponse)
-      : {
-          explanation: `Let's learn about ${targetNode.title}! ${targetNode.description}`,
-          checkQuestion: "Are you ready to try some practice questions?",
-          checkAnswer: "Yes!",
-        };
-
     // ═══ SPACED REPETITION: Check for due reviews ═══
     let reviewSuggestion = null;
     try {
@@ -116,6 +105,8 @@ export async function POST(request: Request) {
       console.error("Review check error (non-critical):", e);
     }
 
+    // Return session metadata immediately — teaching content will stream
+    // via /api/session/teach-stream SSE endpoint.
     return NextResponse.json({
       sessionId: session.id,
       state: result.newState,
@@ -128,7 +119,7 @@ export async function POST(request: Request) {
         domain: targetNode.domain,
         difficulty: targetNode.difficulty,
       },
-      teaching,
+      teaching: null, // Streamed separately
       persona: {
         id: student.avatarPersonaId,
         studentName: student.displayName,

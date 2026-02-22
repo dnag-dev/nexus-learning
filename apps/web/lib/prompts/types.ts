@@ -27,7 +27,10 @@ export interface PromptParams {
 }
 
 export interface TeachingResponse {
+  emoji: string;
+  hook: string;
   explanation: string;
+  example: string;
   checkQuestion: string;
   checkAnswer: string;
 }

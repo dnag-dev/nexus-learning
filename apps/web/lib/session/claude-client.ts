@@ -2,152 +2,201 @@
  * Shared Claude client for teaching session prompts.
  * Supports both blocking (callClaude) and streaming (streamClaude) modes.
  *
- * Uses Haiku for fast question generation (fits within Vercel 10s timeout)
- * and Sonnet for richer content (celebrations, teaching explanations).
+ * Uses raw fetch instead of the Anthropic SDK because SDK v0.78.0 has
+ * connection errors on Vercel serverless. Raw fetch works perfectly.
  */
 
-import Anthropic from "@anthropic-ai/sdk";
+const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
+const ANTHROPIC_VERSION = "2023-06-01";
 
-/** Fast model for structured outputs (questions, celebrations) — responds in 1-3s */
-const FAST_MODEL = "claude-3-5-haiku-20241022";
-/** Rich model for teaching explanations and streaming content */
-const RICH_MODEL = "claude-sonnet-4-5-20250929";
-
+const MODEL = "claude-sonnet-4-5-20250929";
 const MAX_TOKENS = 800;
 const TEMPERATURE = 0.7;
 
-let client: Anthropic | null = null;
-let keySource: string = "none";
+let resolvedKey: string | null = null;
 
-function resolveApiKey(): string | undefined {
+function getApiKey(): string | null {
+  if (resolvedKey) return resolvedKey;
+
   // Priority 1: AAUTI_ANTHROPIC_KEY (avoids conflict with Claude Code shell env)
   const aautiKey = process.env.AAUTI_ANTHROPIC_KEY;
   if (aautiKey && aautiKey.length > 10) {
-    keySource = "AAUTI_ANTHROPIC_KEY";
-    return aautiKey;
+    resolvedKey = aautiKey;
+    console.log(`[Claude] Using AAUTI_ANTHROPIC_KEY (prefix: ${aautiKey.substring(0, 12)}...)`);
+    return resolvedKey;
   }
 
-  // Priority 2: ANTHROPIC_API_KEY (any valid key — relaxed check for Vercel)
+  // Priority 2: ANTHROPIC_API_KEY
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   if (anthropicKey && anthropicKey.length > 10) {
-    keySource = "ANTHROPIC_API_KEY";
-    return anthropicKey;
+    resolvedKey = anthropicKey;
+    console.log(`[Claude] Using ANTHROPIC_API_KEY (prefix: ${anthropicKey.substring(0, 12)}...)`);
+    return resolvedKey;
   }
 
-  keySource = "none";
-  return undefined;
+  console.error(
+    "[Claude] No valid Anthropic API key found.",
+    `AAUTI_ANTHROPIC_KEY set: ${!!aautiKey}`,
+    `ANTHROPIC_API_KEY set: ${!!anthropicKey}`
+  );
+  return null;
 }
 
-export function getClaudeClient(): Anthropic | null {
-  const key = resolveApiKey();
-  if (!key) {
-    console.error(
-      "[Claude] No valid Anthropic API key found.",
-      `AAUTI_ANTHROPIC_KEY set: ${!!process.env.AAUTI_ANTHROPIC_KEY}`,
-      `ANTHROPIC_API_KEY set: ${!!process.env.ANTHROPIC_API_KEY}`,
-      `ANTHROPIC_API_KEY length: ${process.env.ANTHROPIC_API_KEY?.length ?? 0}`,
-      `ANTHROPIC_API_KEY prefix: ${process.env.ANTHROPIC_API_KEY?.substring(0, 8) ?? "N/A"}`
-    );
-    return null;
-  }
-  if (!client) {
-    console.log(
-      `[Claude] Initializing client (source: ${keySource}, prefix: ${key.substring(0, 12)}...)`
-    );
-    client = new Anthropic({ apiKey: key });
-  }
-  return client;
+// Keep the SDK client for backward compatibility (used by callers importing it)
+// but all API calls now go through raw fetch
+export function getClaudeClient(): { apiKey: string } | null {
+  const key = getApiKey();
+  return key ? { apiKey: key } : null;
 }
 
 /**
  * Blocking call — waits for full response.
- * Uses the fast Haiku model by default (1-3s response time) to fit within
- * Vercel serverless timeouts. Use model="rich" for Sonnet.
+ * Uses raw fetch to the Anthropic Messages API (bypasses SDK connection issues on Vercel).
  */
 export async function callClaude(
   prompt: string,
-  options?: { model?: "fast" | "rich"; maxTokens?: number }
+  options?: { maxTokens?: number }
 ): Promise<string | null> {
-  const claude = getClaudeClient();
-  if (!claude) {
-    console.error("[Claude] Client not available — no API key found. Falling back.");
+  const key = getApiKey();
+  if (!key) {
+    console.error("[Claude] No API key — falling back");
     return null;
   }
 
-  const model = options?.model === "rich" ? RICH_MODEL : FAST_MODEL;
   const maxTokens = options?.maxTokens ?? MAX_TOKENS;
 
   try {
     console.log(
-      `[Claude] Calling ${model} (maxTokens: ${maxTokens}, prompt length: ${prompt.length})`
+      `[Claude] Calling ${MODEL} via fetch (maxTokens: ${maxTokens}, prompt: ${prompt.length} chars)`
     );
     const startTime = Date.now();
 
-    const response = await claude.messages.create({
-      model,
-      max_tokens: maxTokens,
-      messages: [{ role: "user", content: prompt }],
-      temperature: TEMPERATURE,
+    const response = await fetch(ANTHROPIC_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": key,
+        "anthropic-version": ANTHROPIC_VERSION,
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: maxTokens,
+        temperature: TEMPERATURE,
+        messages: [{ role: "user", content: prompt }],
+      }),
     });
 
     const elapsed = Date.now() - startTime;
+
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => ({}));
+      console.error(
+        `[Claude] API returned HTTP ${response.status} in ${elapsed}ms:`,
+        (errorBody as Record<string, unknown>)?.error ?? errorBody
+      );
+      return null;
+    }
+
+    const data = await response.json();
+    const content = (data as { content: Array<{ type: string; text?: string }> }).content?.[0];
+
     console.log(
-      `[Claude] Response received in ${elapsed}ms (model: ${response.model}, tokens: ${response.usage?.output_tokens})`
+      `[Claude] Response in ${elapsed}ms (model: ${(data as { model: string }).model}, tokens: ${(data as { usage: { output_tokens: number } }).usage?.output_tokens})`
     );
 
-    const content = response.content[0];
-    if (content.type === "text") return content.text;
+    if (content?.type === "text" && content.text) {
+      return content.text;
+    }
 
-    console.warn("[Claude] Non-text response type:", content.type);
+    console.warn("[Claude] No text content in response");
     return null;
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);
-    const errorName = err instanceof Error ? err.constructor.name : typeof err;
-    console.error(
-      `[Claude] API call FAILED (model: ${model}):`,
-      `[${errorName}] ${errorMsg}`
-    );
+    console.error(`[Claude] Fetch FAILED: ${errorMsg}`);
     return null;
   }
 }
 
 /**
  * Streaming call — yields text deltas as they arrive from the API.
- * Use this for visible word-by-word rendering (teaching explanations).
- * Always uses the rich (Sonnet) model for quality.
+ * Uses raw fetch with SSE parsing (bypasses SDK connection issues on Vercel).
  */
 export async function* streamClaude(
   prompt: string
 ): AsyncGenerator<string, void, undefined> {
-  const claude = getClaudeClient();
-  if (!claude) {
-    console.error("[Claude] Client not available — cannot stream");
+  const key = getApiKey();
+  if (!key) {
+    console.error("[Claude] No API key — cannot stream");
     return;
   }
 
   try {
     console.log(
-      `[Claude] Starting stream (model: ${RICH_MODEL}, prompt length: ${prompt.length})`
+      `[Claude] Starting stream via fetch (model: ${MODEL}, prompt: ${prompt.length} chars)`
     );
 
-    const stream = claude.messages.stream({
-      model: RICH_MODEL,
-      max_tokens: MAX_TOKENS,
-      messages: [{ role: "user", content: prompt }],
-      temperature: TEMPERATURE,
+    const response = await fetch(ANTHROPIC_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": key,
+        "anthropic-version": ANTHROPIC_VERSION,
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: MAX_TOKENS,
+        temperature: TEMPERATURE,
+        stream: true,
+        messages: [{ role: "user", content: prompt }],
+      }),
     });
 
-    for await (const event of stream) {
-      if (
-        event.type === "content_block_delta" &&
-        event.delta.type === "text_delta"
-      ) {
-        yield event.delta.text;
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error(`[Claude] Stream HTTP ${response.status}: ${errorBody.substring(0, 200)}`);
+      return;
+    }
+
+    if (!response.body) {
+      console.error("[Claude] No response body for stream");
+      return;
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+
+      // Parse SSE events from the buffer
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || ""; // Keep incomplete last line in buffer
+
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        const data = line.slice(6).trim();
+        if (data === "[DONE]") return;
+
+        try {
+          const event = JSON.parse(data);
+          if (
+            event.type === "content_block_delta" &&
+            event.delta?.type === "text_delta" &&
+            event.delta?.text
+          ) {
+            yield event.delta.text;
+          }
+        } catch {
+          // Skip non-JSON SSE lines
+        }
       }
     }
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);
-    console.error(`[Claude] Streaming FAILED: ${errorMsg}`);
-    // Caller should handle empty generator as a failure
+    console.error(`[Claude] Stream FAILED: ${errorMsg}`);
   }
 }

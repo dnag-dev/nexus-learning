@@ -46,6 +46,10 @@ const DOMAIN_LABELS: Record<string, string> = {
   GEOMETRY: "Geometry",
   MEASUREMENT: "Measurement & Data",
   DATA: "Data Analysis",
+  GRAMMAR: "Grammar & Language",
+  READING: "Reading Comprehension",
+  WRITING: "Writing",
+  VOCABULARY: "Vocabulary",
 };
 
 export default function StudentDetailPage() {
@@ -56,13 +60,31 @@ export default function StudentDetailPage() {
   const [data, setData] = useState<StudentDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // ─── Focus Area (Blueprint) state ───
+  const [showFocusForm, setShowFocusForm] = useState(false);
+  const [focusText, setFocusText] = useState("");
+  const [savingFocus, setSavingFocus] = useState(false);
+  const [focusSaved, setFocusSaved] = useState(false);
+  const [currentBlueprint, setCurrentBlueprint] = useState<{
+    text: string | null;
+    source: string | null;
+    nodes: string[];
+  } | null>(null);
+
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(`/api/teacher/student/${studentId}/detail`);
-        if (res.ok) {
-          const detail = await res.json();
+        const [detailRes, bpRes] = await Promise.all([
+          fetch(`/api/teacher/student/${studentId}/detail`),
+          fetch(`/api/parent/child/${studentId}/blueprint`),
+        ]);
+        if (detailRes.ok) {
+          const detail = await detailRes.json();
           setData(detail);
+        }
+        if (bpRes.ok) {
+          const bp = await bpRes.json();
+          setCurrentBlueprint(bp);
         }
       } catch (err) {
         console.error("Failed to load student:", err);
@@ -72,6 +94,39 @@ export default function StudentDetailPage() {
     }
     load();
   }, [studentId]);
+
+  const handleSaveFocus = async () => {
+    if (!focusText.trim()) return;
+    setSavingFocus(true);
+    try {
+      const res = await fetch(`/api/parent/child/${studentId}/blueprint`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: focusText.trim(),
+          source: "TEACHER",
+        }),
+      });
+      if (res.ok) {
+        const result = await res.json();
+        setCurrentBlueprint({
+          text: result.text,
+          source: result.source,
+          nodes: result.nodes,
+        });
+        setFocusSaved(true);
+        setTimeout(() => {
+          setShowFocusForm(false);
+          setFocusSaved(false);
+          setFocusText("");
+        }, 1500);
+      }
+    } catch (err) {
+      console.error("Failed to save focus area:", err);
+    } finally {
+      setSavingFocus(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -130,6 +185,62 @@ export default function StudentDetailPage() {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Assign Focus Area */}
+      <div className="bg-white rounded-xl border border-gray-100 p-6">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold text-gray-900">
+            🎯 Learning Focus
+          </h3>
+          <button
+            onClick={() => setShowFocusForm(!showFocusForm)}
+            className="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            {showFocusForm ? "Cancel" : "Assign Focus Area"}
+          </button>
+        </div>
+
+        {/* Current blueprint display */}
+        {currentBlueprint?.text && !showFocusForm && (
+          <div className="bg-blue-50 rounded-lg p-3">
+            <p className="text-sm text-gray-700">{currentBlueprint.text}</p>
+            <p className="text-xs text-gray-400 mt-1">
+              Set by {currentBlueprint.source?.toLowerCase() ?? "unknown"} &middot;{" "}
+              {currentBlueprint.nodes?.length ?? 0} nodes prioritized
+            </p>
+          </div>
+        )}
+
+        {!currentBlueprint?.text && !showFocusForm && (
+          <p className="text-sm text-gray-400">
+            No focus area assigned. Click &ldquo;Assign Focus Area&rdquo; to guide this student&apos;s learning path.
+          </p>
+        )}
+
+        {/* Focus form */}
+        {showFocusForm && (
+          <div className="space-y-3">
+            <p className="text-xs text-gray-500">
+              Describe what this student should focus on. This takes highest priority over parent and kid inputs.
+            </p>
+            <textarea
+              value={focusText}
+              onChange={(e) => setFocusText(e.target.value)}
+              placeholder="e.g. Focus on comma rules and identifying sentence fragments. Also review subject-verb agreement."
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+              rows={3}
+              maxLength={500}
+            />
+            <button
+              onClick={handleSaveFocus}
+              disabled={savingFocus || !focusText.trim()}
+              className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            >
+              {focusSaved ? "✓ Saved!" : savingFocus ? "Saving..." : "Save Focus Area"}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Domain Breakdown */}

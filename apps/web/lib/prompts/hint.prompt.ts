@@ -1,5 +1,6 @@
 /**
- * Hint Prompt — Give a hint without giving the answer
+ * Hint Prompt — Give a hint without giving the answer.
+ * Subject-aware: uses appropriate framing for MATH vs ENGLISH.
  */
 
 import type { PromptParams, HintResponse } from "./types";
@@ -8,6 +9,7 @@ import {
   getPersonaTone,
   getAgeInstruction,
   getEmotionalInstruction,
+  isELASubject,
 } from "./types";
 
 export function buildPrompt(
@@ -17,8 +19,9 @@ export function buildPrompt(
   const tone = getPersonaTone(params.personaId);
   const ageInst = getAgeInstruction(params.ageGroup);
   const emoInst = getEmotionalInstruction(params.currentEmotionalState);
+  const subjectLabel = isELASubject(params.domain) ? "English" : "math";
 
-  return `You are ${persona}, an AI math tutor.
+  return `You are ${persona}, an AI ${subjectLabel} tutor.
 
 PERSONALITY: ${tone}
 

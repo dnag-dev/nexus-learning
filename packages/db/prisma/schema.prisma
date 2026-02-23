@@ -22,6 +22,17 @@ enum GradeLevel {
   G3
   G4
   G5
+  G6
+  G7
+  G8
+  G9
+  G10
+}
+
+// ─── Subject (MATH or ENGLISH) ───
+enum Subject {
+  MATH
+  ENGLISH
 }
 
 enum AgeGroup {
@@ -31,11 +42,17 @@ enum AgeGroup {
 }
 
 enum KnowledgeDomain {
+  // Math domains
   COUNTING
   OPERATIONS
   GEOMETRY
   MEASUREMENT
   DATA
+  // English Language Arts domains
+  GRAMMAR
+  READING
+  WRITING
+  VOCABULARY
 }
 
 enum SessionState {
@@ -166,6 +183,11 @@ model Student {
   username        String?          @unique
   pinHash         String?
   lastLoginAt     DateTime?
+  // ─── Blueprint: Learning focus set by teacher/parent/kid ───
+  blueprintText      String?
+  blueprintNodes     String[]       @default([])
+  blueprintSource    String?        // "KID", "PARENT", "TEACHER"
+  blueprintUpdatedAt DateTime?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   parent          User             @relation(fields: [parentId], references: [id], onDelete: Cascade)
@@ -192,6 +214,7 @@ model KnowledgeNode {
   description  String
   gradeLevel   GradeLevel
   domain       KnowledgeDomain
+  subject      Subject         @default(MATH)
   difficulty   Int             @default(1)
   prerequisites KnowledgeNode[] @relation("NodePrerequisites")
   successors    KnowledgeNode[] @relation("NodePrerequisites")
@@ -199,6 +222,7 @@ model KnowledgeNode {
   sessions      LearningSession[]
 
   @@index([gradeLevel, domain])
+  @@index([subject])
   @@map("knowledge_nodes")
 }
 
@@ -206,6 +230,7 @@ model LearningSession {
   id                   String         @id @default(cuid())
   studentId            String
   sessionType          SessionType    @default(LEARNING)
+  subject              Subject        @default(MATH)
   state                SessionState   @default(IDLE)
   currentNodeId        String?
   startedAt            DateTime       @default(now())

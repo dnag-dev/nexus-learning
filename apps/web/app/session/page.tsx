@@ -115,6 +115,7 @@ function SessionPage() {
   const searchParams = useSearchParams();
   const DEMO_STUDENT_ID = searchParams.get("studentId") || "demo-student-1";
   const returnTo = searchParams.get("returnTo") || "/dashboard";
+  const subjectParam = searchParams.get("subject") || "MATH"; // "MATH" or "ENGLISH"
   const [phase, setPhase] = useState<SessionPhase>("idle");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [node, setNode] = useState<NodeInfo | null>(null);
@@ -299,7 +300,7 @@ function SessionPage() {
       const res = await fetch("/api/session/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ studentId: DEMO_STUDENT_ID }),
+        body: JSON.stringify({ studentId: DEMO_STUDENT_ID, subject: subjectParam }),
         signal: controller.signal,
       });
       clearTimeout(timeout);

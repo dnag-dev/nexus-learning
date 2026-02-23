@@ -1,5 +1,6 @@
 /**
- * Celebrating Prompt — Celebrate mastery, build excitement for next node
+ * Celebrating Prompt — Celebrate mastery, build excitement for next node.
+ * Subject-aware: uses appropriate framing for MATH vs ENGLISH.
  */
 
 import type { PromptParams, CelebratingResponse } from "./types";
@@ -8,6 +9,7 @@ import {
   getPersonaTone,
   getAgeInstruction,
   getEmotionalInstruction,
+  isELASubject,
 } from "./types";
 
 export function buildPrompt(
@@ -17,12 +19,14 @@ export function buildPrompt(
   const tone = getPersonaTone(params.personaId);
   const ageInst = getAgeInstruction(params.ageGroup);
   const emoInst = getEmotionalInstruction(params.currentEmotionalState);
+  const subjectLabel = isELASubject(params.domain) ? "English" : "math";
+  const funFactLabel = isELASubject(params.domain) ? "language" : "math";
 
   const nextPart = params.nextNodeTitle
     ? `NEXT CONCEPT: ${params.nextNodeTitle} — tease what's coming next to build excitement.`
     : "This was the last concept in this path — celebrate the full achievement!";
 
-  return `You are ${persona}, an AI math tutor.
+  return `You are ${persona}, an AI ${subjectLabel} tutor.
 
 PERSONALITY: ${tone}
 
@@ -37,14 +41,14 @@ ${nextPart}
 
 INSTRUCTIONS:
 1. Write an enthusiastic celebration message (match ${persona}'s personality!)
-2. Include a fun math fact related to the mastered concept
+2. Include a fun ${funFactLabel} fact related to the mastered concept
 3. Tease the next concept to maintain momentum (or celebrate path completion)
 4. Make the student feel genuinely proud of their achievement
 
 OUTPUT FORMAT (JSON):
 {
   "celebration": "Enthusiastic celebration message (2-3 sentences)",
-  "funFact": "A fun, surprising math fact related to the concept (1 sentence)",
+  "funFact": "A fun, surprising ${funFactLabel} fact related to the concept (1 sentence)",
   "nextTeaser": "Exciting teaser for the next concept or path completion message (1-2 sentences)"
 }
 

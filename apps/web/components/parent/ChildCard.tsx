@@ -6,8 +6,10 @@
  * Per-child summary card showing key metrics:
  * display name, avatar, grade, XP/level, today's activity,
  * streak, mastery trend, last active timestamp.
+ * Includes "Learning Focus" input for parent blueprints (Phase 4: ELA).
  */
 
+import { useState } from "react";
 import Link from "next/link";
 
 // ─── Types ───
@@ -150,6 +152,9 @@ export default function ChildCard({ child }: ChildCardProps) {
         </span>
       </div>
 
+      {/* Learning Focus (Blueprint) */}
+      <BlueprintInput childId={child.id} />
+
       {/* Start Learning Button */}
       <div className="flex gap-2">
         <a
@@ -186,6 +191,93 @@ function formatRelativeTime(date: Date): string {
   if (diffDays === 1) return "yesterday";
   if (diffDays < 7) return `${diffDays}d ago`;
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+// ─── Blueprint Input (Learning Focus) ───
+
+function BlueprintInput({ childId }: { childId: string }) {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const handleSave = async () => {
+    if (!text.trim()) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/parent/child/${childId}/blueprint`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: text.trim(),
+          source: "PARENT",
+        }),
+      });
+      if (res.ok) {
+        setSaved(true);
+        setTimeout(() => {
+          setOpen(false);
+          setSaved(false);
+        }, 1500);
+      }
+    } catch {
+      // Non-critical
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!open) {
+    return (
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setOpen(true);
+        }}
+        className="w-full mb-3 py-2 text-xs text-purple-600 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors text-center font-medium"
+      >
+        📝 Set Learning Focus
+      </button>
+    );
+  }
+
+  return (
+    <div
+      className="mb-3 bg-purple-50 rounded-lg p-3"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+    >
+      <p className="text-xs text-gray-600 mb-2">
+        What should this child focus on? (e.g. &ldquo;Practice nouns and adjectives&rdquo; or &ldquo;Work on fractions&rdquo;)
+      </p>
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="e.g. Focus on comma rules and sentence structure"
+        className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm resize-none focus:ring-1 focus:ring-purple-400 focus:border-purple-400"
+        rows={2}
+        maxLength={300}
+      />
+      <div className="flex gap-2 mt-2">
+        <button
+          onClick={handleSave}
+          disabled={saving || !text.trim()}
+          className="px-3 py-1 bg-purple-600 text-white text-xs rounded font-medium hover:bg-purple-700 disabled:opacity-50 transition-colors"
+        >
+          {saved ? "✓ Saved!" : saving ? "Saving..." : "Save Focus"}
+        </button>
+        <button
+          onClick={() => setOpen(false)}
+          className="px-3 py-1 text-xs text-gray-500 hover:text-gray-700"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
 }
 
 // ─── Export helper for tests ───

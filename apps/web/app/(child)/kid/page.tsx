@@ -3,11 +3,13 @@
 /**
  * Kid Dashboard (Game Lobby) — The child's gamified home screen.
  *
- * Shows avatar, XP bar, streak, badges, boss challenges, and a big
- * "Start Learning" button. Dark space theme.
+ * Shows avatar, XP bar, streak, badges, boss challenges, subject selector,
+ * optional focus text input, and a big "Start Learning" button.
+ * Dark space theme.
  */
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useChild } from "@/lib/child-context";
 import XPBar from "@/components/gamification/XPBar";
@@ -90,6 +92,7 @@ const DEFAULT_STREAK = {
 };
 
 export default function KidDashboardPage() {
+  const router = useRouter();
   const { studentId, displayName, avatarPersonaId } = useChild();
 
   const [loading, setLoading] = useState(true);
@@ -97,6 +100,11 @@ export default function KidDashboardPage() {
     null
   );
   const [reviews, setReviews] = useState<ReviewData | null>(null);
+
+  // ─── Subject selection + focus text ───
+  const [selectedSubject, setSelectedSubject] = useState<"MATH" | "ENGLISH">("MATH");
+  const [focusText, setFocusText] = useState("");
+  const [startingSession, setStartingSession] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (!studentId) return;
@@ -126,6 +134,41 @@ export default function KidDashboardPage() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  /**
+   * Start a learning session.
+   * If focus text was provided, save it as a kid blueprint first,
+   * then navigate to the session with the selected subject.
+   */
+  const handleStartLearning = useCallback(async () => {
+    setStartingSession(true);
+    try {
+      // If the kid typed focus text, save it as a blueprint (non-blocking on failure)
+      if (focusText.trim()) {
+        try {
+          await fetch(`/api/parent/child/${studentId}/blueprint`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              text: focusText.trim(),
+              source: "KID",
+              subject: selectedSubject,
+            }),
+          });
+        } catch {
+          // Blueprint save is non-critical — proceed to session regardless
+          console.warn("Blueprint save failed (non-critical)");
+        }
+      }
+
+      // Navigate to session with subject parameter
+      router.push(
+        `/session?studentId=${studentId}&subject=${selectedSubject}&returnTo=/kid`
+      );
+    } catch {
+      setStartingSession(false);
+    }
+  }, [studentId, selectedSubject, focusText, router]);
 
   const emoji = PERSONA_EMOJI[avatarPersonaId] ?? "⭐";
   const xp = gamification?.xp ?? 0;
@@ -213,13 +256,57 @@ export default function KidDashboardPage() {
         </div>
       </div>
 
+      {/* Subject Selection */}
+      <div className="space-y-3">
+        <p className="text-sm text-gray-400 text-center">Choose your subject</p>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => setSelectedSubject("MATH")}
+            className={`py-4 rounded-xl border-2 text-center font-semibold transition-all ${
+              selectedSubject === "MATH"
+                ? "border-aauti-primary bg-aauti-primary/20 text-white shadow-lg shadow-aauti-primary/20"
+                : "border-white/10 bg-[#1A2744] text-gray-300 hover:border-white/20"
+            }`}
+          >
+            🔢 Math
+          </button>
+          <button
+            onClick={() => setSelectedSubject("ENGLISH")}
+            className={`py-4 rounded-xl border-2 text-center font-semibold transition-all ${
+              selectedSubject === "ENGLISH"
+                ? "border-blue-500 bg-blue-500/20 text-white shadow-lg shadow-blue-500/20"
+                : "border-white/10 bg-[#1A2744] text-gray-300 hover:border-white/20"
+            }`}
+          >
+            📖 English
+          </button>
+        </div>
+
+        {/* Optional focus text input */}
+        <div className="bg-[#1A2744] rounded-xl border border-white/5 p-3">
+          <input
+            type="text"
+            value={focusText}
+            onChange={(e) => setFocusText(e.target.value)}
+            placeholder={
+              selectedSubject === "ENGLISH"
+                ? "What do you want to learn? e.g. commas, nouns..."
+                : "What do you want to practice? e.g. fractions, addition..."
+            }
+            className="w-full bg-transparent text-white placeholder:text-gray-500 text-sm outline-none"
+            maxLength={200}
+          />
+        </div>
+      </div>
+
       {/* Start Learning CTA */}
-      <Link
-        href={`/session?studentId=${studentId}&returnTo=/kid`}
-        className="block w-full py-5 text-center text-xl font-bold text-white rounded-2xl bg-gradient-to-r from-aauti-primary to-aauti-secondary hover:from-aauti-primary/90 hover:to-aauti-secondary/90 transition-all shadow-lg shadow-aauti-primary/25 active:scale-[0.98]"
+      <button
+        onClick={handleStartLearning}
+        disabled={startingSession}
+        className="block w-full py-5 text-center text-xl font-bold text-white rounded-2xl bg-gradient-to-r from-aauti-primary to-aauti-secondary hover:from-aauti-primary/90 hover:to-aauti-secondary/90 transition-all shadow-lg shadow-aauti-primary/25 active:scale-[0.98] disabled:opacity-50"
       >
-        🚀 Start Learning!
-      </Link>
+        {startingSession ? "Preparing..." : "🚀 Start Learning!"}
+      </button>
 
       {/* Streak Widget */}
       <div className="bg-[#1A2744] rounded-2xl border border-white/5 p-4">

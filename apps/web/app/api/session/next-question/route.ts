@@ -94,16 +94,98 @@ export async function GET(request: Request) {
     `[next-question] Claude FAILED for ${sessionId} — using fallback question for "${node.title}"`
   );
 
-  const question = generateFallbackQuestion(node.title, node.difficulty);
+  const question = generateFallbackQuestion(node.title, node.difficulty, node.domain);
   return NextResponse.json({ question, source: "fallback" });
 }
 
 /**
- * Generate a basic fallback question when Claude is unavailable.
- * Uses the node's difficulty level to adjust the question.
+ * ELA domain set — matches the set in types.ts.
+ * Used to pick subject-appropriate fallback questions.
  */
-function generateFallbackQuestion(nodeTitle: string, difficulty: number) {
-  // Generate contextually appropriate questions based on difficulty
+const ELA_DOMAINS = new Set(["GRAMMAR", "READING", "WRITING", "VOCABULARY"]);
+
+/**
+ * Generate a basic fallback question when Claude is unavailable.
+ * Uses the node's difficulty level and domain to adjust the question.
+ * Subject-aware: returns ELA questions for English nodes, math for math nodes.
+ */
+function generateFallbackQuestion(nodeTitle: string, difficulty: number, domain: string) {
+  if (ELA_DOMAINS.has(domain)) {
+    return generateELAFallbackQuestion(nodeTitle, difficulty);
+  }
+  return generateMathFallbackQuestion(nodeTitle, difficulty);
+}
+
+/** ELA fallback questions for when Claude is unavailable */
+function generateELAFallbackQuestion(nodeTitle: string, difficulty: number) {
+  const easyQuestions = [
+    {
+      questionText: `Let's practice ${nodeTitle}! In the sentence "The dog runs fast", what is the subject?`,
+      options: [
+        { id: "A", text: "dog", isCorrect: true },
+        { id: "B", text: "runs", isCorrect: false },
+        { id: "C", text: "fast", isCorrect: false },
+        { id: "D", text: "the", isCorrect: false },
+      ],
+      correctAnswer: "A",
+      explanation: "The subject is 'dog' — it's the person, place, or thing doing the action (running).",
+    },
+    {
+      questionText: `${nodeTitle} practice: Which word is a verb? "The cat sleeps on the soft bed."`,
+      options: [
+        { id: "A", text: "cat", isCorrect: false },
+        { id: "B", text: "sleeps", isCorrect: true },
+        { id: "C", text: "soft", isCorrect: false },
+        { id: "D", text: "bed", isCorrect: false },
+      ],
+      correctAnswer: "B",
+      explanation: "'Sleeps' is a verb — it tells us what the cat is doing!",
+    },
+    {
+      questionText: `Time to practice ${nodeTitle}! Which word is a noun? "The happy bird sings a pretty song."`,
+      options: [
+        { id: "A", text: "happy", isCorrect: false },
+        { id: "B", text: "sings", isCorrect: false },
+        { id: "C", text: "bird", isCorrect: true },
+        { id: "D", text: "pretty", isCorrect: false },
+      ],
+      correctAnswer: "C",
+      explanation: "'Bird' is a noun — it names a living thing. 'Song' is also a noun!",
+    },
+  ];
+
+  const mediumQuestions = [
+    {
+      questionText: `${nodeTitle}: Which sentence uses a comma correctly?`,
+      options: [
+        { id: "A", text: "I like apples oranges and bananas.", isCorrect: false },
+        { id: "B", text: "I like apples, oranges, and bananas.", isCorrect: true },
+        { id: "C", text: "I like, apples oranges and bananas.", isCorrect: false },
+        { id: "D", text: "I like apples oranges, and bananas.", isCorrect: false },
+      ],
+      correctAnswer: "B",
+      explanation: "When listing 3 or more items, put a comma after each item except the last. This is called the serial (Oxford) comma!",
+    },
+    {
+      questionText: `${nodeTitle}: "Although she was tired, she finished her homework." What type of sentence is this?`,
+      options: [
+        { id: "A", text: "Simple sentence", isCorrect: false },
+        { id: "B", text: "Compound sentence", isCorrect: false },
+        { id: "C", text: "Complex sentence", isCorrect: true },
+        { id: "D", text: "Fragment", isCorrect: false },
+      ],
+      correctAnswer: "C",
+      explanation: "This is a complex sentence — it has one independent clause and one dependent clause starting with 'Although'.",
+    },
+  ];
+
+  const questions = difficulty <= 4 ? easyQuestions : mediumQuestions;
+  const idx = Math.floor(Math.random() * questions.length);
+  return questions[idx];
+}
+
+/** Math fallback questions (original behavior) */
+function generateMathFallbackQuestion(nodeTitle: string, difficulty: number) {
   const easyQuestions = [
     {
       questionText: `Let's practice ${nodeTitle}! What is 3 + 4?`,

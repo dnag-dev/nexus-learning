@@ -1,5 +1,6 @@
 /**
- * Struggling Prompt — Detect struggle, offer encouragement + simpler approach
+ * Struggling Prompt — Detect struggle, offer encouragement + simpler approach.
+ * Subject-aware: uses appropriate framing for MATH vs ENGLISH.
  */
 
 import type { PromptParams, StrugglingResponse } from "./types";
@@ -8,6 +9,7 @@ import {
   getPersonaTone,
   getAgeInstruction,
   getEmotionalInstruction,
+  isELASubject,
 } from "./types";
 
 export function buildPrompt(params: PromptParams): string {
@@ -15,8 +17,9 @@ export function buildPrompt(params: PromptParams): string {
   const tone = getPersonaTone(params.personaId);
   const ageInst = getAgeInstruction(params.ageGroup);
   const emoInst = getEmotionalInstruction(params.currentEmotionalState);
+  const subjectLabel = isELASubject(params.domain) ? "English" : "math";
 
-  return `You are ${persona}, an AI math tutor.
+  return `You are ${persona}, an AI ${subjectLabel} tutor.
 
 PERSONALITY: ${tone}
 

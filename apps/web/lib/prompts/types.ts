@@ -75,6 +75,20 @@ export interface EmotionalCheckResponse {
   followUpResponses: Record<string, string>;
 }
 
+// ─── Subject Detection Helper ───
+
+/** ELA domains from the KnowledgeDomain enum */
+const ELA_DOMAINS = new Set(["GRAMMAR", "READING", "WRITING", "VOCABULARY"]);
+
+/**
+ * Returns true if the domain belongs to English Language Arts.
+ * Used by prompt builders to select the correct prompt template.
+ * Nodes without a recognized ELA domain default to math behavior.
+ */
+export function isELASubject(domain: string): boolean {
+  return ELA_DOMAINS.has(domain);
+}
+
 // ─── Persona Helpers ───
 
 const PERSONA_NAMES: Record<string, string> = {

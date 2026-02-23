@@ -24,7 +24,8 @@
     "SENDGRID_API_KEY",
     "NEXT_PUBLIC_APP_URL",
     "UPSTASH_REDIS_REST_URL",
-    "UPSTASH_REDIS_REST_TOKEN"
+    "UPSTASH_REDIS_REST_TOKEN",
+    "CHILD_AUTH_SECRET"
   ],
   "tasks": {
     "build": {

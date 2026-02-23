@@ -17,18 +17,29 @@ export default function HomePage() {
           </p>
         </div>
 
+        {/* Entry Points */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
             href="/api/auth/login"
             className="inline-flex items-center justify-center px-8 py-3 text-lg font-medium text-white bg-aauti-primary rounded-xl hover:bg-aauti-primary/90 transition-colors"
           >
-            Get Started
+            🎓 I&apos;m a Parent
           </Link>
           <Link
-            href="/api/auth/login"
-            className="inline-flex items-center justify-center px-8 py-3 text-lg font-medium text-aauti-text-primary bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+            href="/kid-login"
+            className="inline-flex items-center justify-center px-8 py-3 text-lg font-medium text-white bg-gradient-to-r from-orange-500 to-amber-500 rounded-xl hover:from-orange-600 hover:to-amber-600 transition-all shadow-lg shadow-orange-500/20"
           >
-            Sign In
+            🚀 I&apos;m a Kid
+          </Link>
+        </div>
+
+        {/* Secondary sign-in */}
+        <div className="mt-4">
+          <Link
+            href="/api/auth/login"
+            className="text-sm text-aauti-text-secondary hover:text-aauti-text-primary transition-colors"
+          >
+            Already have an account? Sign in →
           </Link>
         </div>
 

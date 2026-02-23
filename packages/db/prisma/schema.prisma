@@ -163,6 +163,9 @@ model Student {
   parentId        String
   xp              Int              @default(0)
   level           Int              @default(1)
+  username        String?          @unique
+  pinHash         String?
+  lastLoginAt     DateTime?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   parent          User             @relation(fields: [parentId], references: [id], onDelete: Cascade)

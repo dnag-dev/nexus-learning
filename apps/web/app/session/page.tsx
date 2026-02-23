@@ -114,6 +114,7 @@ export default function SessionPageWrapper() {
 function SessionPage() {
   const searchParams = useSearchParams();
   const DEMO_STUDENT_ID = searchParams.get("studentId") || "demo-student-1";
+  const returnTo = searchParams.get("returnTo") || "/dashboard";
   const [phase, setPhase] = useState<SessionPhase>("idle");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [node, setNode] = useState<NodeInfo | null>(null);
@@ -999,7 +1000,7 @@ function SessionPage() {
             })()}
 
             <a
-              href="/dashboard"
+              href={returnTo}
               className="block w-full py-4 text-center text-lg font-semibold text-white bg-aauti-primary rounded-2xl hover:bg-aauti-primary/90"
             >
               Back to Dashboard

@@ -1,16 +1,17 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@aauti/db";
+import { hashPin, validatePin, validateUsername } from "@/lib/child-auth";
 
 /**
  * POST /api/parent/children
  *
  * Add a child profile to a parent account.
- * Body: { parentId, displayName, gradeLevel, ageGroup }
+ * Body: { parentId, displayName, gradeLevel, ageGroup, username?, pin? }
  */
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { parentId, displayName, gradeLevel, ageGroup } = body;
+    const { parentId, displayName, gradeLevel, ageGroup, username, pin } = body;
 
     if (!parentId || !displayName) {
       return NextResponse.json(
@@ -48,6 +49,43 @@ export async function POST(request: Request) {
       );
     }
 
+    // Validate username if provided
+    let normalizedUsername: string | undefined;
+    if (username) {
+      const usernameError = validateUsername(username);
+      if (usernameError) {
+        return NextResponse.json({ error: usernameError }, { status: 400 });
+      }
+      normalizedUsername = username.toLowerCase();
+
+      // Check uniqueness
+      const existing = await prisma.student.findFirst({
+        where: { username: { equals: normalizedUsername, mode: "insensitive" } },
+      });
+      if (existing) {
+        return NextResponse.json(
+          { error: "This username is already taken. Try another!" },
+          { status: 409 }
+        );
+      }
+    }
+
+    // Validate and hash PIN if provided
+    let pinHash: string | undefined;
+    if (pin) {
+      if (!username) {
+        return NextResponse.json(
+          { error: "Username is required when setting a PIN" },
+          { status: 400 }
+        );
+      }
+      const pinError = validatePin(pin);
+      if (pinError) {
+        return NextResponse.json({ error: pinError }, { status: 400 });
+      }
+      pinHash = await hashPin(pin);
+    }
+
     // Create child
     const child = await prisma.student.create({
       data: {
@@ -55,7 +93,9 @@ export async function POST(request: Request) {
         gradeLevel: gradeLevel || "G3",
         ageGroup: ageGroup || "MID_8_10",
         parentId,
-        avatarPersonaId: "cosmo", // Default persona
+        avatarPersonaId: "cosmo",
+        username: normalizedUsername ?? null,
+        pinHash: pinHash ?? null,
       },
     });
 
@@ -64,6 +104,8 @@ export async function POST(request: Request) {
       displayName: child.displayName,
       gradeLevel: child.gradeLevel,
       ageGroup: child.ageGroup,
+      username: child.username,
+      hasKidLogin: !!child.username && !!child.pinHash,
     });
   } catch (err) {
     console.error("[parent/children] Error:", err);

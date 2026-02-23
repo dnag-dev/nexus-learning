@@ -30,6 +30,9 @@ export default function ParentDashboardPage() {
   const [childName, setChildName] = useState("");
   const [childGrade, setChildGrade] = useState("G3");
   const [childAge, setChildAge] = useState("MID_8_10");
+  const [childUsername, setChildUsername] = useState("");
+  const [childPin, setChildPin] = useState("");
+  const [childPinConfirm, setChildPinConfirm] = useState("");
   const [addingChild, setAddingChild] = useState(false);
 
   const fetchData = useCallback(async () => {
@@ -57,6 +60,20 @@ export default function ParentDashboardPage() {
     if (!childName.trim()) return;
     setAddingChild(true);
 
+    // Validate PIN if provided
+    if (childPin && childPin !== childPinConfirm) {
+      alert("PINs don't match!");
+      return;
+    }
+    if (childPin && !/^\d{4}$/.test(childPin)) {
+      alert("PIN must be exactly 4 digits");
+      return;
+    }
+    if (childUsername && (childUsername.length < 3 || !/^[a-zA-Z0-9_]+$/.test(childUsername))) {
+      alert("Username must be 3-20 characters (letters, numbers, underscores)");
+      return;
+    }
+
     try {
       const res = await fetch("/api/parent/children", {
         method: "POST",
@@ -66,11 +83,16 @@ export default function ParentDashboardPage() {
           displayName: childName.trim(),
           gradeLevel: childGrade,
           ageGroup: childAge,
+          username: childUsername.trim().toLowerCase() || undefined,
+          pin: childPin || undefined,
         }),
       });
 
       if (res.ok) {
         setChildName("");
+        setChildUsername("");
+        setChildPin("");
+        setChildPinConfirm("");
         setShowAddChild(false);
         // Refresh — reload to update sidebar too
         window.location.reload();
@@ -168,6 +190,65 @@ export default function ParentDashboardPage() {
                 </select>
               </div>
             </div>
+            {/* Kid Login Credentials (optional) */}
+            <div className="border-t border-gray-100 pt-4 mt-2">
+              <p className="text-xs text-gray-500 mb-3">
+                🚀 <strong>Optional:</strong> Set up a Kid Login so your child can sign in independently
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Username
+                  </label>
+                  <input
+                    type="text"
+                    value={childUsername}
+                    onChange={(e) => setChildUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, ""))}
+                    placeholder="e.g. arjun_star"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    maxLength={20}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    4-Digit PIN
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={childPin}
+                    onChange={(e) => setChildPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                    placeholder="e.g. 5728"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    maxLength={4}
+                  />
+                </div>
+              </div>
+              {childPin && (
+                <div className="mt-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Confirm PIN
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={childPinConfirm}
+                    onChange={(e) => setChildPinConfirm(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                    placeholder="Re-enter PIN"
+                    className={`w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${
+                      childPinConfirm && childPinConfirm !== childPin
+                        ? "border-red-300 bg-red-50"
+                        : "border-gray-300"
+                    }`}
+                    maxLength={4}
+                  />
+                  {childPinConfirm && childPinConfirm !== childPin && (
+                    <p className="text-xs text-red-500 mt-1">PINs don&apos;t match</p>
+                  )}
+                </div>
+              )}
+            </div>
+
             <div className="flex gap-3">
               <button
                 type="submit"

@@ -15,6 +15,7 @@ import * as teachingPrompt from "@/lib/prompts/teaching.prompt";
 import type { AgeGroupValue, EmotionalStateValue } from "@/lib/prompts/types";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);

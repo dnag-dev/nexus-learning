@@ -8,6 +8,9 @@ import * as practicePrompt from "@/lib/prompts/practice.prompt";
 import * as celebratingPrompt from "@/lib/prompts/celebrating.prompt";
 import type { AgeGroupValue, EmotionalStateValue } from "@/lib/prompts/types";
 import { processCorrectAnswer, processNodeMastered } from "@/lib/gamification/gamification-service";
+
+// Allow up to 30s for Claude API call (Pro plan); on Hobby plan this is capped at 10s
+export const maxDuration = 30;
 import { startPrefetch } from "@/lib/session/question-prefetch";
 
 export async function POST(request: Request) {

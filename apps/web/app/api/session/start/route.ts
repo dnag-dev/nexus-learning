@@ -3,6 +3,9 @@ import { prisma } from "@aauti/db";
 import { transitionState } from "@/lib/session/state-machine";
 import { checkReviewsOnSessionStart } from "@/lib/spaced-repetition/scheduler-job";
 
+// Allow up to 30s (Pro plan); on Hobby plan this is capped at 10s
+export const maxDuration = 30;
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();

@@ -5,6 +5,8 @@ import { callClaude } from "@/lib/session/claude-client";
 import * as hintPrompt from "@/lib/prompts/hint.prompt";
 import type { AgeGroupValue, EmotionalStateValue } from "@/lib/prompts/types";
 
+export const maxDuration = 30;
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();

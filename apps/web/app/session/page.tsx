@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import AvatarDisplay from "@/components/persona/AvatarDisplay";
 import type { AvatarEmotionalState, AvatarDisplayHandle } from "@/components/persona/AvatarDisplay";
@@ -113,10 +113,12 @@ export default function SessionPageWrapper() {
 
 function SessionPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const DEMO_STUDENT_ID = searchParams.get("studentId") || "demo-student-1";
   const returnTo = searchParams.get("returnTo") || "/dashboard";
   const subjectParam = searchParams.get("subject") || "MATH"; // "MATH" or "ENGLISH"
   const [phase, setPhase] = useState<SessionPhase>("idle");
+  const [shareToast, setShareToast] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [node, setNode] = useState<NodeInfo | null>(null);
   const [teaching, setTeaching] = useState<TeachingContent | null>(null);
@@ -902,7 +904,7 @@ function SessionPage() {
         </motion.div>
       )}
 
-      {/* ─── Summary ─── */}
+      {/* ─── Summary (Redesigned: Phases 1-6) ─── */}
       {phase === "summary" && summary && (
         <motion.div
           key="summary"
@@ -914,7 +916,8 @@ function SessionPage() {
           className="min-h-screen bg-[#0D1B2A]"
         >
           <main className="max-w-lg mx-auto px-4 py-12 text-center">
-            <div className="mx-auto mb-6 flex items-center justify-center">
+            {/* ─── Avatar ─── */}
+            <div className="mx-auto mb-4 flex items-center justify-center">
               <AvatarDisplay
                 ref={avatarRef}
                 personaId={personaId}
@@ -924,31 +927,96 @@ function SessionPage() {
                 onTalkingChange={handleTalkingChange}
               />
             </div>
+
+            {/* ─── Phase 6: Streak Momentum Callout ─── */}
+            {(() => {
+              const s = summary as { streak?: { current: number; longest: number } };
+              if (s.streak && s.streak.current >= 2) {
+                return (
+                  <div className="mb-4">
+                    <p className="text-amber-400 font-bold text-lg">
+                      🔥 {s.streak.current} sessions in a row! Keep it up, {studentName}!
+                    </p>
+                  </div>
+                );
+              }
+              return null;
+            })()}
+
             <h1 className="text-3xl font-bold text-white mb-2">
               Session Complete!
             </h1>
-            <p className="text-gray-400 mb-8">
+            <p className="text-gray-400 mb-6">
               Great work, {studentName}!
             </p>
 
             {(() => {
+              // ─── Type the enriched summary from the API ───
               const s = summary as {
                 durationMinutes?: number;
                 questionsAnswered?: number;
                 correctAnswers?: number;
                 accuracy?: number;
                 hintsUsed?: number;
-                currentNode?: { title?: string } | null;
-                recentMastery?: {
+                sessionSubject?: string;
+                currentNode?: { title?: string; subject?: string } | null;
+                // Phase 1: Subject-grouped mastery
+                mathMastery?: Array<{
                   nodeCode: string;
                   title: string;
                   level: string;
                   probability: number;
-                }[];
+                  domain: string;
+                  gradeLevel: string;
+                }>;
+                englishMastery?: Array<{
+                  nodeCode: string;
+                  title: string;
+                  level: string;
+                  probability: number;
+                  domain: string;
+                  gradeLevel: string;
+                }>;
+                // Legacy fallback
+                recentMastery?: Array<{
+                  nodeCode: string;
+                  title: string;
+                  level: string;
+                  probability: number;
+                  subject?: string;
+                }>;
+                // Phase 2: Grade progress
+                gradeProgress?: Array<{
+                  subject: string;
+                  gradeLevel: string;
+                  label: string;
+                  mastered: number;
+                  total: number;
+                  percentage: number;
+                }>;
+                // Phase 4: Next-up
+                nextUpNodes?: Array<{
+                  subject: string;
+                  nodeCode: string;
+                  title: string;
+                }>;
+                // Phase 6: Streak
+                streak?: { current: number; longest: number };
               };
+
+              const mathNodes = s.mathMastery ?? [];
+              const engNodes = s.englishMastery ?? [];
+              const hasMastery = mathNodes.length > 0 || engNodes.length > 0;
+              const sessionSubject = s.sessionSubject ?? subjectParam;
+
+              // ─── Phase 3: Subject-split XP ───
+              // sessionXPEarned is tracked client-side per answer
+              const sessionXP = sessionXPEarned;
+
               return (
                 <>
-                  <div className="grid grid-cols-3 gap-4 mb-6">
+                  {/* ─── Stats Row (Questions / Accuracy / Hints) ─── */}
+                  <div className="grid grid-cols-3 gap-4 mb-4">
                     <div className="bg-[#1A2744] rounded-xl p-4 border border-white/10">
                       <p className="text-2xl font-bold text-aauti-primary">
                         {s.questionsAnswered ?? 0}
@@ -969,31 +1037,234 @@ function SessionPage() {
                     </div>
                   </div>
 
-                  {s.recentMastery && s.recentMastery.length > 0 && (
+                  {/* ─── Phase 3: Subject XP Display ─── */}
+                  {sessionXP > 0 && (
+                    <div className="flex justify-center gap-3 mb-6">
+                      {sessionSubject === "MATH" && (
+                        <div className="inline-flex items-center gap-1.5 bg-green-500/10 border border-green-500/20 rounded-full px-4 py-2">
+                          <span className="text-green-400 font-bold text-sm">+{sessionXP} XP</span>
+                          <span className="text-green-400/70 text-xs">Math</span>
+                        </div>
+                      )}
+                      {sessionSubject === "ENGLISH" && (
+                        <div className="inline-flex items-center gap-1.5 bg-purple-500/10 border border-purple-500/20 rounded-full px-4 py-2">
+                          <span className="text-purple-400 font-bold text-sm">+{sessionXP} XP</span>
+                          <span className="text-purple-400/70 text-xs">English</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* ─── Phase 1: Subject-Grouped Mastery Progress ─── */}
+                  {hasMastery ? (
                     <div className="bg-[#1A2744] rounded-2xl p-5 border border-white/10 mb-6 text-left">
                       <h3 className="font-semibold text-white mb-3">
                         Mastery Progress
                       </h3>
-                      {s.recentMastery.map((m) => (
-                        <div
-                          key={m.nodeCode}
-                          className="flex items-center justify-between py-2 border-b border-white/5 last:border-0"
-                        >
-                          <div>
-                            <p className="text-sm font-medium text-white">
-                              {m.title}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {m.nodeCode}
-                            </p>
+
+                      {/* 📖 English section */}
+                      {engNodes.length > 0 && (
+                        <div className="mb-4 last:mb-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-sm">📖</span>
+                            <span className="text-sm font-semibold text-purple-400">English</span>
                           </div>
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${masteryColors[m.level] ?? ""}`}
-                          >
-                            {m.level} ({m.probability}%)
-                          </span>
+                          {engNodes.map((m) => (
+                            <div
+                              key={m.nodeCode}
+                              className="flex items-center justify-between py-2 border-b border-white/5 last:border-0 ml-5"
+                            >
+                              <p className="text-sm font-medium text-white">
+                                {m.title}
+                              </p>
+                              <span
+                                className={`px-2 py-1 rounded-full text-xs font-medium ${masteryColors[m.level] ?? ""}`}
+                              >
+                                {m.level} ({m.probability}%)
+                              </span>
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      )}
+
+                      {/* 🔢 Math section */}
+                      {mathNodes.length > 0 && (
+                        <div className="mb-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-sm">🔢</span>
+                            <span className="text-sm font-semibold text-green-400">Math</span>
+                          </div>
+                          {mathNodes.map((m) => (
+                            <div
+                              key={m.nodeCode}
+                              className="flex items-center justify-between py-2 border-b border-white/5 last:border-0 ml-5"
+                            >
+                              <p className="text-sm font-medium text-white">
+                                {m.title}
+                              </p>
+                              <span
+                                className={`px-2 py-1 rounded-full text-xs font-medium ${masteryColors[m.level] ?? ""}`}
+                              >
+                                {m.level} ({m.probability}%)
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="bg-[#1A2744] rounded-2xl p-5 border border-white/10 mb-6">
+                      <p className="text-gray-400 text-sm">
+                        Keep going — you&apos;re building mastery! 💪
+                      </p>
+                    </div>
+                  )}
+
+                  {/* ─── Phase 2: Grade Level Progress Bars ─── */}
+                  {s.gradeProgress && s.gradeProgress.length > 0 && (
+                    <div className="bg-[#1A2744] rounded-2xl p-5 border border-white/10 mb-6 text-left">
+                      <h3 className="font-semibold text-white mb-3">
+                        Your Progress
+                      </h3>
+                      <div className="space-y-3">
+                        {s.gradeProgress.map((gp) => {
+                          const isEnglish = gp.subject === "ENGLISH";
+                          const barColor = isEnglish ? "bg-purple-500" : "bg-green-500";
+                          const barTrack = isEnglish ? "bg-purple-500/15" : "bg-green-500/15";
+                          return (
+                            <div key={`${gp.subject}-${gp.gradeLevel}`}>
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-sm text-gray-300">{gp.label}</span>
+                                <span className="text-xs text-gray-500">
+                                  {gp.mastered} of {gp.total} topics mastered
+                                </span>
+                              </div>
+                              {/* CSS-only progress bar */}
+                              <div className={`h-2.5 rounded-full ${barTrack} overflow-hidden`}>
+                                <div
+                                  className={`h-full rounded-full ${barColor} transition-all duration-700 ease-out`}
+                                  style={{ width: `${Math.max(gp.percentage, 2)}%` }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ─── Phase 4: What's Next ─── */}
+                  {s.nextUpNodes && s.nextUpNodes.length > 0 && (
+                    <div className="bg-[#1A2744] rounded-2xl p-5 border border-white/10 mb-6 text-left">
+                      <h3 className="font-semibold text-white mb-3">
+                        What&apos;s Next
+                      </h3>
+                      <div className="space-y-2">
+                        {s.nextUpNodes.map((nu) => {
+                          const isEnglish = nu.subject === "ENGLISH";
+                          const allMastered = nu.nodeCode === "__ALL_MASTERED__";
+                          return (
+                            <button
+                              key={nu.subject}
+                              onClick={() => {
+                                if (!allMastered) {
+                                  router.push(
+                                    `/session?studentId=${DEMO_STUDENT_ID}&subject=${nu.subject}&returnTo=${returnTo}`
+                                  );
+                                }
+                              }}
+                              disabled={allMastered}
+                              className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors text-left ${
+                                allMastered
+                                  ? "opacity-60 cursor-default"
+                                  : "hover:bg-white/5 cursor-pointer active:bg-white/10"
+                              }`}
+                            >
+                              <span className="text-lg">{isEnglish ? "📖" : "🔢"}</span>
+                              <span className={`text-sm font-medium ${isEnglish ? "text-purple-400" : "text-green-400"}`}>
+                                {isEnglish ? "English" : "Math"}
+                              </span>
+                              <span className="text-gray-500 text-sm">→</span>
+                              <span className="text-sm text-white flex-1">
+                                {allMastered ? "🎉 All caught up!" : nu.title}
+                              </span>
+                              {!allMastered && (
+                                <span className="text-gray-500 text-xs">▶</span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ─── Phase 5: Share with Parent Button ─── */}
+                  <button
+                    onClick={async () => {
+                      // Build share text
+                      const date = new Date().toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      });
+                      const masteredList = [
+                        ...engNodes.filter((m) => m.level === "MASTERED").map((m) => `- ${m.title} (English)`),
+                        ...mathNodes.filter((m) => m.level === "MASTERED").map((m) => `- ${m.title} (Math)`),
+                      ];
+                      const progressLines = (s.gradeProgress ?? []).map(
+                        (gp) => `- ${gp.label}: ${gp.mastered} of ${gp.total} topics mastered`
+                      );
+                      const nextUpLines = (s.nextUpNodes ?? [])
+                        .filter((nu) => nu.nodeCode !== "__ALL_MASTERED__")
+                        .map((nu) => `${nu.title} (${nu.subject === "ENGLISH" ? "English" : "Math"})`);
+
+                      const shareText = [
+                        `🎓 Nexus Learning Update — ${studentName}`,
+                        "",
+                        `Session: ${date}`,
+                        `Accuracy: ${s.accuracy ?? 0}%`,
+                        `Questions: ${s.questionsAnswered ?? 0}`,
+                        "",
+                        masteredList.length > 0
+                          ? `✅ Mastered Today:\n${masteredList.join("\n")}`
+                          : "",
+                        progressLines.length > 0
+                          ? `\n📊 Overall Progress:\n${progressLines.join("\n")}`
+                          : "",
+                        nextUpLines.length > 0
+                          ? `\nNext up: ${nextUpLines.join(", ")}`
+                          : "",
+                        "",
+                        "Powered by Nexus Learning",
+                      ]
+                        .filter(Boolean)
+                        .join("\n");
+
+                      // Try native share, fallback to clipboard
+                      if (typeof navigator !== "undefined" && navigator.share) {
+                        try {
+                          await navigator.share({ text: shareText });
+                        } catch {
+                          // User cancelled or share failed — try clipboard
+                          await navigator.clipboard?.writeText(shareText);
+                          setShareToast(true);
+                          setTimeout(() => setShareToast(false), 2000);
+                        }
+                      } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+                        await navigator.clipboard.writeText(shareText);
+                        setShareToast(true);
+                        setTimeout(() => setShareToast(false), 2000);
+                      }
+                    }}
+                    className="w-full py-3 mb-3 text-base font-semibold text-gray-300 bg-transparent border border-white/15 rounded-2xl hover:bg-white/5 hover:border-white/25 transition-colors"
+                  >
+                    Share with Parent 📤
+                  </button>
+
+                  {/* Share toast */}
+                  {shareToast && (
+                    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-green-600 text-white text-sm font-medium px-4 py-2 rounded-full shadow-lg z-50 animate-fade-in-up">
+                      Copied! ✓
                     </div>
                   )}
                 </>

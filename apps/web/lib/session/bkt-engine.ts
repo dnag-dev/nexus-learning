@@ -211,16 +211,55 @@ export async function updateMasteryInDB(
 
 /**
  * Recommend the next knowledge node for a student.
- * Uses Neo4j successors of the current node, filters by mastery.
+ * Tries Neo4j successors first, falls back to PostgreSQL if Neo4j is unavailable.
  */
 export async function recommendNextNode(
   studentId: string,
   currentNodeCode: string
 ): Promise<{ nodeCode: string; title: string } | null> {
-  // Get successors from Neo4j
-  const successors = await getSuccessors(currentNodeCode);
+  // Try Neo4j for graph-based successor lookup
+  let successors: Array<{ nodeCode: string; title: string }> = [];
+  try {
+    successors = await getSuccessors(currentNodeCode);
+  } catch (err) {
+    console.warn("[BKT] Neo4j getSuccessors failed, falling back to Prisma:", err);
+  }
 
-  if (successors.length === 0) return null;
+  // Fallback to Prisma's self-referential successor relation
+  if (successors.length === 0) {
+    const currentNode = await prisma.knowledgeNode.findUnique({
+      where: { nodeCode: currentNodeCode },
+      include: { successors: { orderBy: { difficulty: "asc" } } },
+    });
+    if (currentNode?.successors) {
+      successors = currentNode.successors.map((s) => ({
+        nodeCode: s.nodeCode,
+        title: s.title,
+      }));
+    }
+  }
+
+  // If still no successors (neither source has data), pick next by difficulty
+  if (successors.length === 0) {
+    const currentNode = await prisma.knowledgeNode.findUnique({
+      where: { nodeCode: currentNodeCode },
+    });
+    if (!currentNode) return null;
+
+    const nextByDifficulty = await prisma.knowledgeNode.findFirst({
+      where: {
+        gradeLevel: currentNode.gradeLevel,
+        difficulty: { gte: currentNode.difficulty },
+        nodeCode: { not: currentNodeCode },
+      },
+      orderBy: { difficulty: "asc" },
+    });
+
+    if (nextByDifficulty) {
+      return { nodeCode: nextByDifficulty.nodeCode, title: nextByDifficulty.title };
+    }
+    return null;
+  }
 
   // Check mastery for each successor
   for (const successor of successors) {

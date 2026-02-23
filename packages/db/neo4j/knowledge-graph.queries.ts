@@ -16,6 +16,7 @@ export async function getPrerequisites(
   nodeCode: string
 ): Promise<KnowledgeGraphNode[]> {
   const session = getSession();
+  if (!session) return [];
   try {
     const result = await session.run(
       `MATCH (prereq:KnowledgeNode)-[:PREREQUISITE_OF]->(target:KnowledgeNode {nodeCode: $nodeCode})
@@ -35,6 +36,7 @@ export async function getSuccessors(
   nodeCode: string
 ): Promise<KnowledgeGraphNode[]> {
   const session = getSession();
+  if (!session) return [];
   try {
     const result = await session.run(
       `MATCH (source:KnowledgeNode {nodeCode: $nodeCode})-[:PREREQUISITE_OF]->(successor:KnowledgeNode)
@@ -55,6 +57,7 @@ export async function getShortestLearningPath(
   toNodeCode: string
 ): Promise<LearningPath> {
   const session = getSession();
+  if (!session) return { nodes: [], edges: [], totalDifficulty: 0 };
   try {
     const result = await session.run(
       `MATCH path = shortestPath(
@@ -108,6 +111,7 @@ export async function getNodesByGradeAndDomain(
   domain: string
 ): Promise<KnowledgeGraphNode[]> {
   const session = getSession();
+  if (!session) return [];
   try {
     const result = await session.run(
       `MATCH (n:KnowledgeNode)
@@ -128,6 +132,7 @@ export async function getNodeByCode(
   nodeCode: string
 ): Promise<KnowledgeGraphNode | null> {
   const session = getSession();
+  if (!session) return null;
   try {
     const result = await session.run(
       `MATCH (n:KnowledgeNode {nodeCode: $nodeCode})
@@ -145,6 +150,7 @@ export async function getNodeByCode(
 
 export async function getAllNodes(): Promise<KnowledgeGraphNode[]> {
   const session = getSession();
+  if (!session) return [];
   try {
     const result = await session.run(
       `MATCH (n:KnowledgeNode)

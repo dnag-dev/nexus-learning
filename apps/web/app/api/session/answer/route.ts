@@ -163,11 +163,16 @@ export async function POST(request: Request) {
         console.error("Gamification mastery error (non-critical):", e);
       }
 
-      // Get next node recommendation
-      const nextNode = await recommendNextNode(
-        session.studentId,
-        node.nodeCode
-      );
+      // Get next node recommendation (non-critical — don't crash if it fails)
+      let nextNode = null;
+      try {
+        nextNode = await recommendNextNode(
+          session.studentId,
+          node.nodeCode
+        );
+      } catch (e) {
+        console.error("Next node recommendation error (non-critical):", e);
+      }
 
       // Generate celebration
       const promptParams = buildPromptParams(student, node, updatedMastery);

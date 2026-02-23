@@ -46,6 +46,7 @@ export {
   getSession as getNeo4jSession,
   closeNeo4j,
   verifyConnectivity as verifyNeo4jConnectivity,
+  isNeo4jAvailable,
 } from "../neo4j/neo4j-client";
 
 export {

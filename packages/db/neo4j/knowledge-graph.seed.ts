@@ -256,6 +256,10 @@ async function seed() {
   }
 
   const session = getSession();
+  if (!session) {
+    console.error("Neo4j is unavailable. Cannot seed knowledge graph.");
+    process.exit(1);
+  }
 
   try {
     // Clear existing data

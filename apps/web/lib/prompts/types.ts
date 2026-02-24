@@ -31,8 +31,39 @@ export interface TeachingResponse {
   hook: string;
   explanation: string;
   example: string;
+  /** Second example highlighting the concept — 5-step learning loop */
+  example2: string;
+  /** Common mistake students make */
+  commonMistake: string;
+  /** Why the common mistake is wrong */
+  commonMistakeWhy: string;
+  /** @deprecated — comprehension check is now Step 2 */
   checkQuestion: string;
+  /** @deprecated */
   checkAnswer: string;
+}
+
+/** Step-aware question type for the 5-step learning loop */
+export type LearningStepType =
+  | "check_understanding"    // Step 2: real comprehension check
+  | "guided_practice"        // Step 3: easier with remediation
+  | "independent_practice"   // Step 4: harder, no hints
+  | "mastery_proof";         // Step 5: transfer to new context
+
+/** Extended prompt params with learning step context */
+export interface StepPromptParams extends PromptParams {
+  stepType: LearningStepType;
+  /** For remediation: the student's wrong answer context */
+  wrongAnswerContext?: string;
+  /** The question they got wrong (for re-asking same type) */
+  previousQuestionText?: string;
+}
+
+/** Remediation response for guided practice wrong answers */
+export interface RemediationResponse {
+  whatWentWrong: string;
+  reExplanation: string;
+  newExample: string;
 }
 
 export interface PracticeResponse {

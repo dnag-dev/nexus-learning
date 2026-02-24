@@ -28,11 +28,12 @@ interface TeachingContent {
   hook: string;
   explanation: string;
   example: string;
-  checkQuestion: string;
-  checkAnswer: string;
+  example2?: string;
+  commonMistake?: string;
+  commonMistakeWhy?: string;
 }
 
-interface PracticeQuestion {
+interface PracticeQuestionData {
   questionText: string;
   options: { id: string; text: string; isCorrect: boolean }[];
   correctAnswer: string;
@@ -63,6 +64,19 @@ interface HintContent {
   encouragement: string;
 }
 
+interface StepProgress {
+  correct: number;
+  total: number;
+  required: number;
+  outOf: number;
+}
+
+interface RemediationData {
+  whatWentWrong: string;
+  reExplanation: string;
+  newExample: string;
+}
+
 type SessionPhase =
   | "idle"
   | "teaching"
@@ -72,6 +86,16 @@ type SessionPhase =
   | "struggling"
   | "emotional_check"
   | "summary";
+
+// ─── Step labels ───
+const STEP_LABELS = ["Learn", "Check", "Guided", "Practice", "Prove"];
+const STEP_DESCRIPTIONS = [
+  "Learning the concept",
+  "Check Understanding",
+  "Guided Practice",
+  "Independent Practice",
+  "Mastery Proof",
+];
 
 // ─── Voice Helper ───
 
@@ -97,6 +121,35 @@ async function speakText(text: string, personaId: string): Promise<void> {
   }
 }
 
+// ─── 5-Step Progress Bar Component ───
+
+function StepProgressBar({ step }: { step: number }) {
+  return (
+    <div className="flex gap-1 mb-4 max-w-2xl mx-auto px-4">
+      {STEP_LABELS.map((label, i) => (
+        <div key={i} className="flex-1">
+          <div
+            className={`h-1.5 rounded-full transition-all duration-500 ${
+              i < step
+                ? "bg-aauti-primary"
+                : i === step - 1
+                  ? "bg-aauti-primary/70"
+                  : "bg-white/10"
+            }`}
+          />
+          <p
+            className={`text-[10px] mt-1 text-center transition-colors duration-300 ${
+              i < step ? "text-aauti-primary" : "text-gray-600"
+            }`}
+          >
+            {label}
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ─── Component ───
 
 export default function SessionPageWrapper() {
@@ -116,38 +169,44 @@ function SessionPage() {
   const router = useRouter();
   const DEMO_STUDENT_ID = searchParams.get("studentId") || "demo-student-1";
   const returnTo = searchParams.get("returnTo") || "/dashboard";
-  const subjectParam = searchParams.get("subject") || "MATH"; // "MATH" or "ENGLISH"
+  const subjectParam = searchParams.get("subject") || "MATH";
+
+  // ─── Core State ───
   const [phase, setPhase] = useState<SessionPhase>("idle");
   const [shareToast, setShareToast] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [node, setNode] = useState<NodeInfo | null>(null);
   const [teaching, setTeaching] = useState<TeachingContent | null>(null);
-  const [question, setQuestion] = useState<PracticeQuestion | null>(null);
+  const [question, setQuestion] = useState<PracticeQuestionData | null>(null);
   const [mastery, setMastery] = useState<MasteryInfo | null>(null);
-  const [celebration, setCelebration] = useState<CelebrationContent | null>(
-    null
-  );
+  const [celebration, setCelebration] = useState<CelebrationContent | null>(null);
   const [hint, setHint] = useState<HintContent | null>(null);
   const [checkin, setCheckin] = useState<EmotionalCheckin | null>(null);
   const [checkinResponse, setCheckinResponse] = useState<string | null>(null);
-  const [feedback, setFeedback] = useState<{
-    message: string;
-    type: string;
-  } | null>(null);
+  const [feedback, setFeedback] = useState<{ message: string; type: string } | null>(null);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [personaId, setPersonaId] = useState<PersonaId>("cosmo");
   const [studentName, setStudentName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<Record<string, unknown> | null>(null);
-  const [isComprehensionCheck, setIsComprehensionCheck] = useState(false);
+
+  // ─── 5-Step Learning Loop State ───
+  const [learningStep, setLearningStep] = useState(1);
+  const [stepProgress, setStepProgress] = useState<StepProgress | null>(null);
+  const [remediation, setRemediation] = useState<RemediationData | null>(null);
+
+  // ─── Teaching Stream State ───
   const [teachingStreamUrl, setTeachingStreamUrl] = useState<string | null>(null);
   const [teachingReady, setTeachingReady] = useState(false);
   const [teachingLoading, setTeachingLoading] = useState(false);
+
+  // ─── Avatar + Voice State ───
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [avatarEmotion, setAvatarEmotion] =
-    useState<AvatarEmotionalState>("neutral");
+  const [avatarEmotion, setAvatarEmotion] = useState<AvatarEmotionalState>("neutral");
   const [liveAvatarReady, setLiveAvatarReady] = useState(false);
+
+  // ─── Gamification + Session Stats ───
   const [gamification, setGamification] = useState<{
     xpAwarded: number;
     newXP: number;
@@ -169,19 +228,14 @@ function SessionPage() {
   const triggerVoice = useCallback(
     async (text: string) => {
       setIsSpeaking(true);
-
-      // If HeyGen live avatar is ready, use it (avatar speaks with lip-sync)
       if (avatarRef.current?.isStreamReady()) {
         try {
           await avatarRef.current.speak(text);
-          // Avatar events will control talking state via onTalkingChange
           return;
         } catch {
-          // Fall through to ElevenLabs if avatar speak fails
+          // Fall through to ElevenLabs
         }
       }
-
-      // Fallback: ElevenLabs TTS
       await speakText(text, personaId);
       const duration = Math.min(Math.max(text.length * 40, 1500), 10000);
       setTimeout(() => setIsSpeaking(false), duration);
@@ -207,9 +261,7 @@ function SessionPage() {
         setAvatarEmotion("encouraging");
         break;
       case "feedback":
-        setAvatarEmotion(
-          feedback?.type === "correct" ? "happy" : "encouraging"
-        );
+        setAvatarEmotion(feedback?.type === "correct" ? "happy" : "encouraging");
         break;
       default:
         setAvatarEmotion("neutral");
@@ -229,10 +281,7 @@ function SessionPage() {
       try {
         const d = JSON.parse(event.data);
 
-        if (d.type === "started" || d.type === "progress") {
-          // Connection alive — teachingLoading remains true
-          return;
-        }
+        if (d.type === "started" || d.type === "progress") return;
 
         if (d.type === "done") {
           setTeaching({
@@ -240,14 +289,14 @@ function SessionPage() {
             hook: d.hook ?? "Let's learn something new!",
             explanation: d.explanation ?? "",
             example: d.example ?? "",
-            checkQuestion: d.checkQuestion ?? "Ready to practice?",
-            checkAnswer: d.checkAnswer ?? "Yes!",
+            example2: d.example2 ?? "",
+            commonMistake: d.commonMistake ?? "",
+            commonMistakeWhy: d.commonMistakeWhy ?? "",
           });
           setTeachingLoading(false);
           setTeachingReady(true);
           es.close();
 
-          // Trigger voice with the hook (short, punchy — ideal for TTS)
           if (d.hook) {
             triggerVoice(d.hook);
           }
@@ -255,7 +304,6 @@ function SessionPage() {
 
         if (d.type === "error") {
           console.warn("teach-stream error:", d.message);
-          // Server will send a fallback "done" event next
         }
       } catch {
         // Ignore malformed events
@@ -268,7 +316,6 @@ function SessionPage() {
       es.close();
     };
 
-    // 20s safety timeout (response is faster now with shorter prompt)
     const timeout = setTimeout(() => {
       if (es.readyState !== EventSource.CLOSED) {
         es.close();
@@ -290,8 +337,9 @@ function SessionPage() {
     setError(null);
     setTeachingReady(false);
     setTeachingStreamUrl(null);
-
-    // Reset session-local counters on very first start
+    setLearningStep(1);
+    setStepProgress(null);
+    setRemediation(null);
     setCorrectStreak(0);
     prevMasteryRef.current = 0;
 
@@ -315,12 +363,10 @@ function SessionPage() {
       setStudentName(data.persona?.studentName ?? "Student");
       setPhase("teaching");
 
-      // Teaching content streams via SSE — triggers the useEffect for TeachingCard
       setTeachingStreamUrl(
         `/api/session/teach-stream?sessionId=${data.sessionId}`
       );
 
-      // Non-blocking: fetch gamification profile for milestone data
       if (!gamProfileRef.current) {
         fetch(`/api/student/${DEMO_STUDENT_ID}/gamification`)
           .then((r) => (r.ok ? r.json() : null))
@@ -336,7 +382,7 @@ function SessionPage() {
               };
             }
           })
-          .catch(() => {}); // Non-critical
+          .catch(() => {});
       }
     } catch (err) {
       const message =
@@ -351,6 +397,40 @@ function SessionPage() {
     }
   }, []);
 
+  // ─── Start Practice: Fetch first real question (Step 2) ───
+  const startPractice = useCallback(async () => {
+    if (!sessionId) return;
+    setLearningStep(2);
+    setStepProgress({ correct: 0, total: 0, required: 1, outOf: 1 });
+    setIsLoading(true);
+    setPhase("practice");
+    setQuestion(null);
+    setSelectedOption(null);
+    setFeedback(null);
+    setRemediation(null);
+    setHint(null);
+
+    try {
+      const res = await fetch(
+        `/api/session/next-question?sessionId=${sessionId}`,
+        { signal: AbortSignal.timeout(25000) }
+      );
+      const data = await res.json();
+      if (data.question) {
+        setQuestion(data.question);
+        if (data.learningStep) setLearningStep(data.learningStep);
+      } else {
+        setError("Failed to load question — please try again");
+      }
+    } catch (err) {
+      console.error("Failed to fetch first question:", err);
+      setError("Failed to load question — please try again");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [sessionId]);
+
+  // ─── Submit Answer (5-step aware) ───
   const submitAnswer = useCallback(
     async (optionId: string) => {
       if (!sessionId || !question) return;
@@ -358,10 +438,12 @@ function SessionPage() {
       const option = question.options.find((o) => o.id === optionId);
       if (!option) return;
 
+      const correctOption = question.options.find((o) => o.isCorrect);
+
       setIsLoading(true);
       try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
+        const timeout = setTimeout(() => controller.abort(), 30000);
 
         const res = await fetch("/api/session/answer", {
           method: "POST",
@@ -370,7 +452,11 @@ function SessionPage() {
             sessionId,
             selectedOptionId: optionId,
             isCorrect: option.isCorrect,
-            isComprehensionCheck,
+            // Context for remediation generation (Step 3 wrong answers)
+            questionText: question.questionText,
+            selectedAnswerText: option.text,
+            correctAnswerText: correctOption?.text ?? "",
+            explanation: question.explanation,
           }),
           signal: controller.signal,
         });
@@ -378,42 +464,41 @@ function SessionPage() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error);
 
-        // Reset comprehension check flag after submission
-        setIsComprehensionCheck(false);
         setQuestionsAnswered((prev) => prev + 1);
 
-        // Track previous mastery for animation delta
+        // Track mastery
         const prevProb = prevMasteryRef.current;
         prevMasteryRef.current = data.mastery?.probability ?? prevProb;
-
         setMastery(data.mastery);
 
-        // Capture gamification data (XP, level, badges)
+        // Update 5-step tracking
+        if (data.learningStep !== undefined) setLearningStep(data.learningStep);
+        if (data.stepProgress) setStepProgress(data.stepProgress);
+        if (data.remediation) setRemediation(data.remediation);
+        else setRemediation(null);
+
+        // Gamification
         if (data.gamification) {
           setGamification(data.gamification);
           setSessionXPEarned((prev) => prev + (data.gamification.xpAwarded ?? 0));
         }
 
-        // Update streak: increment on correct, reset on incorrect
-        if (data.feedback?.type === "correct" || data.state === "CELEBRATING") {
+        // Streak
+        if (data.isCorrect || data.state === "CELEBRATING") {
           setCorrectStreak((prev) => prev + 1);
         } else {
           setCorrectStreak(0);
         }
 
+        // ═══ Handle response based on state ═══
         if (data.state === "CELEBRATING") {
           setConceptsMasteredThisSession((prev) => prev + 1);
           setCelebration(data.celebration);
           setFeedback(null);
+          setRemediation(null);
           setPhase("celebrating");
           if (data.celebration?.celebration) {
             triggerVoice(data.celebration.celebration);
-          }
-        } else if (data.state === "STRUGGLING") {
-          setFeedback(data.feedback);
-          setPhase("struggling");
-          if (data.feedback?.message) {
-            triggerVoice(data.feedback.message);
           }
         } else {
           setFeedback(data.feedback);
@@ -423,9 +508,10 @@ function SessionPage() {
           }
 
           if (data.questionPrefetched) {
-            // New flow: question is being generated in background.
-            // Start fetching immediately AND show feedback for 1500ms.
-            // After feedback, show loading transition until question is ready.
+            // Determine delay: longer for remediation content
+            const feedbackDelay = data.remediation ? 5000 : 1500;
+
+            // Start fetching next question immediately (overlaps with feedback display)
             const questionPromise = fetch(
               `/api/session/next-question?sessionId=${sessionId}`,
               { signal: AbortSignal.timeout(25000) }
@@ -434,35 +520,21 @@ function SessionPage() {
               .then((d) => d.question)
               .catch(() => null);
 
-            // After 1500ms feedback, transition to loading state
             setTimeout(() => {
               setFeedback(null);
+              setRemediation(null);
               setSelectedOption(null);
               setHint(null);
-              setIsLoading(true); // Show loading spinner
-              setPhase("practice"); // Move to practice (shows loading UI)
+              setIsLoading(true);
+              setPhase("practice");
 
-              // Now await the question (may already be ready or still generating)
               questionPromise.then((nextQ) => {
                 setIsLoading(false);
                 if (nextQ) {
                   setQuestion(nextQ);
                 }
               });
-            }, 1500);
-          } else if (data.nextQuestion) {
-            // Legacy flow: question included in response
-            setTimeout(() => {
-              setQuestion(data.nextQuestion);
-              setSelectedOption(null);
-              setHint(null);
-              setPhase("practice");
-            }, 1500);
-          } else {
-            setTimeout(() => {
-              setSelectedOption(null);
-              setPhase("practice");
-            }, 1500);
+            }, feedbackDelay);
           }
         }
       } catch (err) {
@@ -478,7 +550,7 @@ function SessionPage() {
         setIsLoading(false);
       }
     },
-    [sessionId, question, triggerVoice, isComprehensionCheck]
+    [sessionId, question, triggerVoice]
   );
 
   const requestHint = useCallback(async () => {
@@ -506,24 +578,6 @@ function SessionPage() {
     }
   }, [sessionId, question, triggerVoice]);
 
-  const startPractice = useCallback(() => {
-    if (teaching) {
-      setIsComprehensionCheck(true);
-      setQuestion({
-        questionText: teaching.checkQuestion,
-        options: [
-          { id: "A", text: "Yes!", isCorrect: true },
-          { id: "B", text: "Not sure yet", isCorrect: false },
-          { id: "C", text: "Can you explain again?", isCorrect: false },
-          { id: "D", text: teaching.checkAnswer, isCorrect: true },
-        ],
-        correctAnswer: "A",
-        explanation: teaching.checkAnswer,
-      });
-      setPhase("practice");
-    }
-  }, [teaching]);
-
   const endSession = useCallback(async () => {
     if (!sessionId) return;
     setIsLoading(true);
@@ -538,15 +592,13 @@ function SessionPage() {
       setSummary(data.summary);
       setPhase("summary");
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to end session"
-      );
+      setError(err instanceof Error ? err.message : "Failed to end session");
     } finally {
       setIsLoading(false);
     }
   }, [sessionId]);
 
-  // Mastery badge styles (used in summary screen — dark theme)
+  // ─── Derived values ───
   const masteryColors: Record<string, string> = {
     NOVICE: "bg-gray-500/20 text-gray-300",
     DEVELOPING: "bg-blue-500/20 text-blue-300",
@@ -555,7 +607,6 @@ function SessionPage() {
     MASTERED: "bg-yellow-500/20 text-yellow-300",
   };
 
-  // Framer Motion transition variants
   const pageVariants = {
     initial: { opacity: 0, x: 30 },
     animate: { opacity: 1, x: 0 },
@@ -570,10 +621,11 @@ function SessionPage() {
 
   const currentDomain = node?.domain ?? "OPERATIONS";
 
-  // ─── Sidebar visibility ───
+  // Only show hints for Steps 2-3 (guided), NOT for Steps 4-5 (independent/mastery)
+  const showHintButton = learningStep <= 3;
+
   const showStats = ["teaching", "practice", "feedback", "struggling"].includes(phase);
 
-  // Props shared across SessionStats and MobileStatsRow
   const statsProps = {
     mastery,
     correctStreak,
@@ -586,7 +638,7 @@ function SessionPage() {
     phase,
   };
 
-  // ─── Render all phases inside AnimatePresence ───
+  // ─── Render ───
 
   return (
     <div className={`transition-[padding] duration-300 ${showStats ? "lg:pr-[280px]" : ""}`}>
@@ -635,7 +687,7 @@ function SessionPage() {
         </motion.div>
       )}
 
-      {/* ─── Teaching (Instagram-story style) ─── */}
+      {/* ─── Teaching (Step 1: TEACH IT) ─── */}
       {phase === "teaching" && node && (
         <motion.div
           key="teaching"
@@ -665,19 +717,10 @@ function SessionPage() {
           </div>
           <main className="max-w-2xl mx-auto px-4 py-8">
             <TeachingCard
-              content={
-                teaching
-                  ? {
-                      emoji: teaching.emoji,
-                      hook: teaching.hook,
-                      explanation: teaching.explanation,
-                      example: teaching.example,
-                    }
-                  : null
-              }
+              content={teaching}
               isLoading={teachingLoading}
               lessonStep={1}
-              totalSteps={3}
+              totalSteps={5}
             />
 
             {teachingReady ? (
@@ -695,10 +738,10 @@ function SessionPage() {
         </motion.div>
       )}
 
-      {/* ─── Practice / Feedback ─── */}
-      {(phase === "practice" || phase === "feedback") && question && (
+      {/* ─── Practice / Feedback (Steps 2-5) ─── */}
+      {(phase === "practice" || phase === "feedback") && (
         <motion.div
-          key={`practice-${phase === "practice" && isLoading ? "loading" : question.questionText.slice(0, 20)}`}
+          key={`practice-${phase === "practice" && isLoading ? "loading" : question?.questionText?.slice(0, 20) ?? "empty"}`}
           variants={pageVariants}
           initial="initial"
           animate="animate"
@@ -724,6 +767,46 @@ function SessionPage() {
             />
           </div>
 
+          {/* 5-Step Progress Bar */}
+          <div className="pt-4">
+            <StepProgressBar step={learningStep} />
+          </div>
+
+          {/* Step Label + Counter */}
+          <div className="text-center mb-2">
+            <p className="text-sm font-medium text-gray-300">
+              {STEP_DESCRIPTIONS[learningStep - 1] ?? "Practice"}
+            </p>
+            {/* Step 3: show X/3 counter */}
+            {learningStep === 3 && stepProgress && (
+              <p className="text-xs text-gray-500 mt-0.5">
+                Question {Math.min(stepProgress.total + 1, 3)} of 3
+                {stepProgress.correct > 0 && (
+                  <span className="text-aauti-success ml-1">
+                    ({stepProgress.correct} correct ✓)
+                  </span>
+                )}
+              </p>
+            )}
+            {/* Step 4: show X/5 counter */}
+            {learningStep === 4 && stepProgress && (
+              <p className="text-xs text-gray-500 mt-0.5">
+                Question {Math.min(stepProgress.total + 1, 5)} of 5
+                {stepProgress.correct > 0 && (
+                  <span className="text-aauti-success ml-1">
+                    ({stepProgress.correct} correct ✓)
+                  </span>
+                )}
+              </p>
+            )}
+            {/* Step 5: special label */}
+            {learningStep === 5 && (
+              <p className="text-xs text-amber-400 mt-0.5">
+                Final Challenge — prove you&apos;ve mastered it! 🏆
+              </p>
+            )}
+          </div>
+
           {/* Loading transition between questions */}
           {phase === "practice" && isLoading ? (
             <main className="max-w-2xl mx-auto px-4 py-8">
@@ -734,24 +817,71 @@ function SessionPage() {
                   <div className="w-3 h-3 rounded-full bg-aauti-primary animate-teaching-dot" style={{ animationDelay: "300ms" }} />
                 </div>
                 <p className="text-gray-400 text-sm mt-4">
-                  Next question coming up...
+                  {learningStep === 2
+                    ? "Let's check your understanding..."
+                    : learningStep === 5
+                      ? "Preparing your final challenge..."
+                      : "Next question coming up..."}
                 </p>
               </div>
             </main>
+          ) : question ? (
+            <>
+              <PracticeQuestion
+                question={question}
+                phase={phase === "feedback" ? "feedback" : "practice"}
+                feedback={feedback}
+                selectedOption={selectedOption}
+                isLoading={isLoading}
+                hint={hint}
+                domain={currentDomain}
+                error={error}
+                onSubmitAnswer={submitAnswer}
+                onRequestHint={showHintButton ? requestHint : undefined}
+                onClearError={() => { setError(null); setSelectedOption(null); }}
+              />
+
+              {/* ─── Remediation Card (Step 3 wrong answers) ─── */}
+              {phase === "feedback" && remediation && (
+                <div className="max-w-2xl mx-auto px-4 -mt-2 pb-8">
+                  <div className="bg-blue-500/10 rounded-2xl p-5 border border-blue-500/20 animate-fade-in-up">
+                    <div className="flex items-start gap-3">
+                      <span className="text-2xl mt-0.5">💡</span>
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-sm font-semibold text-blue-400 mb-1">
+                            What happened:
+                          </p>
+                          <p className="text-white/90 text-sm leading-relaxed">
+                            {remediation.whatWentWrong}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-blue-400 mb-1">
+                            Let me explain it differently:
+                          </p>
+                          <p className="text-white/90 text-sm leading-relaxed">
+                            {remediation.reExplanation}
+                          </p>
+                        </div>
+                        <div className="bg-blue-500/10 rounded-xl p-3 border border-blue-500/10">
+                          <p className="text-sm font-semibold text-blue-300 mb-1">
+                            New example:
+                          </p>
+                          <p className="text-white/80 text-sm leading-relaxed">
+                            {remediation.newExample}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
           ) : (
-            <PracticeQuestion
-              question={question}
-              phase={phase === "feedback" ? "feedback" : "practice"}
-              feedback={feedback}
-              selectedOption={selectedOption}
-              isLoading={isLoading}
-              hint={hint}
-              domain={currentDomain}
-              error={error}
-              onSubmitAnswer={submitAnswer}
-              onRequestHint={requestHint}
-              onClearError={() => { setError(null); setSelectedOption(null); }}
-            />
+            <main className="max-w-2xl mx-auto px-4 py-8">
+              <p className="text-center text-gray-400">Loading question...</p>
+            </main>
           )}
         </motion.div>
       )}
@@ -823,13 +953,11 @@ function SessionPage() {
                     Let&apos;s try a different approach!
                   </p>
                   <p className="text-gray-300 mt-1">
-                    {feedback?.message ??
-                      "This topic can be tricky. Let me help you."}
+                    {feedback?.message ?? "This topic can be tricky. Let me help you."}
                   </p>
                 </div>
               </div>
             </div>
-
             <div className="flex gap-3">
               <button
                 onClick={startPractice}
@@ -883,8 +1011,7 @@ function SessionPage() {
                     key={option}
                     onClick={() => {
                       const response =
-                        checkin.followUpResponses[option] ??
-                        "Let's keep going!";
+                        checkin.followUpResponses[option] ?? "Let's keep going!";
                       setCheckinResponse(response);
                       triggerVoice(response);
                       setTimeout(() => {
@@ -916,7 +1043,7 @@ function SessionPage() {
           className="min-h-screen bg-[#0D1B2A]"
         >
           <main className="max-w-lg mx-auto px-4 py-12 text-center">
-            {/* ─── Avatar ─── */}
+            {/* Avatar */}
             <div className="mx-auto mb-4 flex items-center justify-center">
               <AvatarDisplay
                 ref={avatarRef}
@@ -928,7 +1055,7 @@ function SessionPage() {
               />
             </div>
 
-            {/* ─── Phase 6: Streak Momentum Callout ─── */}
+            {/* Streak Callout */}
             {(() => {
               const s = summary as { streak?: { current: number; longest: number } };
               if (s.streak && s.streak.current >= 2) {
@@ -951,7 +1078,6 @@ function SessionPage() {
             </p>
 
             {(() => {
-              // ─── Type the enriched summary from the API ───
               const s = summary as {
                 durationMinutes?: number;
                 questionsAnswered?: number;
@@ -960,47 +1086,21 @@ function SessionPage() {
                 hintsUsed?: number;
                 sessionSubject?: string;
                 currentNode?: { title?: string; subject?: string } | null;
-                // Phase 1: Subject-grouped mastery
                 mathMastery?: Array<{
-                  nodeCode: string;
-                  title: string;
-                  level: string;
-                  probability: number;
-                  domain: string;
-                  gradeLevel: string;
+                  nodeCode: string; title: string; level: string; probability: number; domain: string; gradeLevel: string;
                 }>;
                 englishMastery?: Array<{
-                  nodeCode: string;
-                  title: string;
-                  level: string;
-                  probability: number;
-                  domain: string;
-                  gradeLevel: string;
+                  nodeCode: string; title: string; level: string; probability: number; domain: string; gradeLevel: string;
                 }>;
-                // Legacy fallback
                 recentMastery?: Array<{
-                  nodeCode: string;
-                  title: string;
-                  level: string;
-                  probability: number;
-                  subject?: string;
+                  nodeCode: string; title: string; level: string; probability: number; subject?: string;
                 }>;
-                // Phase 2: Grade progress
                 gradeProgress?: Array<{
-                  subject: string;
-                  gradeLevel: string;
-                  label: string;
-                  mastered: number;
-                  total: number;
-                  percentage: number;
+                  subject: string; gradeLevel: string; label: string; mastered: number; total: number; percentage: number;
                 }>;
-                // Phase 4: Next-up
                 nextUpNodes?: Array<{
-                  subject: string;
-                  nodeCode: string;
-                  title: string;
+                  subject: string; nodeCode: string; title: string;
                 }>;
-                // Phase 6: Streak
                 streak?: { current: number; longest: number };
               };
 
@@ -1008,14 +1108,11 @@ function SessionPage() {
               const engNodes = s.englishMastery ?? [];
               const hasMastery = mathNodes.length > 0 || engNodes.length > 0;
               const sessionSubject = s.sessionSubject ?? subjectParam;
-
-              // ─── Phase 3: Subject-split XP ───
-              // sessionXPEarned is tracked client-side per answer
               const sessionXP = sessionXPEarned;
 
               return (
                 <>
-                  {/* ─── Stats Row (Questions / Accuracy / Hints) ─── */}
+                  {/* Stats Row */}
                   <div className="grid grid-cols-3 gap-4 mb-4">
                     <div className="bg-[#1A2744] rounded-xl p-4 border border-white/10">
                       <p className="text-2xl font-bold text-aauti-primary">
@@ -1037,7 +1134,7 @@ function SessionPage() {
                     </div>
                   </div>
 
-                  {/* ─── Phase 3: Subject XP Display ─── */}
+                  {/* Subject XP */}
                   {sessionXP > 0 && (
                     <div className="flex justify-center gap-3 mb-6">
                       {sessionSubject === "MATH" && (
@@ -1055,14 +1152,10 @@ function SessionPage() {
                     </div>
                   )}
 
-                  {/* ─── Phase 1: Subject-Grouped Mastery Progress ─── */}
+                  {/* Mastery Progress */}
                   {hasMastery ? (
                     <div className="bg-[#1A2744] rounded-2xl p-5 border border-white/10 mb-6 text-left">
-                      <h3 className="font-semibold text-white mb-3">
-                        Mastery Progress
-                      </h3>
-
-                      {/* 📖 English section */}
+                      <h3 className="font-semibold text-white mb-3">Mastery Progress</h3>
                       {engNodes.length > 0 && (
                         <div className="mb-4 last:mb-0">
                           <div className="flex items-center gap-2 mb-2">
@@ -1070,24 +1163,15 @@ function SessionPage() {
                             <span className="text-sm font-semibold text-purple-400">English</span>
                           </div>
                           {engNodes.map((m) => (
-                            <div
-                              key={m.nodeCode}
-                              className="flex items-center justify-between py-2 border-b border-white/5 last:border-0 ml-5"
-                            >
-                              <p className="text-sm font-medium text-white">
-                                {m.title}
-                              </p>
-                              <span
-                                className={`px-2 py-1 rounded-full text-xs font-medium ${masteryColors[m.level] ?? ""}`}
-                              >
+                            <div key={m.nodeCode} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0 ml-5">
+                              <p className="text-sm font-medium text-white">{m.title}</p>
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${masteryColors[m.level] ?? ""}`}>
                                 {m.level} ({m.probability}%)
                               </span>
                             </div>
                           ))}
                         </div>
                       )}
-
-                      {/* 🔢 Math section */}
                       {mathNodes.length > 0 && (
                         <div className="mb-0">
                           <div className="flex items-center gap-2 mb-2">
@@ -1095,16 +1179,9 @@ function SessionPage() {
                             <span className="text-sm font-semibold text-green-400">Math</span>
                           </div>
                           {mathNodes.map((m) => (
-                            <div
-                              key={m.nodeCode}
-                              className="flex items-center justify-between py-2 border-b border-white/5 last:border-0 ml-5"
-                            >
-                              <p className="text-sm font-medium text-white">
-                                {m.title}
-                              </p>
-                              <span
-                                className={`px-2 py-1 rounded-full text-xs font-medium ${masteryColors[m.level] ?? ""}`}
-                              >
+                            <div key={m.nodeCode} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0 ml-5">
+                              <p className="text-sm font-medium text-white">{m.title}</p>
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${masteryColors[m.level] ?? ""}`}>
                                 {m.level} ({m.probability}%)
                               </span>
                             </div>
@@ -1114,18 +1191,14 @@ function SessionPage() {
                     </div>
                   ) : (
                     <div className="bg-[#1A2744] rounded-2xl p-5 border border-white/10 mb-6">
-                      <p className="text-gray-400 text-sm">
-                        Keep going — you&apos;re building mastery! 💪
-                      </p>
+                      <p className="text-gray-400 text-sm">Keep going — you&apos;re building mastery! 💪</p>
                     </div>
                   )}
 
-                  {/* ─── Phase 2: Grade Level Progress Bars ─── */}
+                  {/* Grade Progress */}
                   {s.gradeProgress && s.gradeProgress.length > 0 && (
                     <div className="bg-[#1A2744] rounded-2xl p-5 border border-white/10 mb-6 text-left">
-                      <h3 className="font-semibold text-white mb-3">
-                        Your Progress
-                      </h3>
+                      <h3 className="font-semibold text-white mb-3">Your Progress</h3>
                       <div className="space-y-3">
                         {s.gradeProgress.map((gp) => {
                           const isEnglish = gp.subject === "ENGLISH";
@@ -1135,11 +1208,8 @@ function SessionPage() {
                             <div key={`${gp.subject}-${gp.gradeLevel}`}>
                               <div className="flex items-center justify-between mb-1">
                                 <span className="text-sm text-gray-300">{gp.label}</span>
-                                <span className="text-xs text-gray-500">
-                                  {gp.mastered} of {gp.total} topics mastered
-                                </span>
+                                <span className="text-xs text-gray-500">{gp.mastered} of {gp.total} topics mastered</span>
                               </div>
-                              {/* CSS-only progress bar */}
                               <div className={`h-2.5 rounded-full ${barTrack} overflow-hidden`}>
                                 <div
                                   className={`h-full rounded-full ${barColor} transition-all duration-700 ease-out`}
@@ -1153,12 +1223,10 @@ function SessionPage() {
                     </div>
                   )}
 
-                  {/* ─── Phase 4: What's Next ─── */}
+                  {/* What's Next */}
                   {s.nextUpNodes && s.nextUpNodes.length > 0 && (
                     <div className="bg-[#1A2744] rounded-2xl p-5 border border-white/10 mb-6 text-left">
-                      <h3 className="font-semibold text-white mb-3">
-                        What&apos;s Next
-                      </h3>
+                      <h3 className="font-semibold text-white mb-3">What&apos;s Next</h3>
                       <div className="space-y-2">
                         {s.nextUpNodes.map((nu) => {
                           const isEnglish = nu.subject === "ENGLISH";
@@ -1198,14 +1266,11 @@ function SessionPage() {
                     </div>
                   )}
 
-                  {/* ─── Phase 5: Share with Parent Button ─── */}
+                  {/* Share */}
                   <button
                     onClick={async () => {
-                      // Build share text
                       const date = new Date().toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
+                        month: "short", day: "numeric", year: "numeric",
                       });
                       const masteredList = [
                         ...engNodes.filter((m) => m.level === "MASTERED").map((m) => `- ${m.title} (English)`),
@@ -1225,27 +1290,17 @@ function SessionPage() {
                         `Accuracy: ${s.accuracy ?? 0}%`,
                         `Questions: ${s.questionsAnswered ?? 0}`,
                         "",
-                        masteredList.length > 0
-                          ? `✅ Mastered Today:\n${masteredList.join("\n")}`
-                          : "",
-                        progressLines.length > 0
-                          ? `\n📊 Overall Progress:\n${progressLines.join("\n")}`
-                          : "",
-                        nextUpLines.length > 0
-                          ? `\nNext up: ${nextUpLines.join(", ")}`
-                          : "",
+                        masteredList.length > 0 ? `✅ Mastered Today:\n${masteredList.join("\n")}` : "",
+                        progressLines.length > 0 ? `\n📊 Overall Progress:\n${progressLines.join("\n")}` : "",
+                        nextUpLines.length > 0 ? `\nNext up: ${nextUpLines.join(", ")}` : "",
                         "",
                         "Powered by Nexus Learning",
-                      ]
-                        .filter(Boolean)
-                        .join("\n");
+                      ].filter(Boolean).join("\n");
 
-                      // Try native share, fallback to clipboard
                       if (typeof navigator !== "undefined" && navigator.share) {
                         try {
                           await navigator.share({ text: shareText });
                         } catch {
-                          // User cancelled or share failed — try clipboard
                           await navigator.clipboard?.writeText(shareText);
                           setShareToast(true);
                           setTimeout(() => setShareToast(false), 2000);
@@ -1261,7 +1316,6 @@ function SessionPage() {
                     Share with Parent 📤
                   </button>
 
-                  {/* Share toast */}
                   {shareToast && (
                     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-green-600 text-white text-sm font-medium px-4 py-2 rounded-full shadow-lg z-50 animate-fade-in-up">
                       Copied! ✓
@@ -1282,7 +1336,7 @@ function SessionPage() {
       )}
     </AnimatePresence>
 
-    {/* ─── Desktop Stats Sidebar (fixed, outside AnimatePresence) ─── */}
+    {/* ─── Desktop Stats Sidebar ─── */}
     <AnimatePresence>
       {showStats && (
         <motion.aside

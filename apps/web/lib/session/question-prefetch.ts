@@ -1,16 +1,17 @@
 /**
- * In-memory question prefetch cache.
+ * In-memory question prefetch cache — 5-step learning loop aware.
  *
  * When a student submits an answer, the answer API kicks off Claude question
- * generation in the background and stores the Promise here. The client then
- * fetches /api/session/next-question which awaits the cached Promise — by
- * that time, the question is usually already generated (overlapping with the
- * 1500ms feedback display).
+ * generation in the background (with the correct step type) and stores the
+ * Promise here. The client then fetches /api/session/next-question which
+ * awaits the cached Promise — by that time, the question is usually already
+ * generated (overlapping with the feedback display).
  */
 
 import { callClaude } from "@/lib/session/claude-client";
 import * as practicePrompt from "@/lib/prompts/practice.prompt";
-import type { PromptParams } from "@/lib/prompts/types";
+import * as stepPrompt from "@/lib/prompts/step-question.prompt";
+import type { PromptParams, LearningStepType } from "@/lib/prompts/types";
 
 export interface PrefetchedQuestion {
   questionText: string;
@@ -25,9 +26,6 @@ interface PrefetchEntry {
 }
 
 // ═══ Use globalThis to share cache across Next.js route handler invocations ═══
-// In dev mode, Next.js re-evaluates modules for each request, so a module-level
-// Map would be recreated each time. globalThis persists across re-evaluations
-// within the same Node.js process (same pattern as Prisma's global singleton).
 const globalForPrefetch = globalThis as unknown as {
   __questionPrefetchCache?: Map<string, PrefetchEntry>;
   __questionPrefetchCleanupStarted?: boolean;
@@ -55,20 +53,25 @@ if (!globalForPrefetch.__questionPrefetchCleanupStarted) {
 /**
  * Start generating a practice question in the background.
  * Does NOT block — returns immediately.
+ *
+ * @param stepType - The learning step type (check_understanding, guided_practice, etc.)
+ *                   If omitted, falls back to legacy practice prompt.
  */
 export function startPrefetch(
   sessionId: string,
   promptParams: PromptParams,
   fallbackNodeCode: string,
-  fallbackTitle: string
+  fallbackTitle: string,
+  stepType?: LearningStepType
 ): void {
   console.log(
-    `[prefetch] Starting prefetch for session ${sessionId} (cache size: ${cache.size})`
+    `[prefetch] Starting prefetch for session ${sessionId} (step: ${stepType ?? "legacy"}, cache size: ${cache.size})`
   );
   const promise = generateQuestion(
     promptParams,
     fallbackNodeCode,
-    fallbackTitle
+    fallbackTitle,
+    stepType
   );
   cache.set(sessionId, { promise, createdAt: Date.now() });
   console.log(
@@ -102,14 +105,22 @@ export async function getPrefetchedQuestion(
 async function generateQuestion(
   params: PromptParams,
   fallbackNodeCode: string,
-  fallbackTitle: string
+  fallbackTitle: string,
+  stepType?: LearningStepType
 ): Promise<PrefetchedQuestion> {
   try {
-    const prompt = practicePrompt.buildPrompt(params);
+    let prompt: string;
+    if (stepType) {
+      prompt = stepPrompt.buildStepPrompt(params, stepType);
+    } else {
+      prompt = practicePrompt.buildPrompt(params);
+    }
     const claudeResponse = await callClaude(prompt);
 
     if (claudeResponse) {
-      return practicePrompt.parseResponse(claudeResponse);
+      return stepType
+        ? stepPrompt.parseStepResponse(claudeResponse)
+        : practicePrompt.parseResponse(claudeResponse);
     }
   } catch (err) {
     console.warn("Prefetch question generation failed:", err);

@@ -1,20 +1,44 @@
 /**
  * GET /api/session/next-question?sessionId=xxx
  *
- * Returns a practice question for a session.
- * Tries prefetch cache first (works in long-lived Node.js, not Vercel serverless),
- * then generates on-demand using Claude (Haiku for speed).
+ * Returns the next question for a session, aware of the 5-step learning loop.
+ * Reads the session's learningStep and generates the appropriate question type:
+ *   Step 1 → auto-advance to Step 2 (check understanding)
+ *   Step 2 → check_understanding question
+ *   Step 3 → guided_practice question
+ *   Step 4 → independent_practice question
+ *   Step 5 → mastery_proof question
+ *
+ * Tries prefetch cache first, then generates on-demand using Claude.
  */
 
 import { NextResponse } from "next/server";
 import { prisma } from "@aauti/db";
 import { getPrefetchedQuestion } from "@/lib/session/question-prefetch";
 import { callClaude } from "@/lib/session/claude-client";
-import * as practicePrompt from "@/lib/prompts/practice.prompt";
-import type { AgeGroupValue, EmotionalStateValue } from "@/lib/prompts/types";
+import * as stepPrompt from "@/lib/prompts/step-question.prompt";
+import type {
+  AgeGroupValue,
+  EmotionalStateValue,
+  LearningStepType,
+} from "@/lib/prompts/types";
 
-// Allow up to 30s for Claude API call (Pro plan); on Hobby plan this is capped at 10s
 export const maxDuration = 30;
+
+function stepToType(step: number): LearningStepType {
+  switch (step) {
+    case 2:
+      return "check_understanding";
+    case 3:
+      return "guided_practice";
+    case 4:
+      return "independent_practice";
+    case 5:
+      return "mastery_proof";
+    default:
+      return "check_understanding";
+  }
+}
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -32,16 +56,23 @@ export async function GET(request: Request) {
     const prefetched = await getPrefetchedQuestion(sessionId);
     if (prefetched) {
       console.log(`[next-question] Prefetch HIT for ${sessionId}`);
-      return NextResponse.json({ question: prefetched, source: "prefetch" });
+      // Read step from session for metadata
+      const session = await prisma.learningSession.findUnique({
+        where: { id: sessionId },
+        select: { learningStep: true },
+      });
+      return NextResponse.json({
+        question: prefetched,
+        source: "prefetch",
+        learningStep: session?.learningStep ?? 2,
+      });
     }
   } catch (e) {
     console.warn("[next-question] Prefetch error (non-critical):", e);
   }
 
-  // Generate on-demand (primary path on Vercel serverless)
-  console.log(
-    `[next-question] Generating on-demand for ${sessionId}`
-  );
+  // Generate on-demand
+  console.log(`[next-question] Generating on-demand for ${sessionId}`);
 
   const session = await prisma.learningSession.findUnique({
     where: { id: sessionId },
@@ -57,6 +88,21 @@ export async function GET(request: Request) {
 
   const student = session.student;
   const node = session.currentNode;
+  let step = session.learningStep;
+
+  // Auto-advance from Step 1 (teaching) to Step 2 (check understanding)
+  if (step === 1) {
+    step = 2;
+    await prisma.learningSession.update({
+      where: { id: sessionId },
+      data: { learningStep: 2, stepCorrectCount: 0, stepTotalCount: 0 },
+    });
+    console.log(
+      `[next-question] Auto-advanced step 1→2 for ${sessionId}`
+    );
+  }
+
+  const stepType = stepToType(step);
 
   const existing = await prisma.masteryScore.findUnique({
     where: {
@@ -78,46 +124,58 @@ export async function GET(request: Request) {
     bktProbability: existing?.bktProbability ?? 0.3,
   };
 
-  const prompt = practicePrompt.buildPrompt(promptParams);
-
-  // Use fast model (Haiku) for question generation — responds in 1-3s
+  // Generate step-aware question
+  const prompt = stepPrompt.buildStepPrompt(promptParams, stepType);
   const claudeResponse = await callClaude(prompt);
 
   if (claudeResponse) {
-    console.log(`[next-question] Claude generated question for ${sessionId}`);
-    const question = practicePrompt.parseResponse(claudeResponse);
-    return NextResponse.json({ question, source: "on-demand" });
+    console.log(
+      `[next-question] Claude generated ${stepType} question for ${sessionId}`
+    );
+    const question = stepPrompt.parseStepResponse(claudeResponse);
+    return NextResponse.json({
+      question,
+      source: "on-demand",
+      learningStep: step,
+    });
   }
 
-  // Fallback: generate a contextual question without Claude
+  // Fallback
   console.error(
-    `[next-question] Claude FAILED for ${sessionId} — using fallback question for "${node.title}"`
+    `[next-question] Claude FAILED for ${sessionId} — using fallback`
   );
 
-  const question = generateFallbackQuestion(node.title, node.difficulty, node.domain);
-  return NextResponse.json({ question, source: "fallback" });
+  const question = generateFallbackQuestion(
+    node.title,
+    node.difficulty,
+    node.domain
+  );
+  return NextResponse.json({
+    question,
+    source: "fallback",
+    learningStep: step,
+  });
 }
 
-/**
- * ELA domain set — matches the set in types.ts.
- * Used to pick subject-appropriate fallback questions.
- */
+// ─── Fallback Questions ───
+
 const ELA_DOMAINS = new Set(["GRAMMAR", "READING", "WRITING", "VOCABULARY"]);
 
-/**
- * Generate a basic fallback question when Claude is unavailable.
- * Uses the node's difficulty level and domain to adjust the question.
- * Subject-aware: returns ELA questions for English nodes, math for math nodes.
- */
-function generateFallbackQuestion(nodeTitle: string, difficulty: number, domain: string) {
+function generateFallbackQuestion(
+  nodeTitle: string,
+  difficulty: number,
+  domain: string
+) {
   if (ELA_DOMAINS.has(domain)) {
     return generateELAFallbackQuestion(nodeTitle, difficulty);
   }
   return generateMathFallbackQuestion(nodeTitle, difficulty);
 }
 
-/** ELA fallback questions for when Claude is unavailable */
-function generateELAFallbackQuestion(nodeTitle: string, difficulty: number) {
+function generateELAFallbackQuestion(
+  nodeTitle: string,
+  difficulty: number
+) {
   const easyQuestions = [
     {
       questionText: `Let's practice ${nodeTitle}! In the sentence "The dog runs fast", what is the subject?`,
@@ -128,7 +186,8 @@ function generateELAFallbackQuestion(nodeTitle: string, difficulty: number) {
         { id: "D", text: "the", isCorrect: false },
       ],
       correctAnswer: "A",
-      explanation: "The subject is 'dog' — it's the person, place, or thing doing the action (running).",
+      explanation:
+        "The subject is 'dog' — it's the person, place, or thing doing the action (running).",
     },
     {
       questionText: `${nodeTitle} practice: Which word is a verb? "The cat sleeps on the soft bed."`,
@@ -150,7 +209,8 @@ function generateELAFallbackQuestion(nodeTitle: string, difficulty: number) {
         { id: "D", text: "pretty", isCorrect: false },
       ],
       correctAnswer: "C",
-      explanation: "'Bird' is a noun — it names a living thing. 'Song' is also a noun!",
+      explanation:
+        "'Bird' is a noun — it names a living thing. 'Song' is also a noun!",
     },
   ];
 
@@ -158,24 +218,30 @@ function generateELAFallbackQuestion(nodeTitle: string, difficulty: number) {
     {
       questionText: `${nodeTitle}: Which sentence uses a comma correctly?`,
       options: [
-        { id: "A", text: "I like apples oranges and bananas.", isCorrect: false },
-        { id: "B", text: "I like apples, oranges, and bananas.", isCorrect: true },
-        { id: "C", text: "I like, apples oranges and bananas.", isCorrect: false },
-        { id: "D", text: "I like apples oranges, and bananas.", isCorrect: false },
+        {
+          id: "A",
+          text: "I like apples oranges and bananas.",
+          isCorrect: false,
+        },
+        {
+          id: "B",
+          text: "I like apples, oranges, and bananas.",
+          isCorrect: true,
+        },
+        {
+          id: "C",
+          text: "I like, apples oranges and bananas.",
+          isCorrect: false,
+        },
+        {
+          id: "D",
+          text: "I like apples oranges, and bananas.",
+          isCorrect: false,
+        },
       ],
       correctAnswer: "B",
-      explanation: "When listing 3 or more items, put a comma after each item except the last. This is called the serial (Oxford) comma!",
-    },
-    {
-      questionText: `${nodeTitle}: "Although she was tired, she finished her homework." What type of sentence is this?`,
-      options: [
-        { id: "A", text: "Simple sentence", isCorrect: false },
-        { id: "B", text: "Compound sentence", isCorrect: false },
-        { id: "C", text: "Complex sentence", isCorrect: true },
-        { id: "D", text: "Fragment", isCorrect: false },
-      ],
-      correctAnswer: "C",
-      explanation: "This is a complex sentence — it has one independent clause and one dependent clause starting with 'Although'.",
+      explanation:
+        "When listing 3 or more items, put a comma after each item except the last.",
     },
   ];
 
@@ -184,8 +250,10 @@ function generateELAFallbackQuestion(nodeTitle: string, difficulty: number) {
   return questions[idx];
 }
 
-/** Math fallback questions (original behavior) */
-function generateMathFallbackQuestion(nodeTitle: string, difficulty: number) {
+function generateMathFallbackQuestion(
+  nodeTitle: string,
+  difficulty: number
+) {
   const easyQuestions = [
     {
       questionText: `Let's practice ${nodeTitle}! What is 3 + 4?`,
@@ -232,7 +300,8 @@ function generateMathFallbackQuestion(nodeTitle: string, difficulty: number) {
         { id: "D", text: "28", isCorrect: false },
       ],
       correctAnswer: "B",
-      explanation: "12 + 15 = 27. Add the ones (2+5=7) and tens (10+10=20), then combine: 27!",
+      explanation:
+        "12 + 15 = 27. Add the ones (2+5=7) and tens (10+10=20), then combine: 27!",
     },
     {
       questionText: `${nodeTitle}: What is 8 x 3?`,

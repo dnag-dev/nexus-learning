@@ -30,7 +30,7 @@ interface PracticeQuestionProps {
   domain: string;
   error: string | null;
   onSubmitAnswer: (optionId: string) => void;
-  onRequestHint: () => void;
+  onRequestHint?: () => void;
   onClearError: () => void;
 }
 
@@ -171,8 +171,8 @@ export default function PracticeQuestion({
         </div>
       )}
 
-      {/* ─── Hint ─── */}
-      {phase === "practice" && !isLoading && (
+      {/* ─── Hint (only shown when onRequestHint provided — Steps 2-3 only) ─── */}
+      {phase === "practice" && !isLoading && (onRequestHint || hint) && (
         <div className="text-center">
           {hint ? (
             <div className="bg-aauti-accent/15 border border-aauti-accent/25 rounded-xl p-4 text-sm">
@@ -182,7 +182,7 @@ export default function PracticeQuestion({
                 {hint.encouragement}
               </p>
             </div>
-          ) : (
+          ) : onRequestHint ? (
             <button
               onClick={onRequestHint}
               disabled={isLoading}
@@ -190,7 +190,7 @@ export default function PracticeQuestion({
             >
               💡 Need a hint?
             </button>
-          )}
+          ) : null}
         </div>
       )}
 

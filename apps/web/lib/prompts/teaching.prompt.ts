@@ -1,5 +1,12 @@
 /**
- * Teaching Prompt — Introduce a new concept (Level 1: Exposure).
+ * Teaching Prompt — Step 1 of the 5-step learning loop.
+ *
+ * Generates rich teaching content with:
+ * - Hook question that makes the student curious
+ * - Clear definition in simple language
+ * - 2 concrete examples with the concept highlighted
+ * - 1 common mistake kids make and why it's wrong
+ *
  * Subject-aware: uses different prompt templates for MATH vs ENGLISH.
  */
 
@@ -19,14 +26,14 @@ export function buildPrompt(params: PromptParams): string {
   return buildMathTeachingPrompt(params);
 }
 
-/** Math teaching prompt (original behavior, unchanged) */
+/** Math teaching prompt — 5-step learning loop (Step 1: TEACH IT) */
 function buildMathTeachingPrompt(params: PromptParams): string {
   const persona = getPersonaName(params.personaId);
   const tone = getPersonaTone(params.personaId);
   const ageInst = getAgeInstruction(params.ageGroup);
   const emoInst = getEmotionalInstruction(params.currentEmotionalState);
 
-  return `You are ${persona}, an AI tutor for children.
+  return `You are ${persona}, an AI math tutor for children.
 
 PERSONALITY: ${tone}
 
@@ -34,44 +41,47 @@ STUDENT: ${params.studentName} (age group: ${params.ageGroup})
 LANGUAGE LEVEL: ${ageInst}
 EMOTIONAL STATE: ${emoInst}
 
-TASK: Introduce the concept "${params.nodeTitle}" (${params.nodeCode}) to ${params.studentName}.
+TASK: Teach the concept "${params.nodeTitle}" (${params.nodeCode}) to ${params.studentName}.
 CONCEPT DESCRIPTION: ${params.nodeDescription}
 GRADE: ${params.gradeLevel} | DOMAIN: ${params.domain} | DIFFICULTY: ${params.difficulty}/10
 
-INSTRUCTIONS:
-1. Pick a single emoji that best represents this concept (e.g. ⚖️ for equal sign, 🍕 for fractions)
-2. Write ONE hook sentence (max 20 words) that grabs ${params.studentName}'s attention and connects to their world
-3. Explain the core concept in exactly 2-3 sentences — clear, concrete, no fluff
-4. Give ONE real-world example ${params.studentName} can picture or try themselves
-5. End with a quick comprehension check question (one simple question with one correct answer)
+INSTRUCTIONS — You must include ALL of the following:
+1. "emoji": Pick a single emoji that best represents this concept
+2. "hook": Write ONE curiosity-provoking question (max 20 words) that makes ${params.studentName} wonder about this topic. NOT a yes/no question — something that makes them think.
+3. "explanation": A clear definition in simple language, 3-4 sentences. Define the concept, explain what it does, and why it matters.
+4. "example": First concrete example with the concept HIGHLIGHTED. Use a real-world scenario. Bold the key part using **asterisks**.
+5. "example2": Second concrete example, different context. Also highlight the key concept with **asterisks**.
+6. "commonMistake": Describe ONE common mistake kids make with this concept. Start with "Many students think..." or "A common mistake is..."
+7. "commonMistakeWhy": Explain WHY that mistake is wrong in 1-2 sentences. Be specific.
 
 HARD LIMITS:
-- Hook: 1 sentence, max 20 words
-- Explanation: 2-3 sentences max
-- Example: 1-2 sentences max
-- Total under 150 words (excluding emoji and JSON keys)
+- Hook: 1 question, max 20 words
+- Explanation: 3-4 sentences
+- Each example: 1-3 sentences
+- Total under 250 words (excluding JSON keys)
 
 OUTPUT FORMAT (JSON):
 {
-  "emoji": "single emoji character",
-  "hook": "One attention-grabbing sentence",
-  "explanation": "Core concept in 2-3 short sentences",
-  "example": "One concrete real-world example",
-  "checkQuestion": "A simple comprehension check question",
-  "checkAnswer": "The correct answer"
+  "emoji": "single emoji",
+  "hook": "A curiosity-provoking question",
+  "explanation": "Clear definition in 3-4 sentences",
+  "example": "First real-world example with **concept highlighted**",
+  "example2": "Second real-world example with **concept highlighted**",
+  "commonMistake": "Many students think...",
+  "commonMistakeWhy": "This is wrong because..."
 }
 
 Respond ONLY with valid JSON.`;
 }
 
-/** ELA teaching prompt — grammar/language arts concept introduction */
+/** ELA teaching prompt — 5-step learning loop (Step 1: TEACH IT) */
 function buildELATeachingPrompt(params: PromptParams): string {
   const persona = getPersonaName(params.personaId);
   const tone = getPersonaTone(params.personaId);
   const ageInst = getAgeInstruction(params.ageGroup);
   const emoInst = getEmotionalInstruction(params.currentEmotionalState);
 
-  return `You are ${persona}, a friendly English tutor teaching a student about "${params.nodeTitle}".
+  return `You are ${persona}, a friendly English tutor teaching "${params.nodeTitle}".
 
 PERSONALITY: ${tone}
 
@@ -82,29 +92,30 @@ EMOTIONAL STATE: ${emoInst}
 CONCEPT: ${params.nodeDescription}
 GRADE: ${params.gradeLevel} | DOMAIN: ${params.domain} | DIFFICULTY: ${params.difficulty}/10
 
-INSTRUCTIONS:
-1. Pick a single emoji that best represents this concept (e.g. 📝 for writing, 📖 for reading)
-2. Write ONE hook sentence (max 20 words) — make the student curious about this grammar topic
-3. Teach this concept in 3-4 sentences using simple, clear language appropriate for their age
-4. Include a memorable real-world example sentence that demonstrates the concept
-5. Give one tip or trick to remember this concept
-6. End with "Now let's practice!" and a quick comprehension check question
+INSTRUCTIONS — You must include ALL of the following:
+1. "emoji": Pick a single emoji that best represents this concept
+2. "hook": Write ONE curiosity-provoking question (max 20 words) that makes ${params.studentName} wonder about this grammar/language topic. NOT a yes/no question.
+3. "explanation": A clear definition in simple language, 3-4 sentences. What is it, how does it work, and why do we need it.
+4. "example": First example sentence that demonstrates the concept. **Bold** the relevant words. Example: "In the sentence 'The **cat** sat on the **mat**', cat and mat are nouns."
+5. "example2": Second example sentence in a DIFFERENT context. **Bold** the relevant words.
+6. "commonMistake": ONE common mistake kids make. Start with "Many students think..." or "A common mistake is..."
+7. "commonMistakeWhy": Why that mistake is wrong, in 1-2 specific sentences.
 
 HARD LIMITS:
-- Hook: 1 sentence, max 20 words
-- Explanation: 3-4 sentences max
-- Example: 1-2 sentences max
-- Do not use jargon. Make it engaging.
-- Total under 150 words (excluding emoji and JSON keys)
+- Hook: 1 question, max 20 words
+- Explanation: 3-4 sentences
+- Each example: 1-3 sentences with the concept highlighted
+- Total under 250 words
 
 OUTPUT FORMAT (JSON):
 {
-  "emoji": "single emoji character",
-  "hook": "One attention-grabbing sentence",
-  "explanation": "Core concept in 3-4 short sentences with a tip to remember it",
-  "example": "One memorable real-world example sentence",
-  "checkQuestion": "A simple comprehension check question ending with Now let's practice!",
-  "checkAnswer": "The correct answer"
+  "emoji": "single emoji",
+  "hook": "A curiosity-provoking question",
+  "explanation": "Clear definition in 3-4 sentences",
+  "example": "First example with **concept highlighted**",
+  "example2": "Second example with **concept highlighted**",
+  "commonMistake": "Many students think...",
+  "commonMistakeWhy": "This is wrong because..."
 }
 
 Respond ONLY with valid JSON.`;
@@ -118,21 +129,25 @@ export function parseResponse(rawResponse: string): TeachingResponse {
       emoji: parsed.emoji || "📚",
       hook: parsed.hook || "Let's learn something amazing!",
       explanation: parsed.explanation || "Let me explain this concept to you!",
-      example:
-        parsed.example || "You'll see this all around you in everyday life.",
-      checkQuestion:
-        parsed.checkQuestion || "Can you tell me what you just learned?",
-      checkAnswer: parsed.checkAnswer || "Great thinking!",
+      example: parsed.example || "You'll see this in everyday life.",
+      example2: parsed.example2 || "",
+      commonMistake: parsed.commonMistake || "",
+      commonMistakeWhy: parsed.commonMistakeWhy || "",
+      // Legacy fields — no longer used for comprehension check (now Step 2)
+      checkQuestion: parsed.checkQuestion || "",
+      checkAnswer: parsed.checkAnswer || "",
     };
   } catch {
     return {
       emoji: "📚",
       hook: "Let's learn something new today!",
-      explanation:
-        "This is an exciting concept we're going to explore together.",
+      explanation: "This is an exciting concept we're going to explore together.",
       example: "You'll see this all around you in everyday life.",
-      checkQuestion: "Are you ready to try a practice question?",
-      checkAnswer: "Yes!",
+      example2: "",
+      commonMistake: "",
+      commonMistakeWhy: "",
+      checkQuestion: "",
+      checkAnswer: "",
     };
   }
 }

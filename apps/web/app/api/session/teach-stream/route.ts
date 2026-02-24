@@ -63,11 +63,14 @@ export async function GET(request: Request) {
   const fallbackDone = {
     type: "done" as const,
     emoji: "📚",
-    hook: `Let's learn about ${node.title}!`,
+    hook: `What do you think "${node.title}" means?`,
     explanation: node.description,
     example: "You'll see this in everyday life.",
-    checkQuestion: "Are you ready to try some practice questions?",
-    checkAnswer: "Yes!",
+    example2: "",
+    commonMistake: "",
+    commonMistakeWhy: "",
+    checkQuestion: "",
+    checkAnswer: "",
   };
 
   const stream = new ReadableStream({
@@ -113,6 +116,9 @@ export async function GET(request: Request) {
             hook: parsed.hook,
             explanation: parsed.explanation,
             example: parsed.example,
+            example2: parsed.example2,
+            commonMistake: parsed.commonMistake,
+            commonMistakeWhy: parsed.commonMistakeWhy,
             checkQuestion: parsed.checkQuestion,
             checkAnswer: parsed.checkAnswer,
           });

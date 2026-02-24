@@ -1,22 +1,77 @@
+/**
+ * POST /api/session/answer
+ *
+ * 5-step learning loop answer processor.
+ *
+ * Step 2 (check_understanding): 1 question. Correct/wrong → always advance to Step 3.
+ * Step 3 (guided_practice): 3 questions, need 2/3. Wrong → remediation. Fail → back to Step 2.
+ * Step 4 (independent_practice): 5 questions, need 4/5. No hints. Fail → back to Step 2.
+ * Step 5 (mastery_proof): 1 question. Correct → MASTERY. Wrong → back to Step 2.
+ *
+ * BKT mastery updates on every answer (keeps underlying model accurate).
+ */
+
 import { NextResponse } from "next/server";
 import { prisma } from "@aauti/db";
 import { transitionState } from "@/lib/session/state-machine";
-import { updateMasteryInDB, shouldAdvanceNode, recommendNextNode } from "@/lib/session/bkt-engine";
+import {
+  updateMasteryInDB,
+  shouldAdvanceNode,
+  recommendNextNode,
+} from "@/lib/session/bkt-engine";
 import type { MasteryData } from "@/lib/session/bkt-engine";
 import { callClaude } from "@/lib/session/claude-client";
-import * as practicePrompt from "@/lib/prompts/practice.prompt";
 import * as celebratingPrompt from "@/lib/prompts/celebrating.prompt";
-import type { AgeGroupValue, EmotionalStateValue } from "@/lib/prompts/types";
-import { processCorrectAnswer, processNodeMastered } from "@/lib/gamification/gamification-service";
-
-// Allow up to 30s for Claude API call (Pro plan); on Hobby plan this is capped at 10s
-export const maxDuration = 30;
+import * as stepPrompt from "@/lib/prompts/step-question.prompt";
+import type {
+  AgeGroupValue,
+  EmotionalStateValue,
+  LearningStepType,
+} from "@/lib/prompts/types";
+import {
+  processCorrectAnswer,
+  processNodeMastered,
+} from "@/lib/gamification/gamification-service";
 import { startPrefetch } from "@/lib/session/question-prefetch";
+
+export const maxDuration = 30;
+
+// ═══ Step requirements ═══
+const STEP_REQUIREMENTS: Record<number, { required: number; total: number }> = {
+  2: { required: 1, total: 1 }, // Check understanding: 1/1
+  3: { required: 2, total: 3 }, // Guided practice: 2/3
+  4: { required: 4, total: 5 }, // Independent practice: 4/5
+  5: { required: 1, total: 1 }, // Mastery proof: 1/1
+};
+
+function stepToType(step: number): LearningStepType {
+  switch (step) {
+    case 2:
+      return "check_understanding";
+    case 3:
+      return "guided_practice";
+    case 4:
+      return "independent_practice";
+    case 5:
+      return "mastery_proof";
+    default:
+      return "check_understanding";
+  }
+}
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { sessionId, selectedOptionId, isCorrect, isComprehensionCheck } = body;
+    const {
+      sessionId,
+      selectedOptionId,
+      isCorrect,
+      // Remediation context (client sends these for Step 3 wrong answers)
+      questionText,
+      selectedAnswerText,
+      correctAnswerText,
+      explanation,
+    } = body;
 
     if (!sessionId || isCorrect === undefined) {
       return NextResponse.json(
@@ -39,75 +94,30 @@ export async function POST(request: Request) {
 
     const student = session.student;
     const node = session.currentNode;
+    const currentStep = session.learningStep; // 1-5
 
-    // ═══ COMPREHENSION CHECK: Skip BKT — just generate first real question ═══
-    if (isComprehensionCheck) {
-      // Transition TEACHING → PRACTICE without touching mastery
-      if (session.state === "TEACHING") {
-        await transitionState(sessionId, "PRACTICE", "SUBMIT_ANSWER", {
-          isCorrect: true,
-        });
-      }
-
-      // Get current mastery (read-only)
-      const existingMastery = await prisma.masteryScore.findUnique({
-        where: {
-          studentId_nodeId: { studentId: session.studentId, nodeId: node.id },
-        },
-      });
-      const currentMastery: MasteryData = existingMastery
-        ? {
-            bktProbability: existingMastery.bktProbability,
-            level: existingMastery.level as MasteryData["level"],
-            practiceCount: existingMastery.practiceCount,
-            correctCount: existingMastery.correctCount,
-            lastPracticed: existingMastery.lastPracticed,
-            nextReviewAt: existingMastery.nextReviewAt,
-          }
-        : {
-            bktProbability: 0.3,
-            level: "NOVICE" as const,
-            practiceCount: 0,
-            correctCount: 0,
-            lastPracticed: new Date(),
-            nextReviewAt: null,
-          };
-
-      // Kick off first real practice question generation in the background
-      const promptParams = buildPromptParams(student, node, currentMastery);
-      startPrefetch(sessionId, promptParams, node.nodeCode, node.title);
-
-      // Return feedback immediately — client fetches question via /api/session/next-question
-      return NextResponse.json({
-        state: "PRACTICE",
-        recommendedAction: "present_practice_problem",
-        isCorrect: true,
-        mastery: formatMastery(currentMastery),
-        feedback: {
-          message: "Great! Let's start practicing!",
-          type: "correct",
-        },
-        questionPrefetched: true, // Signal client to fetch from next-question endpoint
-      });
-    }
-
-    // Update BKT mastery
+    // ═══ Update BKT mastery on every answer ═══
     const updatedMastery = await updateMasteryInDB(
       session.studentId,
-      session.currentNode.id,
+      node.id,
       isCorrect
     );
 
-    // Update session counters
+    // Update session step counters
+    const newStepCorrect = session.stepCorrectCount + (isCorrect ? 1 : 0);
+    const newStepTotal = session.stepTotalCount + 1;
+
     await prisma.learningSession.update({
       where: { id: sessionId },
       data: {
         questionsAnswered: { increment: 1 },
         correctAnswers: { increment: isCorrect ? 1 : 0 },
+        stepCorrectCount: newStepCorrect,
+        stepTotalCount: newStepTotal,
       },
     });
 
-    // ═══ GAMIFICATION: Award XP for correct answer ═══
+    // ═══ Gamification: XP for correct answers ═══
     let gamificationXP = null;
     if (isCorrect) {
       try {
@@ -121,143 +131,415 @@ export async function POST(request: Request) {
       }
     }
 
-    // Determine next state based on result
-    let wrongStreak = 0;
-    if (!isCorrect) {
-      // Check if struggling (3+ wrong in a row on same node)
-      const recentSessions = await prisma.learningSession.findMany({
-        where: { studentId: session.studentId, currentNodeId: node.id },
-        orderBy: { startedAt: "desc" },
-        take: 1,
+    // Ensure we're in PRACTICE state (transition from TEACHING if needed)
+    if (session.state === "TEACHING") {
+      await transitionState(sessionId, "PRACTICE", "SUBMIT_ANSWER", {
+        isCorrect,
       });
-      // Simple heuristic: if mastery is very low after this answer, they're struggling
-      if (updatedMastery.bktProbability < 0.25) wrongStreak = 3;
     }
 
-    // Decision tree
-    if (isCorrect && shouldAdvanceNode(updatedMastery)) {
-      // If still in TEACHING, transition to PRACTICE first
-      if (session.state === "TEACHING") {
-        await transitionState(sessionId, "PRACTICE", "SUBMIT_ANSWER", {
-          isCorrect,
-        });
-      }
+    const promptParams = buildPromptParams(student, node, updatedMastery);
 
-      // MASTERY ACHIEVED — celebrate!
-      const result = await transitionState(
+    // ═══════════════════════════════════════════════════════════
+    // STEP 2: CHECK UNDERSTANDING (1 question)
+    // Correct or wrong → always advance to Step 3 (guided practice)
+    // ═══════════════════════════════════════════════════════════
+    if (currentStep === 2) {
+      await prisma.learningSession.update({
+        where: { id: sessionId },
+        data: { learningStep: 3, stepCorrectCount: 0, stepTotalCount: 0 },
+      });
+
+      startPrefetch(
         sessionId,
-        "CELEBRATING",
-        "MASTERY_ACHIEVED",
-        {
-          nodeCode: node.nodeCode,
-          bktProbability: updatedMastery.bktProbability,
-        }
+        promptParams,
+        node.nodeCode,
+        node.title,
+        "guided_practice"
       );
 
-      // ═══ GAMIFICATION: Node mastered → award XP + check badges ═══
-      let masteryGamification = null;
-      try {
-        masteryGamification = await processNodeMastered(
-          session.studentId,
-          node.nodeCode,
-          node.title
-        );
-      } catch (e) {
-        console.error("Gamification mastery error (non-critical):", e);
-      }
-
-      // Get next node recommendation (non-critical — don't crash if it fails)
-      let nextNode = null;
-      try {
-        nextNode = await recommendNextNode(
-          session.studentId,
-          node.nodeCode
-        );
-      } catch (e) {
-        console.error("Next node recommendation error (non-critical):", e);
-      }
-
-      // Generate celebration
-      const promptParams = buildPromptParams(student, node, updatedMastery);
-      const prompt = celebratingPrompt.buildPrompt({
-        ...promptParams,
-        nextNodeTitle: nextNode?.title,
-      });
-      const claudeResponse = await callClaude(prompt);
-      const celebration = claudeResponse
-        ? celebratingPrompt.parseResponse(claudeResponse)
-        : {
-            celebration: `Amazing! You've mastered ${node.title}!`,
-            funFact: "Math is everywhere in the world around you!",
-            nextTeaser: nextNode
-              ? `Up next: ${nextNode.title}!`
-              : "You've completed this learning path!",
-          };
-
-      return NextResponse.json({
-        state: result.newState,
-        recommendedAction: result.recommendedAction,
-        isCorrect,
-        mastery: formatMastery(updatedMastery),
-        celebration,
-        nextNode,
-        gamification: masteryGamification ?? gamificationXP,
-      });
-    } else if (!isCorrect && wrongStreak >= 3) {
-      // If still in TEACHING, transition to PRACTICE first
-      if (session.state === "TEACHING") {
-        await transitionState(sessionId, "PRACTICE", "SUBMIT_ANSWER", {
-          isCorrect,
-        });
-      }
-
-      // STRUGGLING — need intervention
-      const result = await transitionState(
-        sessionId,
-        "STRUGGLING",
-        "STRUGGLE_DETECTED",
-        { wrongStreak, bktProbability: updatedMastery.bktProbability }
-      );
-
-      return NextResponse.json({
-        state: result.newState,
-        recommendedAction: result.recommendedAction,
-        isCorrect,
-        mastery: formatMastery(updatedMastery),
-        feedback: {
-          message: "Let's slow down and try a different approach.",
-          type: "struggling",
-        },
-      });
-    } else {
-      // CONTINUE PRACTICE — generate next question
-      // Stay in PRACTICE (or transition from TEACHING → PRACTICE)
-      if (session.state === "TEACHING") {
-        await transitionState(sessionId, "PRACTICE", "SUBMIT_ANSWER", {
-          isCorrect,
-        });
-      }
-
-      // Start generating next question in the background
-      const promptParams = buildPromptParams(student, node, updatedMastery);
-      startPrefetch(sessionId, promptParams, node.nodeCode, node.title);
-
-      // Return feedback immediately — client fetches question via /api/session/next-question
       return NextResponse.json({
         state: "PRACTICE",
-        recommendedAction: "present_practice_problem",
+        learningStep: 3,
+        stepProgress: { correct: 0, total: 0, required: 2, outOf: 3 },
+        stepTransition: { from: 2, to: 3, reason: "advance" },
         isCorrect,
         mastery: formatMastery(updatedMastery),
         feedback: {
           message: isCorrect
-            ? "Great job! Here's another one."
-            : "Not quite — let's try again!",
+            ? "You got it! Let's practice more. 💪"
+            : "Not quite — let's practice together to get the hang of it!",
           type: isCorrect ? "correct" : "incorrect",
         },
-        questionPrefetched: true, // Signal client to fetch from next-question endpoint
+        questionPrefetched: true,
         gamification: gamificationXP,
       });
     }
+
+    // ═══════════════════════════════════════════════════════════
+    // STEP 3: GUIDED PRACTICE (need 2/3 correct, remediation on wrong)
+    // ═══════════════════════════════════════════════════════════
+    if (currentStep === 3) {
+      // Generate remediation for wrong answers
+      let remediation = null;
+      if (!isCorrect && questionText && selectedAnswerText && correctAnswerText) {
+        try {
+          const remPrompt = stepPrompt.buildRemediationPrompt(
+            promptParams,
+            questionText,
+            selectedAnswerText,
+            correctAnswerText,
+            explanation ?? ""
+          );
+          const remResponse = await callClaude(remPrompt);
+          if (remResponse) {
+            remediation = stepPrompt.parseRemediationResponse(remResponse);
+          }
+        } catch (e) {
+          console.error("Remediation generation error:", e);
+        }
+        if (!remediation) {
+          remediation = {
+            whatWentWrong:
+              "That's not quite right, but you're learning!",
+            reExplanation:
+              "Let me explain this differently...",
+            newExample:
+              "Here's another way to think about it.",
+          };
+        }
+      }
+
+      // Check if step is complete (3 questions answered)
+      if (newStepTotal >= 3) {
+        if (newStepCorrect >= 2) {
+          // PASSED Step 3 → advance to Step 4
+          await prisma.learningSession.update({
+            where: { id: sessionId },
+            data: {
+              learningStep: 4,
+              stepCorrectCount: 0,
+              stepTotalCount: 0,
+            },
+          });
+
+          startPrefetch(
+            sessionId,
+            promptParams,
+            node.nodeCode,
+            node.title,
+            "independent_practice"
+          );
+
+          return NextResponse.json({
+            state: "PRACTICE",
+            learningStep: 4,
+            stepProgress: { correct: 0, total: 0, required: 4, outOf: 5 },
+            stepTransition: { from: 3, to: 4, reason: "passed" },
+            isCorrect,
+            mastery: formatMastery(updatedMastery),
+            feedback: {
+              message: isCorrect
+                ? "Excellent! Ready for harder problems! 🚀"
+                : "Good effort! Time to level up!",
+              type: isCorrect ? "correct" : "step_advance",
+            },
+            remediation,
+            questionPrefetched: true,
+            gamification: gamificationXP,
+          });
+        } else {
+          // FAILED Step 3 → back to Step 2
+          await prisma.learningSession.update({
+            where: { id: sessionId },
+            data: {
+              learningStep: 2,
+              stepCorrectCount: 0,
+              stepTotalCount: 0,
+            },
+          });
+
+          startPrefetch(
+            sessionId,
+            promptParams,
+            node.nodeCode,
+            node.title,
+            "check_understanding"
+          );
+
+          return NextResponse.json({
+            state: "PRACTICE",
+            learningStep: 2,
+            stepProgress: { correct: 0, total: 0, required: 1, outOf: 1 },
+            stepTransition: { from: 3, to: 2, reason: "failed" },
+            isCorrect,
+            mastery: formatMastery(updatedMastery),
+            feedback: {
+              message:
+                "Let's review and try again — you've got this! 💪",
+              type: "retry",
+            },
+            remediation,
+            questionPrefetched: true,
+            gamification: gamificationXP,
+          });
+        }
+      }
+
+      // Step 3 not complete yet — continue with next question
+      startPrefetch(
+        sessionId,
+        promptParams,
+        node.nodeCode,
+        node.title,
+        "guided_practice"
+      );
+
+      return NextResponse.json({
+        state: "PRACTICE",
+        learningStep: 3,
+        stepProgress: {
+          correct: newStepCorrect,
+          total: newStepTotal,
+          required: 2,
+          outOf: 3,
+        },
+        isCorrect,
+        mastery: formatMastery(updatedMastery),
+        feedback: {
+          message: isCorrect
+            ? "Great job! Keep going!"
+            : "That's okay — let's learn from this!",
+          type: isCorrect ? "correct" : "incorrect",
+        },
+        remediation,
+        questionPrefetched: true,
+        gamification: gamificationXP,
+      });
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // STEP 4: INDEPENDENT PRACTICE (need 4/5 correct, no hints)
+    // ═══════════════════════════════════════════════════════════
+    if (currentStep === 4) {
+      // Check if step is complete (5 questions answered)
+      if (newStepTotal >= 5) {
+        if (newStepCorrect >= 4) {
+          // PASSED Step 4 → advance to Step 5
+          await prisma.learningSession.update({
+            where: { id: sessionId },
+            data: {
+              learningStep: 5,
+              stepCorrectCount: 0,
+              stepTotalCount: 0,
+            },
+          });
+
+          startPrefetch(
+            sessionId,
+            promptParams,
+            node.nodeCode,
+            node.title,
+            "mastery_proof"
+          );
+
+          return NextResponse.json({
+            state: "PRACTICE",
+            learningStep: 5,
+            stepProgress: { correct: 0, total: 0, required: 1, outOf: 1 },
+            stepTransition: { from: 4, to: 5, reason: "passed" },
+            isCorrect,
+            mastery: formatMastery(updatedMastery),
+            feedback: {
+              message: isCorrect
+                ? "Amazing! One final challenge... 🏆"
+                : "Good progress! Time for the final test!",
+              type: isCorrect ? "correct" : "step_advance",
+            },
+            questionPrefetched: true,
+            gamification: gamificationXP,
+          });
+        } else {
+          // FAILED Step 4 → back to Step 2
+          await prisma.learningSession.update({
+            where: { id: sessionId },
+            data: {
+              learningStep: 2,
+              stepCorrectCount: 0,
+              stepTotalCount: 0,
+            },
+          });
+
+          startPrefetch(
+            sessionId,
+            promptParams,
+            node.nodeCode,
+            node.title,
+            "check_understanding"
+          );
+
+          return NextResponse.json({
+            state: "PRACTICE",
+            learningStep: 2,
+            stepProgress: { correct: 0, total: 0, required: 1, outOf: 1 },
+            stepTransition: { from: 4, to: 2, reason: "failed" },
+            isCorrect,
+            mastery: formatMastery(updatedMastery),
+            feedback: {
+              message:
+                "Let's go back and strengthen our understanding! 📚",
+              type: "retry",
+            },
+            questionPrefetched: true,
+            gamification: gamificationXP,
+          });
+        }
+      }
+
+      // Step 4 not complete yet — continue
+      startPrefetch(
+        sessionId,
+        promptParams,
+        node.nodeCode,
+        node.title,
+        "independent_practice"
+      );
+
+      return NextResponse.json({
+        state: "PRACTICE",
+        learningStep: 4,
+        stepProgress: {
+          correct: newStepCorrect,
+          total: newStepTotal,
+          required: 4,
+          outOf: 5,
+        },
+        isCorrect,
+        mastery: formatMastery(updatedMastery),
+        feedback: {
+          message: isCorrect
+            ? "Correct! Keep it up!"
+            : "Not quite — stay focused!",
+          type: isCorrect ? "correct" : "incorrect",
+        },
+        questionPrefetched: true,
+        gamification: gamificationXP,
+      });
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // STEP 5: MASTERY PROOF (1 question, transfer)
+    // ═══════════════════════════════════════════════════════════
+    if (currentStep === 5) {
+      if (isCorrect) {
+        // ═══ MASTERY ACHIEVED! 🎉 ═══
+        const result = await transitionState(
+          sessionId,
+          "CELEBRATING",
+          "MASTERY_ACHIEVED",
+          {
+            nodeCode: node.nodeCode,
+            bktProbability: updatedMastery.bktProbability,
+          }
+        );
+
+        // Gamification: Node mastered
+        let masteryGamification = null;
+        try {
+          masteryGamification = await processNodeMastered(
+            session.studentId,
+            node.nodeCode,
+            node.title
+          );
+        } catch (e) {
+          console.error("Gamification mastery error:", e);
+        }
+
+        // Get next node
+        let nextNode = null;
+        try {
+          nextNode = await recommendNextNode(
+            session.studentId,
+            node.nodeCode
+          );
+        } catch (e) {
+          console.error("Next node error:", e);
+        }
+
+        // Generate celebration
+        const prompt = celebratingPrompt.buildPrompt({
+          ...promptParams,
+          nextNodeTitle: nextNode?.title,
+        });
+        const claudeResponse = await callClaude(prompt);
+        const celebration = claudeResponse
+          ? celebratingPrompt.parseResponse(claudeResponse)
+          : {
+              celebration: `Amazing! You've mastered ${node.title}!`,
+              funFact: "Learning is an adventure!",
+              nextTeaser: nextNode
+                ? `Up next: ${nextNode.title}!`
+                : "You've completed this learning path!",
+            };
+
+        return NextResponse.json({
+          state: result.newState,
+          recommendedAction: result.recommendedAction,
+          learningStep: 5,
+          isCorrect: true,
+          mastery: formatMastery(updatedMastery),
+          celebration,
+          nextNode,
+          gamification: masteryGamification ?? gamificationXP,
+        });
+      } else {
+        // FAILED mastery proof → back to Step 2
+        await prisma.learningSession.update({
+          where: { id: sessionId },
+          data: {
+            learningStep: 2,
+            stepCorrectCount: 0,
+            stepTotalCount: 0,
+          },
+        });
+
+        startPrefetch(
+          sessionId,
+          promptParams,
+          node.nodeCode,
+          node.title,
+          "check_understanding"
+        );
+
+        return NextResponse.json({
+          state: "PRACTICE",
+          learningStep: 2,
+          stepProgress: { correct: 0, total: 0, required: 1, outOf: 1 },
+          stepTransition: { from: 5, to: 2, reason: "failed" },
+          isCorrect: false,
+          mastery: formatMastery(updatedMastery),
+          feedback: {
+            message:
+              "Almost there! Let's review and try again. 🔄",
+            type: "retry",
+          },
+          questionPrefetched: true,
+          gamification: gamificationXP,
+        });
+      }
+    }
+
+    // ═══ Fallback (step 1 or unknown — shouldn't normally reach here) ═══
+    return NextResponse.json({
+      state: "PRACTICE",
+      learningStep: currentStep,
+      isCorrect,
+      mastery: formatMastery(updatedMastery),
+      feedback: {
+        message: "Let's keep going!",
+        type: isCorrect ? "correct" : "incorrect",
+      },
+    });
   } catch (err) {
     console.error("Session answer error:", err);
     return NextResponse.json(
@@ -269,6 +551,8 @@ export async function POST(request: Request) {
     );
   }
 }
+
+// ─── Helpers ───
 
 function buildPromptParams(
   student: { displayName: string; ageGroup: string; avatarPersonaId: string },
@@ -303,19 +587,5 @@ function formatMastery(mastery: MasteryData) {
     probability: Math.round(mastery.bktProbability * 100),
     practiceCount: mastery.practiceCount,
     correctCount: mastery.correctCount,
-  };
-}
-
-function getFallbackPracticeQuestion(nodeCode: string, title: string) {
-  return {
-    questionText: `Practice question for ${title}: What is 5 + 3?`,
-    options: [
-      { id: "A", text: "7", isCorrect: false },
-      { id: "B", text: "8", isCorrect: true },
-      { id: "C", text: "9", isCorrect: false },
-      { id: "D", text: "6", isCorrect: false },
-    ],
-    correctAnswer: "B",
-    explanation: "5 + 3 = 8",
   };
 }

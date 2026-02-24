@@ -245,6 +245,10 @@ model LearningSession {
   adaptationsTriggered  Int            @default(0)
   averageResponseTimeMs Int?
   frustrationPeakCount  Int            @default(0)
+  // 5-step learning loop tracking (teach → check → guided → independent → mastery proof)
+  learningStep         Int            @default(1)  // 1=teach, 2=check, 3=guided, 4=independent, 5=mastery
+  stepCorrectCount     Int            @default(0)  // correct answers in current step
+  stepTotalCount       Int            @default(0)  // total answers in current step
   // Review session fields
   reviewNodeIds        String[]       @default([])
   completedNodeIds     String[]       @default([])

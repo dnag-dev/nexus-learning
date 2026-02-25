@@ -10,7 +10,10 @@ import TeachingCard from "@/components/session/TeachingCard";
 import SessionHeader from "@/components/session/SessionHeader";
 import PracticeQuestion from "@/components/session/PracticeQuestion";
 import MasteryCelebration from "@/components/session/MasteryCelebration";
+import FluencyDrill from "@/components/session/FluencyDrill";
+import type { FluencyAnswerResult } from "@/components/session/FluencyDrill";
 import SessionStats, { MobileStatsRow } from "@/components/session/SessionStats";
+import NexusScore from "@/components/gamification/NexusScore";
 
 // ─── Types ───
 
@@ -85,6 +88,7 @@ type SessionPhase =
   | "celebrating"
   | "struggling"
   | "emotional_check"
+  | "fluency_drill"
   | "summary";
 
 // ─── Step labels ───
@@ -196,6 +200,12 @@ function SessionPage() {
   const [stepProgress, setStepProgress] = useState<StepProgress | null>(null);
   const [remediation, setRemediation] = useState<RemediationData | null>(null);
 
+  // ─── Fluency Drill State ───
+  const [fluencyConsecutive, setFluencyConsecutive] = useState(0);
+  const [fluencyBenchmarkMs, setFluencyBenchmarkMs] = useState<number | null>(null);
+  const [fluencyPersonalBest, setFluencyPersonalBest] = useState<number | null>(null);
+  const [nexusScore, setNexusScore] = useState<number | null>(null);
+
   // ─── Teaching Stream State ───
   const [teachingStreamUrl, setTeachingStreamUrl] = useState<string | null>(null);
   const [teachingReady, setTeachingReady] = useState(false);
@@ -222,6 +232,8 @@ function SessionPage() {
   const gamProfileRef = useRef<{ totalMastered: number; badges: string[] } | null>(null);
   const prevMasteryRef = useRef(0);
   const avatarRef = useRef<AvatarDisplayHandle>(null);
+  // ─── Response Time Tracking ───
+  const questionStartTimeRef = useRef<number>(0);
 
   // ─── Voice + Avatar Helpers ───
 
@@ -418,6 +430,7 @@ function SessionPage() {
       const data = await res.json();
       if (data.question) {
         setQuestion(data.question);
+        questionStartTimeRef.current = Date.now();
         if (data.learningStep) setLearningStep(data.learningStep);
       } else {
         setError("Failed to load question — please try again");
@@ -445,6 +458,10 @@ function SessionPage() {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 30000);
 
+        const responseTimeMs = questionStartTimeRef.current > 0
+          ? Date.now() - questionStartTimeRef.current
+          : undefined;
+
         const res = await fetch("/api/session/answer", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -457,6 +474,8 @@ function SessionPage() {
             selectedAnswerText: option.text,
             correctAnswerText: correctOption?.text ?? "",
             explanation: question.explanation,
+            // Response time tracking for mastery gating + fluency
+            responseTimeMs,
           }),
           signal: controller.signal,
         });
@@ -490,7 +509,49 @@ function SessionPage() {
           setCorrectStreak(0);
         }
 
+        // Update Nexus Score if returned
+        if (data.nexusScore?.nexusScore !== undefined) {
+          setNexusScore(data.nexusScore.nexusScore);
+        }
+
         // ═══ Handle response based on state ═══
+        if (data.state === "FLUENCY_DRILL") {
+          // Transition to fluency drill mode
+          setFluencyConsecutive(0);
+          if (data.nexusScore?.benchmarkMs) {
+            setFluencyBenchmarkMs(data.nexusScore.benchmarkMs);
+          }
+          if (data.nexusScore?.personalBestMs) {
+            setFluencyPersonalBest(data.nexusScore.personalBestMs);
+          }
+          setFeedback(data.feedback);
+          setPhase("feedback");
+          if (data.feedback?.message) {
+            triggerVoice(data.feedback.message);
+          }
+          // After feedback, switch to fluency mode
+          setTimeout(() => {
+            setFeedback(null);
+            setSelectedOption(null);
+            setPhase("fluency_drill");
+            // Fetch a fluency question
+            setIsLoading(true);
+            fetch(`/api/session/next-question?sessionId=${sessionId}`, {
+              signal: AbortSignal.timeout(25000),
+            })
+              .then((r) => r.json())
+              .then((d) => {
+                if (d.question) {
+                  setQuestion(d.question);
+                  questionStartTimeRef.current = Date.now();
+                }
+                setIsLoading(false);
+              })
+              .catch(() => setIsLoading(false));
+          }, 2500);
+          return;
+        }
+
         if (data.state === "CELEBRATING") {
           setConceptsMasteredThisSession((prev) => prev + 1);
           setCelebration(data.celebration);
@@ -532,6 +593,7 @@ function SessionPage() {
                 setIsLoading(false);
                 if (nextQ) {
                   setQuestion(nextQ);
+                  questionStartTimeRef.current = Date.now();
                 }
               });
             }, feedbackDelay);
@@ -911,6 +973,100 @@ function SessionPage() {
         </motion.div>
       )}
 
+      {/* ─── Fluency Drill ─── */}
+      {phase === "fluency_drill" && (
+        <motion.div
+          key="fluency-drill"
+          variants={pageVariants}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+          transition={pageTransition}
+          className="min-h-screen bg-[#0D1B2A]"
+        >
+          <SessionHeader
+            personaId={personaId}
+            speaking={isSpeaking}
+            avatarEmotion="encouraging"
+            node={node}
+            mastery={mastery}
+            domain={currentDomain}
+            questionsAnswered={questionsAnswered}
+            onEnd={endSession}
+          />
+          <div className="lg:hidden">
+            <MobileStatsRow
+              {...statsProps}
+              isExpanded={statsExpanded}
+              onToggle={() => setStatsExpanded((prev) => !prev)}
+            />
+          </div>
+          <div className="pt-4">
+            {isLoading ? (
+              <main className="max-w-2xl mx-auto px-4 py-8">
+                <div className="flex flex-col items-center justify-center py-20">
+                  <div className="flex gap-2">
+                    <div className="w-3 h-3 rounded-full bg-orange-500 animate-teaching-dot" style={{ animationDelay: "0ms" }} />
+                    <div className="w-3 h-3 rounded-full bg-orange-500 animate-teaching-dot" style={{ animationDelay: "150ms" }} />
+                    <div className="w-3 h-3 rounded-full bg-orange-500 animate-teaching-dot" style={{ animationDelay: "300ms" }} />
+                  </div>
+                  <p className="text-gray-400 text-sm mt-4">
+                    Preparing fluency drill...
+                  </p>
+                </div>
+              </main>
+            ) : question ? (
+              <FluencyDrill
+                sessionId={sessionId!}
+                question={question}
+                benchmarkMs={fluencyBenchmarkMs}
+                consecutiveCorrect={fluencyConsecutive}
+                personalBestMs={fluencyPersonalBest}
+                onAnswer={(result: FluencyAnswerResult) => {
+                  setFluencyConsecutive(result.consecutiveCorrect);
+                  if (result.personalBestMs !== null) {
+                    setFluencyPersonalBest(result.personalBestMs);
+                  }
+                  if (result.nexusScore !== null) {
+                    setNexusScore(result.nexusScore);
+                  }
+                  setQuestionsAnswered((prev) => prev + 1);
+                  if (result.isCorrect) {
+                    setCorrectStreak((prev) => prev + 1);
+                  } else {
+                    setCorrectStreak(0);
+                  }
+                }}
+                onComplete={() => {
+                  // Fluency mastery achieved — celebrate
+                  setCelebration({
+                    celebration: "You've achieved true fluency! Speed AND accuracy mastered!",
+                    funFact: "Your brain now processes this automatically — like riding a bike!",
+                    nextTeaser: "Ready for the next challenge?",
+                  });
+                  setPhase("celebrating");
+                }}
+                onRequestNextQuestion={() => {
+                  setIsLoading(true);
+                  fetch(`/api/session/next-question?sessionId=${sessionId}`, {
+                    signal: AbortSignal.timeout(25000),
+                  })
+                    .then((r) => r.json())
+                    .then((d) => {
+                      if (d.question) {
+                        setQuestion(d.question);
+                        questionStartTimeRef.current = Date.now();
+                      }
+                      setIsLoading(false);
+                    })
+                    .catch(() => setIsLoading(false));
+                }}
+              />
+            ) : null}
+          </div>
+        </motion.div>
+      )}
+
       {/* ─── Struggling ─── */}
       {phase === "struggling" && (
         <motion.div
@@ -1133,6 +1289,14 @@ function SessionPage() {
                       <p className="text-xs text-gray-400">Hints</p>
                     </div>
                   </div>
+
+                  {/* Nexus Score */}
+                  {nexusScore !== null && nexusScore > 0 && (
+                    <div className="bg-[#1A2744] rounded-2xl p-5 border border-white/10 mb-4">
+                      <h3 className="font-semibold text-white mb-3 text-center">Nexus Score</h3>
+                      <NexusScore score={nexusScore} size="sm" showBreakdown={false} />
+                    </div>
+                  )}
 
                   {/* Subject XP */}
                   {sessionXP > 0 && (

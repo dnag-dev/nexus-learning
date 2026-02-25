@@ -22,6 +22,8 @@ import {
   CHALLENGE_CONFIGS,
 } from "@/lib/gamification";
 import ReviewDueWidget from "@/components/review/ReviewDueWidget";
+import NexusScore from "@/components/gamification/NexusScore";
+import TopicTree from "@/components/constellation/TopicTree";
 
 const PERSONA_EMOJI: Record<string, string> = {
   cosmo: "🐻",
@@ -81,6 +83,13 @@ interface ReviewData {
   };
 }
 
+interface NexusScoreData {
+  nexusScore: number;
+  accuracy: number;
+  speed: number;
+  retention: number;
+}
+
 const DEFAULT_STREAK = {
   type: "daily" as const,
   current: 0,
@@ -100,6 +109,7 @@ export default function KidDashboardPage() {
     null
   );
   const [reviews, setReviews] = useState<ReviewData | null>(null);
+  const [avgNexusScore, setAvgNexusScore] = useState<NexusScoreData | null>(null);
 
   // ─── Subject selection + focus text ───
   const [selectedSubject, setSelectedSubject] = useState<"MATH" | "ENGLISH">("MATH");
@@ -110,9 +120,10 @@ export default function KidDashboardPage() {
     if (!studentId) return;
 
     try {
-      const [gamRes, revRes] = await Promise.all([
+      const [gamRes, revRes, nexusRes] = await Promise.all([
         fetch(`/api/student/${studentId}/gamification`),
         fetch(`/api/student/${studentId}/reviews`),
+        fetch(`/api/student/${studentId}/nexus-score`),
       ]);
 
       if (gamRes.ok) {
@@ -123,6 +134,21 @@ export default function KidDashboardPage() {
       if (revRes.ok) {
         const data = await revRes.json();
         setReviews(data);
+      }
+
+      if (nexusRes.ok) {
+        const data = await nexusRes.json();
+        // Calculate average nexus score across all nodes
+        if (data.nodes && data.nodes.length > 0) {
+          const nodes = data.nodes as Array<{ nexusScore: number; accuracy: number; speed: number; retention: number }>;
+          const avg = {
+            nexusScore: Math.round(nodes.reduce((sum: number, n: { nexusScore: number }) => sum + n.nexusScore, 0) / nodes.length),
+            accuracy: Math.round(nodes.reduce((sum: number, n: { accuracy: number }) => sum + n.accuracy, 0) / nodes.length),
+            speed: Math.round(nodes.reduce((sum: number, n: { speed: number }) => sum + n.speed, 0) / nodes.length),
+            retention: Math.round(nodes.reduce((sum: number, n: { retention: number }) => sum + n.retention, 0) / nodes.length),
+          };
+          setAvgNexusScore(avg);
+        }
       }
     } catch (err) {
       console.error("Failed to load dashboard data:", err);
@@ -311,6 +337,38 @@ export default function KidDashboardPage() {
       {/* Streak Widget */}
       <div className="bg-[#1A2744] rounded-2xl border border-white/5 p-4">
         <StreakWidget streak={streak} />
+      </div>
+
+      {/* Nexus Score Summary */}
+      {avgNexusScore && avgNexusScore.nexusScore > 0 && (
+        <div className="bg-[#1A2744] rounded-2xl border border-white/5 p-4">
+          <h3 className="text-white font-semibold mb-3 text-center">Nexus Score</h3>
+          <NexusScore
+            score={avgNexusScore.nexusScore}
+            accuracy={avgNexusScore.accuracy}
+            speed={avgNexusScore.speed}
+            retention={avgNexusScore.retention}
+            size="md"
+          />
+        </div>
+      )}
+
+      {/* Topic Tree Preview */}
+      <div className="bg-[#1A2744] rounded-2xl border border-white/5 p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-white font-semibold">Learning Path</h3>
+          <Link
+            href="/kid/constellation"
+            className="text-xs text-gray-400 hover:text-white transition-colors"
+          >
+            View All →
+          </Link>
+        </div>
+        <TopicTree
+          studentId={studentId}
+          domain={selectedSubject === "MATH" ? "MATH" : "ENGLISH"}
+          compact
+        />
       </div>
 
       {/* Boss Challenge (if available) */}

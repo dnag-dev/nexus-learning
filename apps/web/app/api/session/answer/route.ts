@@ -33,6 +33,8 @@ import {
   processNodeMastered,
 } from "@/lib/gamification/gamification-service";
 import { startPrefetch } from "@/lib/session/question-prefetch";
+import { evaluateTrueMastery } from "@/lib/session/mastery-gate";
+import { updateNexusScore } from "@/lib/session/nexus-score";
 
 export const maxDuration = 30;
 
@@ -71,6 +73,8 @@ export async function POST(request: Request) {
       selectedAnswerText,
       correctAnswerText,
       explanation,
+      // Response time tracking (client sends milliseconds from question display to submit)
+      responseTimeMs,
     } = body;
 
     if (!sessionId || isCorrect === undefined) {
@@ -102,6 +106,66 @@ export async function POST(request: Request) {
       node.id,
       isCorrect
     );
+
+    // ═══ Record QuestionResponse for mastery gating + speed tracking ═══
+    const stepType = stepToType(currentStep);
+    if (responseTimeMs && responseTimeMs > 0) {
+      try {
+        await prisma.questionResponse.create({
+          data: {
+            studentId: session.studentId,
+            nodeId: node.id,
+            sessionId,
+            questionText: questionText ?? "",
+            isCorrect,
+            responseTimeMs: Math.round(responseTimeMs),
+            questionType: stepType,
+          },
+        });
+
+        // Update personal best on correct answers
+        if (isCorrect) {
+          const existing = await prisma.masteryScore.findUnique({
+            where: {
+              studentId_nodeId: {
+                studentId: session.studentId,
+                nodeId: node.id,
+              },
+            },
+            select: { personalBestMs: true },
+          });
+          if (
+            !existing?.personalBestMs ||
+            responseTimeMs < existing.personalBestMs
+          ) {
+            await prisma.masteryScore.update({
+              where: {
+                studentId_nodeId: {
+                  studentId: session.studentId,
+                  nodeId: node.id,
+                },
+              },
+              data: { personalBestMs: Math.round(responseTimeMs) },
+            });
+          }
+        }
+      } catch (e) {
+        console.error("QuestionResponse recording error (non-critical):", e);
+      }
+    }
+
+    // ═══ Update Nexus Score on every answer ═══
+    let nexusBreakdown = null;
+    try {
+      nexusBreakdown = await updateNexusScore(
+        session.studentId,
+        node.id,
+        node.gradeLevel,
+        node.domain
+      );
+    } catch (e) {
+      console.error("Nexus Score update error (non-critical):", e);
+    }
 
     // Update session step counters
     const newStepCorrect = session.stepCorrectCount + (isCorrect ? 1 : 0);
@@ -428,11 +492,132 @@ export async function POST(request: Request) {
     }
 
     // ═══════════════════════════════════════════════════════════
-    // STEP 5: MASTERY PROOF (1 question, transfer)
+    // STEP 5: MASTERY PROOF (1 question, transfer) + TRUE MASTERY GATE
     // ═══════════════════════════════════════════════════════════
     if (currentStep === 5) {
       if (isCorrect) {
-        // ═══ MASTERY ACHIEVED! 🎉 ═══
+        // ═══ Run True Mastery Gate ═══
+        let masteryGate = null;
+        try {
+          masteryGate = await evaluateTrueMastery(session.studentId, node.id);
+        } catch (e) {
+          console.error("Mastery gate evaluation error:", e);
+        }
+
+        // Check mastery gate recommendation
+        if (masteryGate && masteryGate.recommendation === "fluency_drill") {
+          // Accuracy+retention pass but speed fails → fluency drill mode
+          await prisma.masteryScore.update({
+            where: {
+              studentId_nodeId: {
+                studentId: session.studentId,
+                nodeId: node.id,
+              },
+            },
+            data: { fluencyDrillMode: true, consecutiveCorrect: 0 },
+          });
+
+          await prisma.learningSession.update({
+            where: { id: sessionId },
+            data: { mode: "fluency" },
+          });
+
+          return NextResponse.json({
+            state: "FLUENCY_DRILL",
+            learningStep: 5,
+            isCorrect: true,
+            mastery: formatMastery(updatedMastery),
+            nexusScore: nexusBreakdown,
+            masteryGate: {
+              accuracy: masteryGate.accuracy,
+              speed: masteryGate.speed,
+              retention: masteryGate.retention,
+              consistency: masteryGate.consistency,
+            },
+            feedback: {
+              message:
+                "You know this well! Let's build speed — Fluency Drill time! 🏎️",
+              type: "fluency_drill",
+            },
+            gamification: gamificationXP,
+          });
+        }
+
+        if (masteryGate && masteryGate.recommendation === "retention_review") {
+          // Accuracy passes but retention fails → schedule review
+          startPrefetch(
+            sessionId,
+            promptParams,
+            node.nodeCode,
+            node.title,
+            "check_understanding"
+          );
+
+          await prisma.learningSession.update({
+            where: { id: sessionId },
+            data: {
+              learningStep: 2,
+              stepCorrectCount: 0,
+              stepTotalCount: 0,
+            },
+          });
+
+          return NextResponse.json({
+            state: "PRACTICE",
+            learningStep: 2,
+            stepProgress: { correct: 0, total: 0, required: 1, outOf: 1 },
+            stepTransition: { from: 5, to: 2, reason: "retention_review" },
+            isCorrect: true,
+            mastery: formatMastery(updatedMastery),
+            nexusScore: nexusBreakdown,
+            feedback: {
+              message:
+                "Great accuracy! But let's make sure this sticks — more practice! 🧠",
+              type: "retention_review",
+            },
+            questionPrefetched: true,
+            gamification: gamificationXP,
+          });
+        }
+
+        if (masteryGate && masteryGate.recommendation === "practice") {
+          // Not enough evidence yet → back to practice
+          startPrefetch(
+            sessionId,
+            promptParams,
+            node.nodeCode,
+            node.title,
+            "check_understanding"
+          );
+
+          await prisma.learningSession.update({
+            where: { id: sessionId },
+            data: {
+              learningStep: 2,
+              stepCorrectCount: 0,
+              stepTotalCount: 0,
+            },
+          });
+
+          return NextResponse.json({
+            state: "PRACTICE",
+            learningStep: 2,
+            stepProgress: { correct: 0, total: 0, required: 1, outOf: 1 },
+            stepTransition: { from: 5, to: 2, reason: "more_practice" },
+            isCorrect: true,
+            mastery: formatMastery(updatedMastery),
+            nexusScore: nexusBreakdown,
+            feedback: {
+              message:
+                "Good answer! Let's keep building mastery — practice makes permanent! 💪",
+              type: "more_practice",
+            },
+            questionPrefetched: true,
+            gamification: gamificationXP,
+          });
+        }
+
+        // ═══ TRUE MASTERY ACHIEVED! 🎉 (gate passed or no gate data) ═══
         const result = await transitionState(
           sessionId,
           "CELEBRATING",
@@ -442,6 +627,21 @@ export async function POST(request: Request) {
             bktProbability: updatedMastery.bktProbability,
           }
         );
+
+        // Mark as truly mastered
+        try {
+          await prisma.masteryScore.update({
+            where: {
+              studentId_nodeId: {
+                studentId: session.studentId,
+                nodeId: node.id,
+              },
+            },
+            data: { trulyMastered: true, fluencyDrillMode: false },
+          });
+        } catch {
+          // Non-critical
+        }
 
         // Gamification: Node mastered
         let masteryGamification = null;
@@ -488,6 +688,7 @@ export async function POST(request: Request) {
           learningStep: 5,
           isCorrect: true,
           mastery: formatMastery(updatedMastery),
+          nexusScore: nexusBreakdown,
           celebration,
           nextNode,
           gamification: masteryGamification ?? gamificationXP,
@@ -518,6 +719,7 @@ export async function POST(request: Request) {
           stepTransition: { from: 5, to: 2, reason: "failed" },
           isCorrect: false,
           mastery: formatMastery(updatedMastery),
+          nexusScore: nexusBreakdown,
           feedback: {
             message:
               "Almost there! Let's review and try again. 🔄",

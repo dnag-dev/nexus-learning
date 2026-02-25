@@ -26,6 +26,8 @@ import {
   CHALLENGE_CONFIGS,
 } from "@/lib/gamification";
 import ReviewDueWidget from "@/components/review/ReviewDueWidget";
+import TopicTree from "@/components/constellation/TopicTree";
+import NexusScore from "@/components/gamification/NexusScore";
 
 interface MasteryMapResponse {
   nodes: Array<{
@@ -97,6 +99,7 @@ export default function KidConstellationPage() {
   const router = useRouter();
   const { studentId } = useChild();
   const [selectedStar, setSelectedStar] = useState<StarNode | null>(null);
+  const [viewMode, setViewMode] = useState<"starmap" | "topictree">("starmap");
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -265,21 +268,53 @@ export default function KidConstellationPage() {
         <XPBar xp={xp} compact className="w-48" />
       </div>
 
+      {/* View Toggle */}
+      <div className="flex gap-2 justify-center">
+        <button
+          onClick={() => setViewMode("starmap")}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            viewMode === "starmap"
+              ? "bg-purple-600 text-white"
+              : "bg-white/5 text-gray-400 hover:text-white"
+          }`}
+        >
+          🌌 Star Map
+        </button>
+        <button
+          onClick={() => setViewMode("topictree")}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            viewMode === "topictree"
+              ? "bg-purple-600 text-white"
+              : "bg-white/5 text-gray-400 hover:text-white"
+          }`}
+        >
+          🌳 Topic Tree
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Star Map */}
+        {/* Main Content */}
         <div className="lg:col-span-3 relative">
-          <StarMap
-            data={constellationData}
-            height={550}
-            onStarClick={setSelectedStar}
-            selectedStarId={selectedStar?.id}
-            className="w-full"
-          />
-          <StarDetail
-            star={selectedStar}
-            onClose={() => setSelectedStar(null)}
-            onStartSession={handleStartSession}
-          />
+          {viewMode === "starmap" ? (
+            <>
+              <StarMap
+                data={constellationData}
+                height={550}
+                onStarClick={setSelectedStar}
+                selectedStarId={selectedStar?.id}
+                className="w-full"
+              />
+              <StarDetail
+                star={selectedStar}
+                onClose={() => setSelectedStar(null)}
+                onStartSession={handleStartSession}
+              />
+            </>
+          ) : (
+            <div className="bg-[#1A2744] rounded-2xl border border-white/5 p-6">
+              <TopicTree studentId={studentId} />
+            </div>
+          )}
         </div>
 
         {/* Sidebar */}

@@ -202,6 +202,8 @@ model Student {
   classEnrollments      ClassStudent[]
   assignmentSubmissions AssignmentSubmission[]
   interventionAlerts    InterventionAlert[]
+  questionResponses     QuestionResponse[]
+  branchUnlocks         BranchUnlock[]
 
   @@index([parentId])
   @@map("students")
@@ -218,8 +220,9 @@ model KnowledgeNode {
   difficulty   Int             @default(1)
   prerequisites KnowledgeNode[] @relation("NodePrerequisites")
   successors    KnowledgeNode[] @relation("NodePrerequisites")
-  masteryScores MasteryScore[]
-  sessions      LearningSession[]
+  masteryScores      MasteryScore[]
+  sessions           LearningSession[]
+  questionResponses  QuestionResponse[]
 
   @@index([gradeLevel, domain])
   @@index([subject])
@@ -249,6 +252,8 @@ model LearningSession {
   learningStep         Int            @default(1)  // 1=teach, 2=check, 3=guided, 4=independent, 5=mastery
   stepCorrectCount     Int            @default(0)  // correct answers in current step
   stepTotalCount       Int            @default(0)  // total answers in current step
+  // 3-Engine: session mode
+  mode                 String         @default("standard") // "standard" | "fluency" | "challenge"
   // Review session fields
   reviewNodeIds        String[]       @default([])
   completedNodeIds     String[]       @default([])
@@ -256,6 +261,7 @@ model LearningSession {
   student              Student        @relation(fields: [studentId], references: [id], onDelete: Cascade)
   currentNode          KnowledgeNode? @relation(fields: [currentNodeId], references: [id])
   emotionalLogs        EmotionalLog[]
+  questionResponses    QuestionResponse[]
 
   @@index([studentId])
   @@index([currentNodeId])
@@ -276,6 +282,14 @@ model MasteryScore {
   easinessFactor  Float        @default(2.5)
   reviewCount     Int          @default(0)
   reviewInterval  Int          @default(1) // days
+  // ─── 3-Engine: True Mastery + Nexus Score + Fluency ───
+  nexusScore         Float    @default(0)     // composite 0-100
+  speedTrendMs       Float?                   // rolling avg response time
+  retentionScore     Float    @default(0)     // 0-1, from spaced repetition checks
+  trulyMastered      Boolean  @default(false) // all 4 criteria met
+  fluencyDrillMode   Boolean  @default(false) // currently in fluency drill
+  personalBestMs     Int?                     // fastest correct response time
+  consecutiveCorrect Int      @default(0)     // for fluency: 10 consecutive at benchmark
   student         Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
   node            KnowledgeNode @relation(fields: [nodeId], references: [id])
 
@@ -433,6 +447,72 @@ model WebhookLog {
   @@index([eventType])
   @@index([processedAt])
   @@map("webhook_logs")
+}
+
+// ─── 3-Engine: Question Response Tracking ───
+
+model QuestionResponse {
+  id             String          @id @default(cuid())
+  studentId      String
+  nodeId         String
+  sessionId      String
+  questionText   String
+  isCorrect      Boolean
+  responseTimeMs Int             // milliseconds to answer
+  questionType   String          // check_understanding, guided_practice, etc.
+  createdAt      DateTime        @default(now())
+
+  student        Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  node           KnowledgeNode   @relation(fields: [nodeId], references: [id])
+  session        LearningSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([studentId, nodeId, createdAt])
+  @@index([studentId, nodeId, questionType])
+  @@map("question_responses")
+}
+
+model FluencyBenchmark {
+  id          String  @id @default(cuid())
+  domain      String  // ADDITION, MULTIPLICATION, GRAMMAR, etc.
+  gradeLevel  String  // K, 1, 2, 3...
+  targetTimeMs Int    // target response time in ms
+  description String?
+
+  @@unique([domain, gradeLevel])
+  @@map("fluency_benchmarks")
+}
+
+model TopicBranch {
+  id                    String   @id @default(cuid())
+  name                  String   // "Multiplication Mastery", "Fraction Explorer"
+  description           String
+  domain                String
+  gradeLevel            String
+  nodeIds               String[] // ordered list of KnowledgeNode IDs in this branch
+  prerequisiteBranchIds String[] // branches that must be completed first
+  isAdvanced            Boolean  @default(false)
+  sortOrder             Int      @default(0)
+
+  unlocks               BranchUnlock[]
+
+  @@map("topic_branches")
+}
+
+model BranchUnlock {
+  id             String    @id @default(cuid())
+  studentId      String
+  branchId       String
+  unlockedAt     DateTime  @default(now())
+  completedAt    DateTime?
+  nodesCompleted Int       @default(0)
+  totalNodes     Int
+
+  student        Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  branch         TopicBranch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, branchId])
+  @@index([studentId])
+  @@map("branch_unlocks")
 }
 
 // ─── Phase 11: Teacher Dashboard Models ───

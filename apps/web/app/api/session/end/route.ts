@@ -13,6 +13,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@aauti/db";
 import { transitionState } from "@/lib/session/state-machine";
 import { processSessionComplete } from "@/lib/gamification/gamification-service";
+import { updatePlansAfterSession } from "@/lib/learning-plan/eta-calculator";
 
 export const maxDuration = 30;
 
@@ -80,11 +81,21 @@ export async function POST(request: Request) {
       console.error("Gamification session-end error (non-critical):", e);
     }
 
+    // ═══ GPS: Recalculate ETA for all active learning plans ═══
+    // Updates projected completion dates, velocity, and generates insights
+    let gpsUpdate = null;
+    try {
+      gpsUpdate = await updatePlansAfterSession(session.studentId, sessionId);
+    } catch (e) {
+      console.error("GPS plan update error (non-critical):", e);
+    }
+
     return NextResponse.json({
       state: result.newState,
       recommendedAction: result.recommendedAction,
       summary,
       gamification,
+      gpsUpdate,
     });
   } catch (err) {
     console.error("Session end error:", err);

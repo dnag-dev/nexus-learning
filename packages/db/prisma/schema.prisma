@@ -688,18 +688,22 @@ model LearningPlan {
 }
 
 model ETASnapshot {
-  id                    String       @id @default(cuid())
-  planId                String
-  plan                  LearningPlan @relation(fields: [planId], references: [id])
-  hoursRemaining        Float
-  projectedCompletion   DateTime
-  velocityAtSnapshot    Float
-  conceptsRemaining     Int
-  triggeredBySessionId  String?
-  createdAt             DateTime     @default(now())
+  id                      String       @id @default(cuid())
+  planId                  String
+  plan                    LearningPlan @relation(fields: [planId], references: [id])
+  hoursRemaining          Float
+  projectedCompletion     DateTime
+  velocityAtSnapshot      Float
+  conceptsRemaining       Int
+  conceptsMastered        Int          @default(0)
+  isAheadOfSchedule       Boolean      @default(true)
+  daysDifference          Int          @default(0)
+  insight                 String?
+  triggeredBySessionId    String?
+  recordedAt              DateTime     @default(now())
 
   @@index([planId])
-  @@index([createdAt])
+  @@index([recordedAt])
   @@map("eta_snapshots")
 }
 

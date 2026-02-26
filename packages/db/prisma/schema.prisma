@@ -75,6 +75,7 @@ enum MasteryLevel {
   PROFICIENT
   ADVANCED
   MASTERED
+  FLUENT     // Speed + accuracy + retention all confirmed
 }
 
 enum EmotionalState {

@@ -17,7 +17,7 @@ const ELA_GRADES = ["G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9", "G10",
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { studentId, nodeCode, subject: requestedSubject, planId } = body;
+    const { studentId, nodeCode, subject: requestedSubject, planId, topic } = body;
 
     if (!studentId) {
       return NextResponse.json(
@@ -57,6 +57,9 @@ export async function POST(request: Request) {
       targetNode = await prisma.knowledgeNode.findUnique({
         where: { nodeCode },
       });
+    } else if (topic && typeof topic === "string" && topic.trim().length >= 2) {
+      // ─── Topic search: find the best matching concept by title/description ───
+      targetNode = await findConceptByTopic(topic.trim(), subject);
     } else if (planId) {
       // ─── Plan-aware mode: pick next concept from specified plan ───
       const nextInPlan = await getNextConceptInPlan(planId);
@@ -342,6 +345,74 @@ async function selectMostUrgentConcept(
     if (next) {
       return { nodeCode: next.nodeCode, planId: plan.id };
     }
+  }
+
+  return null;
+}
+
+// ─── Topic Search: Find Concept by Free-Text ───
+
+/**
+ * Searches knowledge nodes by title and description to find the best match
+ * for a user's free-text topic request (e.g., "exponents", "fractions").
+ *
+ * Scoring strategy:
+ * - Exact word match in title: +10
+ * - Partial match in title: +5
+ * - Match in description: +3
+ * - Prefer lower difficulty (more introductory) concepts: +1 for difficulty ≤ 3
+ */
+async function findConceptByTopic(
+  topic: string,
+  subject: string
+): Promise<{ id: string; nodeCode: string; title: string; description: string; gradeLevel: string; domain: string; difficulty: number; subject: string } | null> {
+  // Fetch all nodes for this subject (typically ~100-200 nodes, fast query)
+  const allNodes = await prisma.knowledgeNode.findMany({
+    where: { subject: subject as any },
+    orderBy: { difficulty: "asc" },
+  });
+
+  if (allNodes.length === 0) return null;
+
+  const topicLower = topic.toLowerCase();
+  const topicWords = topicLower.split(/\s+/).filter((w) => w.length >= 2);
+
+  // Score each node
+  const scored = allNodes.map((node) => {
+    const titleLower = node.title.toLowerCase();
+    const descLower = node.description.toLowerCase();
+    let score = 0;
+
+    for (const word of topicWords) {
+      // Exact word boundary match in title (strongest signal)
+      const wordRegex = new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "i");
+      if (wordRegex.test(titleLower)) {
+        score += 10;
+      } else if (titleLower.includes(word)) {
+        // Partial match in title
+        score += 5;
+      }
+
+      // Match in description
+      if (descLower.includes(word)) {
+        score += 3;
+      }
+    }
+
+    // Bonus for introductory-level concepts (easier = better starting point)
+    if (node.difficulty <= 3) {
+      score += 1;
+    }
+
+    return { node, score };
+  });
+
+  // Sort by score descending, then difficulty ascending (prefer easier if tied)
+  scored.sort((a, b) => b.score - a.score || a.node.difficulty - b.node.difficulty);
+
+  // Return the best match if it has any relevance
+  if (scored[0] && scored[0].score > 0) {
+    return scored[0].node;
   }
 
   return null;

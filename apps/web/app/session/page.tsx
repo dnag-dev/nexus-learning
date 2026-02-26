@@ -178,6 +178,9 @@ function SessionPage() {
   const planIdParam = searchParams.get("planId") || undefined;
   const nodeCodeParam = searchParams.get("nodeCode") || undefined;
 
+  // ─── Topic Search State ───
+  const [topicInput, setTopicInput] = useState("");
+
   // ─── Core State ───
   const [phase, setPhase] = useState<SessionPhase>("idle");
   const [shareToast, setShareToast] = useState(false);
@@ -390,6 +393,7 @@ function SessionPage() {
           subject: subjectParam,
           ...(planIdParam ? { planId: planIdParam } : {}),
           ...(nodeCodeParam ? { nodeCode: nodeCodeParam } : {}),
+          ...(topicInput.trim().length >= 2 && !nodeCodeParam ? { topic: topicInput.trim() } : {}),
         }),
         signal: controller.signal,
       });
@@ -762,16 +766,40 @@ function SessionPage() {
             <h1 className="text-3xl font-bold text-white mb-3">
               Ready to Learn?
             </h1>
-            <p className="text-gray-400 mb-8">
-              Start a learning session and your AI tutor will guide you through
-              new concepts, practice problems, and celebrations!
+            <p className="text-gray-400 mb-6">
+              Type a topic you want to learn, or just press Start and your AI
+              tutor will pick the next best concept for you!
             </p>
+            <div className="relative mb-4">
+              <input
+                type="text"
+                value={topicInput}
+                onChange={(e) => setTopicInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !isLoading) startSession();
+                }}
+                placeholder="e.g. exponents, fractions, algebra..."
+                className="w-full px-5 py-4 bg-slate-800/80 border border-white/10 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 text-base"
+              />
+              {topicInput.length > 0 && (
+                <button
+                  onClick={() => setTopicInput("")}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
             <button
               onClick={startSession}
               disabled={isLoading}
               className="w-full py-4 text-lg font-semibold text-white bg-aauti-primary rounded-2xl hover:bg-aauti-primary/90 transition-colors disabled:opacity-50"
             >
-              {isLoading ? "Setting up..." : "Start Learning! 🚀"}
+              {isLoading
+                ? "Setting up..."
+                : topicInput.trim().length >= 2
+                  ? `Learn "${topicInput.trim()}" 🚀`
+                  : "Start Learning! 🚀"}
             </button>
             {/* GPS navigation — show when student has active plans */}
             {planIdParam && (

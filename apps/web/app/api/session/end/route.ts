@@ -14,6 +14,7 @@ import { prisma } from "@aauti/db";
 import { transitionState } from "@/lib/session/state-machine";
 import { processSessionComplete } from "@/lib/gamification/gamification-service";
 import { updatePlansAfterSession } from "@/lib/learning-plan/eta-calculator";
+import { adaptPlansAfterSession } from "@/lib/learning-plan/plan-adapter";
 
 export const maxDuration = 30;
 
@@ -90,12 +91,27 @@ export async function POST(request: Request) {
       console.error("GPS plan update error (non-critical):", e);
     }
 
+    // ═══ GPS: Adapt learning plans based on session performance ═══
+    // Runs 6 adaptation rules (pacing, inactivity, failed reviews, schedule)
+    let planAdaptation = null;
+    try {
+      planAdaptation = await adaptPlansAfterSession(session.studentId, sessionId);
+    } catch (e) {
+      console.error("GPS plan adaptation error (non-critical):", e);
+    }
+
     return NextResponse.json({
       state: result.newState,
       recommendedAction: result.recommendedAction,
       summary,
       gamification,
       gpsUpdate,
+      planAdaptation: planAdaptation
+        ? {
+            adaptationsCount: planAdaptation.adaptations.length,
+            message: planAdaptation.message,
+          }
+        : null,
     });
   } catch (err) {
     console.error("Session end error:", err);

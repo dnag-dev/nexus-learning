@@ -27,6 +27,8 @@ enum GradeLevel {
   G8
   G9
   G10
+  G11
+  G12
 }
 
 // ─── Subject (MATH or ENGLISH) ───
@@ -42,17 +44,32 @@ enum AgeGroup {
 }
 
 enum KnowledgeDomain {
-  // Math domains
+  // Math domains (K-5)
   COUNTING
   OPERATIONS
   GEOMETRY
   MEASUREMENT
   DATA
+  // Math domains (6-12)
+  RATIOS
+  EXPRESSIONS
+  EQUATIONS
+  FUNCTIONS
+  NUMBER_SYSTEM
+  STATISTICS
+  ALGEBRA
+  TRIGONOMETRY
+  CALCULUS
   // English Language Arts domains
   GRAMMAR
   READING
   WRITING
   VOCABULARY
+  // ELA domains (6-12)
+  RHETORIC
+  LITERATURE
+  COMPOSITION
+  RESEARCH
 }
 
 enum SessionState {

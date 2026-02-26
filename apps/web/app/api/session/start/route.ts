@@ -11,8 +11,8 @@ export const maxDuration = 30;
  * Grade levels for each subject.
  * Math uses K-G5; English (ELA) uses G1-G10 (matching seeded ELA nodes).
  */
-const MATH_GRADES = ["K", "G1", "G2", "G3", "G4", "G5"];
-const ELA_GRADES = ["G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9", "G10"];
+const MATH_GRADES = ["K", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9", "G10", "G11", "G12"];
+const ELA_GRADES = ["G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9", "G10", "G11", "G12"];
 
 export async function POST(request: Request) {
   try {

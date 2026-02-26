@@ -40,10 +40,14 @@ const MATH_NODES_BY_GRADE: Record<string, string[]> = {
     "5.NBT.1", "5.NBT.2", "5.NBT.3", "5.NBT.5", "5.NBT.6", "5.NBT.7",
     "5.NF.1", "5.NF.2", "5.NF.3", "5.NF.4", "5.NF.6", "5.MD.1", "5.MD.3", "5.G.1",
   ],
-  // G6-G8: Nodes don't exist yet — will be populated in Step 15
-  G6: [],
-  G7: [],
-  G8: [],
+  // G6-G12: Populated in Step 15
+  G6: ["6.RP.1", "6.RP.2", "6.RP.3", "6.NS.1", "6.NS.5", "6.NS.6", "6.NS.7", "6.EE.1", "6.EE.2", "6.EE.5", "6.EE.7", "6.G.1", "6.SP.1"],
+  G7: ["7.RP.1", "7.RP.2", "7.RP.3", "7.NS.1", "7.NS.2", "7.EE.1", "7.EE.4", "7.G.4", "7.G.6", "7.SP.1"],
+  G8: ["8.NS.1", "8.EE.1", "8.EE.5", "8.EE.7", "8.EE.8", "8.F.1", "8.F.2", "8.F.4", "8.G.1", "8.G.6", "8.G.7", "8.SP.1"],
+  G9: ["HSA.REI.1", "HSA.REI.3", "HSA.REI.6", "HSA.SSE.1", "HSA.SSE.2", "HSA.APR.1", "HSA.CED.1", "HSF.IF.1", "HSF.IF.4", "HSF.BF.1", "HSF.LE.1"],
+  G10: ["HSG.CO.1", "HSG.CO.6", "HSG.SRT.1", "HSG.SRT.6", "HSG.SRT.8", "HSA.REI.4", "HSA.REI.7", "HSF.IF.7", "HSS.ID.6"],
+  G11: ["HSF.TF.1", "HSF.TF.2", "HSF.TF.5", "HSF.BF.3", "HSF.BF.4", "HSN.CN.1", "HSA.APR.3", "HSA.APR.6", "HSF.LE.4"],
+  G12: ["HSF.LIM.1", "HSF.LIM.2", "HSF.DER.1", "HSF.DER.2", "HSF.DER.3", "HSF.INT.1", "HSF.INT.2", "HSS.IC.1"],
 };
 
 const ELA_NODES_BY_GRADE: Record<string, string[]> = {
@@ -68,14 +72,19 @@ const ELA_NODES_BY_GRADE: Record<string, string[]> = {
     "ela_parallel_structure", "ela_active_passive_voice",
     "ela_clauses", "ela_modifiers",
   ],
-  G6: [],
-  G7: [],
-  G8: [],
+  // G6-G12: Populated in Step 15
+  G6: ["6.RL.1", "6.RL.2", "6.RL.4", "6.RL.6", "6.W.1", "6.W.2", "6.W.3", "6.L.4"],
+  G7: ["7.RL.1", "7.RL.3", "7.RI.6", "7.RI.8", "7.RI.9", "7.W.1", "7.W.7", "7.L.5"],
+  G8: ["8.RL.3", "8.RL.6", "8.RI.5", "8.RI.8", "8.W.1", "8.W.7", "8.L.5"],
+  G9: ["9.RL.1", "9.RL.2", "9.RL.5", "9.RI.5", "9.RI.6", "9.W.1", "9.W.2", "9.W.7"],
+  G10: ["10.RL.3", "10.RL.6", "10.RI.6", "10.W.1", "10.W.2", "10.L.5"],
+  G11: ["11.RL.3", "11.RL.5", "11.RI.6", "11.W.1", "11.W.2", "11.W.7"],
+  G12: ["12.RL.3", "12.RL.6", "12.RI.6", "12.W.1", "12.W.2", "12.W.7"],
 };
 
 // Cumulative: grade proficiency includes all prior grades
 function cumulativeMathNodes(upToGrade: string): string[] {
-  const gradeOrder = ["K", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8"];
+  const gradeOrder = ["K", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9", "G10", "G11", "G12"];
   const idx = gradeOrder.indexOf(upToGrade);
   const nodes: string[] = [];
   for (let i = 0; i <= idx; i++) {
@@ -85,7 +94,7 @@ function cumulativeMathNodes(upToGrade: string): string[] {
 }
 
 function cumulativeELANodes(upToGrade: string): string[] {
-  const gradeOrder = ["K", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8"];
+  const gradeOrder = ["K", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9", "G10", "G11", "G12"];
   const idx = gradeOrder.indexOf(upToGrade);
   const nodes: string[] = [];
   for (let i = 0; i <= idx; i++) {
@@ -109,6 +118,7 @@ interface GoalDef {
 
 const GRADE_NUM: Record<string, number> = {
   K: 0, G1: 1, G2: 2, G3: 3, G4: 4, G5: 5, G6: 6, G7: 7, G8: 8,
+  G9: 9, G10: 10, G11: 11, G12: 12,
 };
 
 function gradeLabel(g: string): string {
@@ -117,8 +127,8 @@ function gradeLabel(g: string): string {
 
 const goals: GoalDef[] = [];
 
-// ─── GRADE PROFICIENCY: Math K-8 ───
-for (const grade of ["K", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8"]) {
+// ─── GRADE PROFICIENCY: Math K-12 ───
+for (const grade of ["K", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9", "G10", "G11", "G12"]) {
   const nodes = cumulativeMathNodes(grade);
   goals.push({
     name: `Common Core Math — ${gradeLabel(grade)}`,
@@ -131,8 +141,8 @@ for (const grade of ["K", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8"]) {
   });
 }
 
-// ─── GRADE PROFICIENCY: ELA K-8 ───
-for (const grade of ["K", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8"]) {
+// ─── GRADE PROFICIENCY: ELA K-12 ───
+for (const grade of ["K", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9", "G10", "G11", "G12"]) {
   const nodes = cumulativeELANodes(grade);
   goals.push({
     name: `Common Core ELA — ${gradeLabel(grade)}`,
@@ -147,12 +157,8 @@ for (const grade of ["K", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8"]) {
 
 // ─── EXAM PREP ───
 
-// SAT Math — maps to algebra, functions, data analysis, geometry
-const SAT_MATH_NODES = [
-  // Linear equations & algebra foundations
-  ...cumulativeMathNodes("G5"),
-  // Placeholder for G6-G12 nodes (Step 15)
-];
+// SAT Math — maps to algebra, functions, data analysis, geometry (through G10)
+const SAT_MATH_NODES = cumulativeMathNodes("G10");
 goals.push({
   name: "SAT Math Prep",
   description: "Prepare for the SAT Math section. Covers Heart of Algebra, Passport to Advanced Math, Problem Solving and Data Analysis, and Additional Topics in Math.",
@@ -163,8 +169,8 @@ goals.push({
   estimatedHours: 120,
 });
 
-// SAT Reading and Writing
-const SAT_RW_NODES = cumulativeELANodes("G5");
+// SAT Reading and Writing (through G10)
+const SAT_RW_NODES = cumulativeELANodes("G10");
 goals.push({
   name: "SAT Reading & Writing Prep",
   description: "Prepare for the SAT Reading and Writing section. Covers Command of Evidence, Words in Context, Analysis in History/Social Studies/Science, Expression of Ideas, and Standard English Conventions.",
@@ -182,7 +188,7 @@ goals.push({
   category: "EXAM_PREP",
   examType: "ACT",
   standardsCovered: ["ACT.MATH"],
-  requiredNodeIds: cumulativeMathNodes("G5"),
+  requiredNodeIds: cumulativeMathNodes("G10"),
   estimatedHours: 110,
 });
 

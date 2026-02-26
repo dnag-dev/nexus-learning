@@ -106,6 +106,37 @@ export interface EmotionalCheckResponse {
   followUpResponses: Record<string, string>;
 }
 
+// ─── Learn More Panel Types ───
+
+/** Content generated for the Learn More help panel */
+export interface LearnMoreContent {
+  /** 1-sentence concept definition */
+  definition: string;
+  /** Animated step-by-step explanation (Watch tab) */
+  steps: Array<{
+    label: string;
+    visual: string;
+    narration: string;
+  }>;
+  /** 3 worked examples (Examples tab) */
+  examples: Array<{
+    problem: string;
+    steps: string[];
+    answer: string;
+    tip: string;
+  }>;
+  /** Pre-generated FAQs (Ask tab fallback) */
+  faqs: Array<{
+    question: string;
+    answer: string;
+  }>;
+}
+
+/** Response from the live Ask Q&A endpoint */
+export interface LearnMoreAskResponse {
+  answer: string;
+}
+
 // ─── Subject Detection Helper ───
 
 /** ELA domains from the KnowledgeDomain enum */

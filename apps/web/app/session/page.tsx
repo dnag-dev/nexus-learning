@@ -14,6 +14,7 @@ import FluencyDrill from "@/components/session/FluencyDrill";
 import type { FluencyAnswerResult } from "@/components/session/FluencyDrill";
 import SessionStats, { MobileStatsRow } from "@/components/session/SessionStats";
 import NexusScore from "@/components/gamification/NexusScore";
+import LearnPanel from "@/components/session/LearnPanel";
 
 // ─── Types ───
 
@@ -1515,6 +1516,20 @@ function SessionPage() {
         </motion.aside>
       )}
     </AnimatePresence>
+
+    {/* ─── Learn More Panel (available during practice/feedback/struggling) ─── */}
+    {sessionId && node && (
+      <LearnPanel
+        sessionId={sessionId}
+        nodeTitle={node.title}
+        personaId={personaId}
+        isVisible={
+          phase === "practice" ||
+          phase === "feedback" ||
+          phase === "struggling"
+        }
+      />
+    )}
     </div>
   );
 }

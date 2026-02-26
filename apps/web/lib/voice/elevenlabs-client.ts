@@ -8,7 +8,7 @@
  * - Graceful fallback: returns null if ElevenLabs unavailable
  */
 
-import { createHash } from "crypto";
+import { getRedisClient, buildCacheKey } from "@/lib/cache/redis-client";
 
 // ─── Types ───
 
@@ -37,36 +37,7 @@ function getConfig(): ElevenLabsConfig | null {
 const CACHE_TTL = 7 * 24 * 60 * 60; // 7 days in seconds
 
 function cacheKey(text: string, voiceId: string): string {
-  const hash = createHash("sha256")
-    .update(`${voiceId}:${text}`)
-    .digest("hex")
-    .slice(0, 16);
-  return `tts:${hash}`;
-}
-
-async function getRedisClient(): Promise<{
-  get(key: string): Promise<string | null>;
-  set(key: string, value: string, options?: { EX: number }): Promise<void>;
-} | null> {
-  try {
-    const { default: Redis } = await import("ioredis");
-    const redisUrl = process.env.REDIS_URL ?? "redis://localhost:6379";
-    const redis = new Redis(redisUrl);
-    return {
-      async get(key: string) {
-        return redis.get(key);
-      },
-      async set(key: string, value: string, options?: { EX: number }) {
-        if (options?.EX) {
-          await redis.set(key, value, "EX", options.EX);
-        } else {
-          await redis.set(key, value);
-        }
-      },
-    };
-  } catch {
-    return null;
-  }
+  return buildCacheKey("tts", voiceId, text);
 }
 
 // ─── Core Functions ───

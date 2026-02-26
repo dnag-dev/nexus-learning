@@ -19,6 +19,25 @@ import {
   isELASubject,
 } from "./types";
 
+/** Generate an example JSON format with a random correct answer position */
+function randomizedOutputExample(): string {
+  const ids = ["A", "B", "C", "D"];
+  const correctIdx = Math.floor(Math.random() * 4);
+  const correctId = ids[correctIdx];
+  const options = ids.map((id) => {
+    const isCorrect = id === correctId;
+    return `    {"id": "${id}", "text": "Plausible answer", "isCorrect": ${isCorrect}}`;
+  });
+  return `{
+  "questionText": "Your question here",
+  "options": [
+${options.join(",\n")}
+  ],
+  "correctAnswer": "${correctId}",
+  "explanation": "Clear explanation of why ${correctId} is correct"
+}`;
+}
+
 /**
  * Build a prompt for a specific learning step.
  */
@@ -74,19 +93,10 @@ STRICT RULES:
 5. Each wrong option should represent a common misunderstanding
 6. Frame it using a concrete example (e.g., "Which word in this sentence is a noun: 'The happy dog ran fast'?")
 7. Keep it at the SAME difficulty level as the teaching — this is a check, not a trick
+8. RANDOMLY place the correct answer at position A, B, C, or D — do NOT always put it in the same position
 
 OUTPUT FORMAT (JSON):
-{
-  "questionText": "A concrete question testing understanding of the concept",
-  "options": [
-    {"id": "A", "text": "Plausible answer 1", "isCorrect": false},
-    {"id": "B", "text": "Plausible answer 2", "isCorrect": true},
-    {"id": "C", "text": "Plausible answer 3", "isCorrect": false},
-    {"id": "D", "text": "Plausible answer 4", "isCorrect": false}
-  ],
-  "correctAnswer": "B",
-  "explanation": "Clear explanation of why B is correct and what the others represent"
-}
+${randomizedOutputExample()}
 
 Respond ONLY with valid JSON.`;
 }
@@ -103,19 +113,10 @@ This is scaffolded practice — make it accessible but meaningful:
 3. All 4 options must be plausible (no throwaway answers)
 4. The question should test APPLICATION of the concept, not just recall
 5. Include a thorough explanation that teaches even if they get it wrong
+6. RANDOMLY place the correct answer at position A, B, C, or D — do NOT always put it in the same position
 
 OUTPUT FORMAT (JSON):
-{
-  "questionText": "A practice problem applying the concept",
-  "options": [
-    {"id": "A", "text": "Plausible answer 1", "isCorrect": false},
-    {"id": "B", "text": "Plausible answer 2", "isCorrect": true},
-    {"id": "C", "text": "Plausible answer 3", "isCorrect": false},
-    {"id": "D", "text": "Plausible answer 4", "isCorrect": false}
-  ],
-  "correctAnswer": "B",
-  "explanation": "Detailed explanation of the correct answer and why each wrong answer is incorrect"
-}
+${randomizedOutputExample()}
 
 Respond ONLY with valid JSON.`;
 }
@@ -133,19 +134,10 @@ This is a real test of understanding — make it challenging:
 4. All 4 options must be plausible and tricky — common mistakes as wrong answers
 5. The question should require multi-step thinking or combining with prior knowledge
 6. Include a brief explanation (student only sees it after answering)
+7. RANDOMLY place the correct answer at position A, B, C, or D — do NOT always put it in the same position
 
 OUTPUT FORMAT (JSON):
-{
-  "questionText": "A challenging problem requiring application of the concept",
-  "options": [
-    {"id": "A", "text": "Plausible answer 1", "isCorrect": false},
-    {"id": "B", "text": "Plausible answer 2", "isCorrect": true},
-    {"id": "C", "text": "Plausible answer 3", "isCorrect": false},
-    {"id": "D", "text": "Plausible answer 4", "isCorrect": false}
-  ],
-  "correctAnswer": "B",
-  "explanation": "Brief explanation of the correct answer"
-}
+${randomizedOutputExample()}
 
 Respond ONLY with valid JSON.`;
 }
@@ -168,19 +160,10 @@ This question must prove TRANSFER — the student can apply the concept in a COM
 4. The question should prove the student truly understands, not just memorized a pattern
 5. All 4 options must be plausible
 6. This is the FINAL test — if they get this right, they have mastered the concept
+7. RANDOMLY place the correct answer at position A, B, C, or D — do NOT always put it in the same position
 
 OUTPUT FORMAT (JSON):
-{
-  "questionText": "A transfer question applying the concept in a completely new way",
-  "options": [
-    {"id": "A", "text": "Plausible answer 1", "isCorrect": false},
-    {"id": "B", "text": "Plausible answer 2", "isCorrect": true},
-    {"id": "C", "text": "Plausible answer 3", "isCorrect": false},
-    {"id": "D", "text": "Plausible answer 4", "isCorrect": false}
-  ],
-  "correctAnswer": "B",
-  "explanation": "Explanation of why this proves mastery of the concept"
-}
+${randomizedOutputExample()}
 
 Respond ONLY with valid JSON.`;
 }
@@ -231,6 +214,27 @@ OUTPUT FORMAT (JSON):
 Respond ONLY with valid JSON.`;
 }
 
+/** Shuffle options and reassign A/B/C/D ids so correct answer position is random */
+function shuffleOptions(
+  options: Array<{ id: string; text: string; isCorrect: boolean }>
+): { options: Array<{ id: string; text: string; isCorrect: boolean }>; correctAnswer: string } {
+  const ids = ["A", "B", "C", "D"];
+  // Fisher-Yates shuffle
+  const shuffled = [...options];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  // Reassign IDs after shuffle
+  let correctAnswer = "A";
+  const result = shuffled.map((opt, idx) => {
+    const newId = ids[idx];
+    if (opt.isCorrect) correctAnswer = newId;
+    return { id: newId, text: opt.text, isCorrect: opt.isCorrect };
+  });
+  return { options: result, correctAnswer };
+}
+
 export function parseStepResponse(rawResponse: string): PracticeResponse {
   try {
     // Strategy 1: Strip markdown code blocks and parse
@@ -255,10 +259,14 @@ export function parseStepResponse(rawResponse: string): PracticeResponse {
       throw new Error("Invalid options format");
     }
 
+    // Server-side shuffle: randomize option positions so correct answer
+    // isn't always in the same slot even if Claude is biased
+    const shuffled = shuffleOptions(parsed.options);
+
     return {
       questionText: parsed.questionText,
-      options: parsed.options,
-      correctAnswer: parsed.correctAnswer,
+      options: shuffled.options,
+      correctAnswer: shuffled.correctAnswer,
       explanation: parsed.explanation,
     };
   } catch (err) {

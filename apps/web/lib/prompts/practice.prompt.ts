@@ -132,6 +132,27 @@ OUTPUT FORMAT (JSON):
 Respond ONLY with valid JSON.`;
 }
 
+/** Shuffle options and reassign A/B/C/D ids so correct answer position is random */
+function shuffleOptions(
+  options: Array<{ id: string; text: string; isCorrect: boolean }>
+): { options: Array<{ id: string; text: string; isCorrect: boolean }>; correctAnswer: string } {
+  const ids = ["A", "B", "C", "D"];
+  // Fisher-Yates shuffle
+  const shuffled = [...options];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  // Reassign IDs after shuffle
+  let correctAnswer = "A";
+  const result = shuffled.map((opt, idx) => {
+    const newId = ids[idx];
+    if (opt.isCorrect) correctAnswer = newId;
+    return { id: newId, text: opt.text, isCorrect: opt.isCorrect };
+  });
+  return { options: result, correctAnswer };
+}
+
 export function parseResponse(rawResponse: string): PracticeResponse {
   try {
     // Strategy 1: Strip markdown code blocks and parse
@@ -156,10 +177,13 @@ export function parseResponse(rawResponse: string): PracticeResponse {
       throw new Error("Invalid options format");
     }
 
+    // Server-side shuffle: randomize option positions
+    const shuffled = shuffleOptions(parsed.options);
+
     return {
       questionText: parsed.questionText,
-      options: parsed.options,
-      correctAnswer: parsed.correctAnswer,
+      options: shuffled.options,
+      correctAnswer: shuffled.correctAnswer,
       explanation: parsed.explanation,
     };
   } catch (err) {

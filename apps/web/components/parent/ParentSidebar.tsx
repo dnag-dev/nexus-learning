@@ -68,6 +68,12 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { label: "Overview", icon: "📊", href: "/dashboard" },
   {
+    label: "GPS",
+    icon: "🧭",
+    href: "/child/{id}/gps",
+    requiresChild: true,
+  },
+  {
     label: "Progress",
     icon: "🌟",
     href: "/child/{id}/progress",

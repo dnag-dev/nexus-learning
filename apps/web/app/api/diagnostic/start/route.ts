@@ -1,7 +1,18 @@
+/**
+ * POST /api/diagnostic/start
+ *
+ * Starts a diagnostic assessment for a student.
+ * Two modes:
+ * 1. Standard mode (no goalId): Binary search through all concepts (K-G1 math)
+ * 2. Goal-aware mode (goalId provided): Binary search through goal's requiredNodeIds
+ *    Only tests concepts in the goal's prerequisite chain
+ */
+
 import { NextResponse } from "next/server";
 import { prisma } from "@aauti/db";
 import {
   createDiagnosticState,
+  createGoalDiagnosticState,
   selectNextQuestion,
 } from "@/lib/diagnostic/diagnostic-engine";
 import { generateDiagnosticQuestion } from "@/lib/diagnostic/question-generator";
@@ -12,10 +23,15 @@ const diagnosticSessions = new Map<string, DiagnosticState>();
 
 export { diagnosticSessions };
 
+export const maxDuration = 30;
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { studentId } = body;
+    const { studentId, goalId } = body as {
+      studentId?: string;
+      goalId?: string;
+    };
 
     if (!studentId) {
       return NextResponse.json(
@@ -36,6 +52,27 @@ export async function POST(request: Request) {
       );
     }
 
+    // If goal-aware mode, validate the goal exists
+    let goalName: string | undefined;
+    if (goalId) {
+      const goal = await prisma.learningGoal.findUnique({
+        where: { id: goalId },
+      });
+      if (!goal) {
+        return NextResponse.json(
+          { error: "Learning goal not found" },
+          { status: 404 }
+        );
+      }
+      if (!goal.requiredNodeIds || goal.requiredNodeIds.length === 0) {
+        return NextResponse.json(
+          { error: "This goal has no required concepts to test" },
+          { status: 400 }
+        );
+      }
+      goalName = goal.name;
+    }
+
     // Create a learning session in DIAGNOSTIC state
     const session = await prisma.learningSession.create({
       data: {
@@ -45,12 +82,26 @@ export async function POST(request: Request) {
       },
     });
 
-    // Initialize the diagnostic state
-    const diagState = createDiagnosticState(
-      session.id,
-      studentId,
-      student.gradeLevel
-    );
+    // Initialize the diagnostic state — standard or goal-aware
+    let diagState: DiagnosticState;
+
+    if (goalId) {
+      // Goal-aware mode: binary search through goal's concept space
+      diagState = await createGoalDiagnosticState(
+        session.id,
+        studentId,
+        student.gradeLevel,
+        goalId
+      );
+    } else {
+      // Standard mode: binary search through default K-G1 concepts
+      diagState = createDiagnosticState(
+        session.id,
+        studentId,
+        student.gradeLevel
+      );
+    }
+
     diagnosticSessions.set(session.id, diagState);
 
     // Get the first question
@@ -102,11 +153,21 @@ export async function POST(request: Request) {
         total: diagState.totalQuestions,
         percentComplete: 0,
       },
+      // Goal-aware mode metadata
+      ...(goalId && {
+        mode: "goal-aware",
+        goalId,
+        goalName,
+        totalConceptsInGoal: diagState.orderedNodes?.length ?? 0,
+      }),
     });
   } catch (err) {
     console.error("Diagnostic start error:", err);
     return NextResponse.json(
-      { error: "Failed to start diagnostic" },
+      {
+        error:
+          err instanceof Error ? err.message : "Failed to start diagnostic",
+      },
       { status: 500 }
     );
   }

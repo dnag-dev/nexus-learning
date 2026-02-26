@@ -1,3 +1,14 @@
+/**
+ * POST /api/diagnostic/answer
+ *
+ * Processes an answer to a diagnostic question.
+ * Works for both standard and goal-aware modes.
+ * Returns feedback and the next question, or signals completion.
+ *
+ * In goal-aware mode, the completion response includes a skill map
+ * showing mastered/gap/untested concepts with estimated hours.
+ */
+
 import { NextResponse } from "next/server";
 import { prisma } from "@aauti/db";
 import {
@@ -5,6 +16,7 @@ import {
   selectNextQuestion,
   calculatePlacementResult,
   saveDiagnosticResult,
+  generateSkillMap,
 } from "@/lib/diagnostic/diagnostic-engine";
 import { generateDiagnosticQuestion } from "@/lib/diagnostic/question-generator";
 import { diagnosticSessions } from "../start/route";
@@ -67,6 +79,17 @@ export async function POST(request: Request) {
       // Save results to DB
       await saveDiagnosticResult(diagState.studentId, sessionId, result);
 
+      // Generate skill map for goal-aware mode
+      let skillMap = null;
+      if (newState.goalId && newState.orderedNodes) {
+        try {
+          skillMap = await generateSkillMap(newState, sessionId);
+        } catch (e) {
+          console.error("[diagnostic/answer] Skill map generation error:", e);
+          // Non-critical — continue without skill map
+        }
+      }
+
       // Clean up in-memory state
       diagnosticSessions.delete(sessionId);
 
@@ -78,19 +101,37 @@ export async function POST(request: Request) {
           total: newState.totalQuestions,
           percentComplete: 100,
         },
+        // Goal-aware mode extras
+        ...(newState.goalId && {
+          mode: "goal-aware",
+          goalId: newState.goalId,
+          goalName: newState.goalName,
+          skillMap,
+        }),
       });
     }
 
     // Not complete — generate the next question
     const nextNode = selectNextQuestion(newState);
     if (!nextNode) {
-      // Edge case: search space exhausted before 20 questions
+      // Edge case: search space exhausted before max questions
       const result = calculatePlacementResult(newState);
       const frontierNode = await prisma.knowledgeNode.findUnique({
         where: { nodeCode: result.frontierNodeCode },
       });
       result.frontierNodeTitle = frontierNode?.title ?? result.frontierNodeCode;
       await saveDiagnosticResult(diagState.studentId, sessionId, result);
+
+      // Generate skill map for goal-aware mode
+      let skillMap = null;
+      if (newState.goalId && newState.orderedNodes) {
+        try {
+          skillMap = await generateSkillMap(newState, sessionId);
+        } catch (e) {
+          console.error("[diagnostic/answer] Skill map generation error:", e);
+        }
+      }
+
       diagnosticSessions.delete(sessionId);
 
       return NextResponse.json({
@@ -101,6 +142,12 @@ export async function POST(request: Request) {
           total: newState.totalQuestions,
           percentComplete: 100,
         },
+        ...(newState.goalId && {
+          mode: "goal-aware",
+          goalId: newState.goalId,
+          goalName: newState.goalName,
+          skillMap,
+        }),
       });
     }
 
@@ -155,6 +202,12 @@ export async function POST(request: Request) {
           ? getCorrectFeedback(student?.avatarPersonaId ?? "cosmo")
           : getIncorrectFeedback(student?.avatarPersonaId ?? "cosmo"),
       },
+      // Goal-aware mode metadata
+      ...(newState.goalId && {
+        mode: "goal-aware",
+        goalId: newState.goalId,
+        goalName: newState.goalName,
+      }),
     });
   } catch (err) {
     console.error("Diagnostic answer error:", err);
@@ -168,20 +221,20 @@ export async function POST(request: Request) {
 function getCorrectFeedback(personaId: string): string {
   const feedbacks: Record<string, string[]> = {
     cosmo: [
-      "That's right! Cosmo's star is glowing brighter! ⭐",
-      "You got it! Cosmo is so proud of you! 🐻",
-      "Amazing work! Keep going — you're doing great!",
-      "Yes! You're a math superstar! ✨",
+      "That's right! Cosmo's star is glowing brighter! \u2B50",
+      "You got it! Cosmo is so proud of you! \uD83D\uDC3B",
+      "Amazing work! Keep going \u2014 you're doing great!",
+      "Yes! You're a math superstar! \u2728",
     ],
     rex: [
-      "Wait, you got that RIGHT?! Rex is impressed! 🦕",
+      "Wait, you got that RIGHT?! Rex is impressed! \uD83E\uDD95",
       "Wow! Even Rex couldn't do that so fast!",
       "That's correct! Rex is doing a happy dance!",
     ],
     luna: [
-      "Beautiful! Luna knew you could do it. 🌙",
-      "Purr-fect answer! ✨",
-      "How lovely — you solved it with such grace!",
+      "Beautiful! Luna knew you could do it. \uD83C\uDF19",
+      "Purr-fect answer! \u2728",
+      "How lovely \u2014 you solved it with such grace!",
     ],
   };
 
@@ -192,19 +245,19 @@ function getCorrectFeedback(personaId: string): string {
 function getIncorrectFeedback(personaId: string): string {
   const feedbacks: Record<string, string[]> = {
     cosmo: [
-      "Not quite, but that's okay! Cosmo learns from every try. 🐻",
-      "Almost! Don't worry — that one is tricky. Let's keep going!",
-      "That's a tough one! Cosmo will help you with this later. 💪",
+      "Not quite, but that's okay! Cosmo learns from every try. \uD83D\uDC3B",
+      "Almost! Don't worry \u2014 that one is tricky. Let's keep going!",
+      "That's a tough one! Cosmo will help you with this later. \uD83D\uDCAA",
     ],
     rex: [
-      "Oops! Don't worry — Rex gets things wrong ALL the time! 🦕",
+      "Oops! Don't worry \u2014 Rex gets things wrong ALL the time! \uD83E\uDD95",
       "That's okay! Rex says mistakes are just learning in disguise!",
       "No worries! Even Rex mixed that one up yesterday!",
     ],
     luna: [
-      "That's okay, dear. Every great thinker stumbles sometimes. 🌙",
-      "Not quite — but Luna sees you thinking hard, and that's what matters.",
-      "Close! Luna will guide you through this one later. ✨",
+      "That's okay, dear. Every great thinker stumbles sometimes. \uD83C\uDF19",
+      "Not quite \u2014 but Luna sees you thinking hard, and that's what matters.",
+      "Close! Luna will guide you through this one later. \u2728",
     ],
   };
 

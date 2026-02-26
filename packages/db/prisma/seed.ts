@@ -1156,6 +1156,277 @@ async function seed() {
     console.log("  Created demo assignment: Addition and Subtraction Basics");
   }
 
+  // ─── Learning GPS Demo Seed Data ───
+  console.log("\n  Seeding Learning GPS demo data...");
+
+  // Create GPS demo student: Ishan (Grade 5, active learning plan)
+  const ishanStudent = await prisma.student.upsert({
+    where: { id: "demo-student-ishan" },
+    update: { gradeLevel: "G5", ageGroup: "MID_8_10" },
+    create: {
+      id: "demo-student-ishan",
+      displayName: "Ishan",
+      avatarPersonaId: "cosmo",
+      gradeLevel: "G5",
+      ageGroup: "MID_8_10",
+      parentId: demoParent.id,
+    },
+  });
+  console.log(`  Created GPS demo student: ${ishanStudent.displayName} (G5)`);
+
+  // Create streak data for Ishan
+  await prisma.streakData.upsert({
+    where: { studentId: ishanStudent.id },
+    update: { currentStreak: 5, longestStreak: 12, totalDaysActive: 15 },
+    create: {
+      studentId: ishanStudent.id,
+      currentStreak: 5,
+      longestStreak: 12,
+      totalDaysActive: 15,
+    },
+  });
+
+  // Enroll Ishan in the teacher's Grade 1 class for teacher visibility
+  await prisma.classStudent.upsert({
+    where: {
+      classId_studentId: { classId: demoClass.id, studentId: ishanStudent.id },
+    },
+    update: {},
+    create: {
+      classId: demoClass.id,
+      studentId: ishanStudent.id,
+    },
+  });
+
+  // Find G5 math nodes to build the plan's concept sequence
+  const g5MathNodes = await prisma.knowledgeNode.findMany({
+    where: { gradeLevel: "G5", subject: "MATH" },
+    orderBy: { difficulty: "asc" },
+  });
+
+  // Also include prerequisite nodes from lower grades (a realistic plan)
+  const g4MathNodes = await prisma.knowledgeNode.findMany({
+    where: { gradeLevel: "G4", subject: "MATH" },
+    orderBy: { difficulty: "asc" },
+    take: 5,
+  });
+
+  const planNodeCodes = [
+    ...g4MathNodes.map((n) => n.nodeCode),
+    ...g5MathNodes.map((n) => n.nodeCode),
+  ];
+
+  if (planNodeCodes.length > 0) {
+    // Create or find a Grade 5 Math goal
+    const g5Goal = await prisma.learningGoal.upsert({
+      where: { id: "demo-goal-g5-math" },
+      update: {},
+      create: {
+        id: "demo-goal-g5-math",
+        name: "Grade 5 Math Proficiency",
+        category: "GRADE_PROFICIENCY",
+        description: "Master all Grade 5 Common Core Math standards",
+        requiredNodeIds: planNodeCodes,
+        gradeLevel: 5,
+        estimatedHours: planNodeCodes.length * 0.85,
+      },
+    });
+
+    // Calculate index for ~34% progress
+    const totalConcepts = planNodeCodes.length;
+    const currentIndex = Math.round(totalConcepts * 0.34);
+    const hoursCompleted = currentIndex * 0.8; // ~0.8 hours per concept on average
+
+    // Target date: 6 weeks from now
+    const targetDate = new Date();
+    targetDate.setDate(targetDate.getDate() + 42);
+
+    // Projected completion: 5 weeks from now (slightly ahead)
+    const projectedDate = new Date();
+    projectedDate.setDate(projectedDate.getDate() + 35);
+
+    // Create the active learning plan
+    const ishanPlan = await prisma.learningPlan.upsert({
+      where: { id: "demo-plan-ishan-g5-math" },
+      update: {
+        currentConceptIndex: currentIndex,
+        hoursCompleted,
+        projectedCompletionDate: projectedDate,
+        isAheadOfSchedule: true,
+        lastRecalculatedAt: new Date(),
+      },
+      create: {
+        id: "demo-plan-ishan-g5-math",
+        studentId: ishanStudent.id,
+        goalId: g5Goal.id,
+        status: "ACTIVE",
+        conceptSequence: planNodeCodes,
+        totalEstimatedHours: totalConcepts * 0.85,
+        hoursCompleted,
+        projectedCompletionDate: projectedDate,
+        targetCompletionDate: targetDate,
+        weeklyMilestones: [],
+        currentConceptIndex: currentIndex,
+        velocityHoursPerWeek: 3.5,
+        isAheadOfSchedule: true,
+        lastRecalculatedAt: new Date(),
+      },
+    });
+    console.log(
+      `  Created GPS plan: ${g5Goal.name} — ${currentIndex}/${totalConcepts} concepts (${Math.round((currentIndex / totalConcepts) * 100)}%)`
+    );
+
+    // Create mastery scores for completed concepts (simulating progress)
+    const completedNodes = planNodeCodes.slice(0, currentIndex);
+    const allPlanNodes = await prisma.knowledgeNode.findMany({
+      where: { nodeCode: { in: completedNodes } },
+    });
+
+    for (const node of allPlanNodes) {
+      // Mastered concepts: high BKT, MASTERED or ADVANCED level
+      const bkt = 0.85 + Math.random() * 0.14; // 0.85-0.99
+      const level = bkt >= 0.9 ? "MASTERED" : "ADVANCED";
+
+      await prisma.masteryScore.upsert({
+        where: {
+          studentId_nodeId: { studentId: ishanStudent.id, nodeId: node.id },
+        },
+        update: {
+          bktProbability: Math.round(bkt * 100) / 100,
+          level: level as any,
+          practiceCount: Math.floor(Math.random() * 8) + 5,
+          correctCount: Math.floor(Math.random() * 6) + 4,
+          lastPracticed: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
+        },
+        create: {
+          studentId: ishanStudent.id,
+          nodeId: node.id,
+          bktProbability: Math.round(bkt * 100) / 100,
+          level: level as any,
+          practiceCount: Math.floor(Math.random() * 8) + 5,
+          correctCount: Math.floor(Math.random() * 6) + 4,
+          lastPracticed: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
+        },
+      });
+    }
+    console.log(`  Created ${allPlanNodes.length} mastery scores for completed concepts`);
+
+    // Create an ETA snapshot (history)
+    await prisma.eTASnapshot.create({
+      data: {
+        planId: ishanPlan.id,
+        conceptsRemaining: totalConcepts - currentIndex,
+        conceptsMastered: currentIndex,
+        hoursRemaining: (totalConcepts - currentIndex) * 0.85,
+        velocityAtSnapshot: 3.5,
+        projectedCompletion: projectedDate,
+        isAheadOfSchedule: true,
+        daysDifference: 7, // 7 days ahead
+        insight: "You're 1 week ahead of schedule — great momentum!",
+      },
+    });
+    console.log("  Created ETA snapshot for GPS plan");
+
+    // Create a completed milestone (week 2 passed)
+    // Delete existing first (no compound unique), then create
+    await prisma.milestoneResult.deleteMany({
+      where: { planId: ishanPlan.id, weekNumber: 2 },
+    });
+    await prisma.milestoneResult.create({
+      data: {
+        planId: ishanPlan.id,
+        weekNumber: 2,
+        passed: true,
+        score: 0.88, // Stored as 0-1
+        conceptsTested: completedNodes.slice(0, 4),
+      },
+    });
+    console.log("  Created milestone result: Week 2 passed (88%)");
+
+    // Create a few demo learning sessions linked to the plan
+    const recentSessions = [
+      { daysAgo: 0, questions: 12, correct: 10, duration: 900 },
+      { daysAgo: 1, questions: 15, correct: 13, duration: 1100 },
+      { daysAgo: 3, questions: 10, correct: 8, duration: 750 },
+    ];
+
+    for (const sess of recentSessions) {
+      const sessionDate = new Date();
+      sessionDate.setDate(sessionDate.getDate() - sess.daysAgo);
+
+      const nodeIdx = Math.min(currentIndex - 1, g5MathNodes.length - 1);
+      const sessionNode = g5MathNodes[Math.max(0, nodeIdx)];
+
+      if (sessionNode) {
+        await prisma.learningSession.create({
+          data: {
+            studentId: ishanStudent.id,
+            state: "COMPLETED",
+            currentNodeId: sessionNode.id,
+            subject: "MATH",
+            planId: ishanPlan.id,
+            questionsAnswered: sess.questions,
+            correctAnswers: sess.correct,
+            durationSeconds: sess.duration,
+            startedAt: sessionDate,
+            endedAt: new Date(sessionDate.getTime() + sess.duration * 1000),
+          },
+        });
+      }
+    }
+    console.log("  Created 3 recent learning sessions for GPS demo");
+  } else {
+    console.log("  ⚠ No G5 math nodes found — run standards seed first for full GPS demo");
+  }
+
+  // Create additional demo students with varied progress for teacher GPS view
+  const gpsStudents = [
+    { id: "demo-student-5", name: "Zara", grade: "G3", persona: "zara", progress: 0.6 },
+    { id: "demo-student-6", name: "Ethan", grade: "G4", persona: "nova", progress: 0.15 },
+    { id: "demo-student-7", name: "Lila", grade: "G2", persona: "pip", progress: 0.85 },
+    { id: "demo-student-8", name: "Noah", grade: "G5", persona: "koda", progress: 0.45 },
+  ];
+
+  for (const s of gpsStudents) {
+    const student = await prisma.student.upsert({
+      where: { id: s.id },
+      update: { gradeLevel: s.grade as any },
+      create: {
+        id: s.id,
+        displayName: s.name,
+        avatarPersonaId: s.persona,
+        gradeLevel: s.grade as any,
+        ageGroup: "MID_8_10",
+        parentId: demoParent.id,
+      },
+    });
+
+    await prisma.streakData.upsert({
+      where: { studentId: student.id },
+      update: {},
+      create: {
+        studentId: student.id,
+        currentStreak: Math.floor(Math.random() * 10),
+        longestStreak: Math.floor(Math.random() * 20),
+        totalDaysActive: Math.floor(Math.random() * 30),
+      },
+    });
+
+    // Enroll in teacher's class
+    await prisma.classStudent.upsert({
+      where: {
+        classId_studentId: { classId: demoClass.id, studentId: student.id },
+      },
+      update: {},
+      create: {
+        classId: demoClass.id,
+        studentId: student.id,
+      },
+    });
+  }
+  console.log("  Created 4 additional GPS demo students: Zara, Ethan, Lila, Noah");
+
+  console.log("\n  ✅ Learning GPS seed data complete!");
   console.log("PostgreSQL seed complete!");
 }
 

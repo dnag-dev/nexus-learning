@@ -209,6 +209,26 @@ function SessionPage() {
   const [fluencyPersonalBest, setFluencyPersonalBest] = useState<number | null>(null);
   const [nexusScore, setNexusScore] = useState<number | null>(null);
 
+  // ─── Plan/GPS Context State ───
+  const [todaysPlan, setTodaysPlan] = useState<{
+    planId: string;
+    goalName: string;
+    goalCategory: string;
+    positionInPlan: number;
+    totalInPlan: number;
+    progress: number;
+    isAheadOfSchedule: boolean;
+    reason: string;
+  } | null>(null);
+  const [gpsNavigation, setGpsNavigation] = useState<{
+    planId: string;
+    goalName: string;
+    progress: number;
+    isAheadOfSchedule: boolean;
+    redirectUrl: string;
+  } | null>(null);
+  const [hasActivePlans, setHasActivePlans] = useState(false);
+
   // ─── Teaching Stream State ───
   const [teachingStreamUrl, setTeachingStreamUrl] = useState<string | null>(null);
   const [teachingReady, setTeachingReady] = useState(false);
@@ -381,6 +401,7 @@ function SessionPage() {
       setNode(data.node);
       setPersonaId(data.persona?.id ?? "cosmo");
       setStudentName(data.persona?.studentName ?? "Student");
+      if (data.todaysPlan) setTodaysPlan(data.todaysPlan);
       setPhase("teaching");
 
       setTeachingStreamUrl(
@@ -660,6 +681,8 @@ function SessionPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setSummary(data.summary);
+      if (data.gpsNavigation) setGpsNavigation(data.gpsNavigation);
+      if (data.hasActivePlans) setHasActivePlans(true);
       setPhase("summary");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to end session");
@@ -750,6 +773,23 @@ function SessionPage() {
             >
               {isLoading ? "Setting up..." : "Start Learning! 🚀"}
             </button>
+            {/* GPS navigation — show when student has active plans */}
+            {planIdParam && (
+              <a
+                href={`/gps?studentId=${DEMO_STUDENT_ID}`}
+                className="block w-full mt-3 py-3 text-center text-sm font-medium text-teal-400 bg-teal-500/10 border border-teal-500/20 rounded-xl hover:bg-teal-500/20 transition-colors"
+              >
+                🗺️ View your Learning GPS Dashboard
+              </a>
+            )}
+            {!planIdParam && (
+              <a
+                href={`/goals?studentId=${DEMO_STUDENT_ID}`}
+                className="block w-full mt-3 py-3 text-center text-sm font-medium text-gray-400 hover:text-white transition-colors"
+              >
+                🎯 Set a Learning Goal
+              </a>
+            )}
             {error && (
               <p className="mt-4 text-sm text-aauti-danger">{error}</p>
             )}
@@ -786,6 +826,34 @@ function SessionPage() {
             />
           </div>
           <main className="max-w-2xl mx-auto px-4 py-8">
+            {/* ─── Today's Plan Banner (GPS context) ─── */}
+            {todaysPlan && (
+              <div className="mb-4 bg-gradient-to-r from-teal-500/10 to-cyan-500/10 rounded-xl p-3 border border-teal-500/20 animate-fade-in-up">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">🗺️</span>
+                    <div>
+                      <p className="text-xs text-teal-400 font-semibold">
+                        {todaysPlan.goalName}
+                      </p>
+                      <p className="text-[11px] text-gray-400">
+                        Concept {todaysPlan.positionInPlan} of {todaysPlan.totalInPlan} · {todaysPlan.reason}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-16 h-1.5 bg-teal-500/20 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-teal-400 rounded-full transition-all duration-700"
+                        style={{ width: `${Math.max(todaysPlan.progress, 3)}%` }}
+                      />
+                    </div>
+                    <span className="text-[11px] text-teal-400 font-medium">{todaysPlan.progress}%</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <TeachingCard
               content={teaching}
               isLoading={teachingLoading}
@@ -1395,6 +1463,31 @@ function SessionPage() {
                     </div>
                   )}
 
+                  {/* GPS Plan Progress (when session was part of a plan) */}
+                  {gpsNavigation && (
+                    <div className="bg-gradient-to-r from-teal-500/10 to-cyan-500/10 rounded-2xl p-5 border border-teal-500/20 mb-6 text-left">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-lg">🗺️</span>
+                        <h3 className="font-semibold text-white">Learning GPS</h3>
+                      </div>
+                      <p className="text-sm text-gray-300 mb-2">{gpsNavigation.goalName}</p>
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 h-2 bg-teal-500/20 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-teal-400 rounded-full transition-all duration-700"
+                            style={{ width: `${Math.max(gpsNavigation.progress, 3)}%` }}
+                          />
+                        </div>
+                        <span className="text-sm font-bold text-teal-400">{gpsNavigation.progress}%</span>
+                      </div>
+                      <div className="mt-2 flex items-center gap-1">
+                        <span className={`text-xs font-medium ${gpsNavigation.isAheadOfSchedule ? "text-green-400" : "text-amber-400"}`}>
+                          {gpsNavigation.isAheadOfSchedule ? "📈 Ahead of schedule" : "⏳ Keep pushing!"}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
                   {/* What's Next */}
                   {s.nextUpNodes && s.nextUpNodes.length > 0 && (
                     <div className="bg-[#1A2744] rounded-2xl p-5 border border-white/10 mb-6 text-left">
@@ -1497,9 +1590,31 @@ function SessionPage() {
               );
             })()}
 
+            {/* GPS Dashboard Button (when session was part of a plan) */}
+            {gpsNavigation && (
+              <a
+                href={gpsNavigation.redirectUrl}
+                className="block w-full py-4 text-center text-lg font-semibold text-white bg-gradient-to-r from-teal-500 to-cyan-600 rounded-2xl hover:from-teal-600 hover:to-cyan-700 transition-all mb-3"
+              >
+                🗺️ View GPS Dashboard
+              </a>
+            )}
+            {/* GPS link for students with active plans but session wasn't plan-linked */}
+            {!gpsNavigation && hasActivePlans && (
+              <a
+                href={`/gps?studentId=${DEMO_STUDENT_ID}`}
+                className="block w-full py-3 text-center text-base font-semibold text-teal-400 bg-teal-500/10 border border-teal-500/20 rounded-2xl hover:bg-teal-500/20 transition-colors mb-3"
+              >
+                🗺️ View Learning GPS
+              </a>
+            )}
             <a
               href={returnTo}
-              className="block w-full py-4 text-center text-lg font-semibold text-white bg-aauti-primary rounded-2xl hover:bg-aauti-primary/90"
+              className={`block w-full py-4 text-center text-lg font-semibold rounded-2xl transition-colors ${
+                gpsNavigation
+                  ? "text-gray-300 bg-transparent border border-white/10 hover:bg-white/5"
+                  : "text-white bg-aauti-primary hover:bg-aauti-primary/90"
+              }`}
             >
               Back to Dashboard
             </a>

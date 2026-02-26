@@ -100,6 +100,45 @@ export async function POST(request: Request) {
       console.error("GPS plan adaptation error (non-critical):", e);
     }
 
+    // ═══ GPS: Build plan-aware navigation context ═══
+    // If session was part of a learning plan, provide GPS redirect info
+    let gpsNavigation = null;
+    if (session.planId) {
+      try {
+        const plan = await prisma.learningPlan.findUnique({
+          where: { id: session.planId },
+          include: { goal: true },
+        });
+        if (plan) {
+          const progress = plan.conceptSequence.length > 0
+            ? Math.round((plan.currentConceptIndex / plan.conceptSequence.length) * 100)
+            : 0;
+          gpsNavigation = {
+            planId: plan.id,
+            goalName: plan.goal.name,
+            progress,
+            isAheadOfSchedule: plan.isAheadOfSchedule,
+            redirectUrl: `/gps?studentId=${session.studentId}`,
+          };
+        }
+      } catch (e) {
+        console.error("GPS navigation build error (non-critical):", e);
+      }
+    }
+
+    // Check if student has any active plans (for GPS redirect suggestion)
+    let hasActivePlans = false;
+    if (!gpsNavigation) {
+      try {
+        const activePlanCount = await prisma.learningPlan.count({
+          where: { studentId: session.studentId, status: "ACTIVE" },
+        });
+        hasActivePlans = activePlanCount > 0;
+      } catch {
+        // Non-critical
+      }
+    }
+
     return NextResponse.json({
       state: result.newState,
       recommendedAction: result.recommendedAction,
@@ -112,6 +151,9 @@ export async function POST(request: Request) {
             message: planAdaptation.message,
           }
         : null,
+      // GPS navigation context for client-side redirect
+      gpsNavigation,
+      hasActivePlans: hasActivePlans || !!gpsNavigation,
     });
   } catch (err) {
     console.error("Session end error:", err);
@@ -138,6 +180,8 @@ const GRADE_LABELS: Record<string, string> = {
   G8: "Grade 8",
   G9: "Grade 9",
   G10: "Grade 10",
+  G11: "Grade 11",
+  G12: "Grade 12",
 };
 
 async function buildSummary(sessionId: string, studentId: string) {
@@ -250,7 +294,7 @@ async function buildSummary(sessionId: string, studentId: string) {
   }
 
   // Sort: by subject (ENGLISH first for display), then grade ascending
-  const gradeOrder = ["K", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9", "G10"];
+  const gradeOrder = ["K", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9", "G10", "G11", "G12"];
   gradeProgress.sort((a, b) => {
     if (a.subject !== b.subject) return a.subject === "ENGLISH" ? -1 : 1;
     return gradeOrder.indexOf(a.gradeLevel) - gradeOrder.indexOf(b.gradeLevel);
@@ -342,5 +386,7 @@ async function buildSummary(sessionId: string, studentId: string) {
     nextUpNodes,
     // Phase 6: Streak
     streak,
+    // Phase 7: Plan context (for GPS-aware navigation)
+    planId: session.planId ?? null,
   };
 }

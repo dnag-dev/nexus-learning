@@ -43,25 +43,31 @@ export default function HomePage() {
           </Link>
         </div>
 
-        <div className="mt-16 grid grid-cols-3 gap-8 text-center">
+        <div className="mt-16 grid grid-cols-4 gap-6 text-center">
           <div>
-            <div className="text-3xl font-bold text-aauti-primary">K-5</div>
+            <div className="text-3xl font-bold text-aauti-primary">K-12</div>
             <div className="text-sm text-aauti-text-secondary mt-1">
               Grade Range
             </div>
           </div>
           <div>
             <div className="text-3xl font-bold text-aauti-secondary">
-              20+
+              200+
             </div>
             <div className="text-sm text-aauti-text-secondary mt-1">
-              Math Standards
+              Learning Concepts
             </div>
           </div>
           <div>
             <div className="text-3xl font-bold text-aauti-accent">6</div>
             <div className="text-sm text-aauti-text-secondary mt-1">
               AI Tutors
+            </div>
+          </div>
+          <div>
+            <div className="text-3xl font-bold text-emerald-500">GPS</div>
+            <div className="text-sm text-aauti-text-secondary mt-1">
+              Learning Roadmap
             </div>
           </div>
         </div>

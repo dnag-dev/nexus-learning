@@ -183,6 +183,42 @@ export async function POST(request: Request) {
       console.error("Review check error (non-critical):", e);
     }
 
+    // ═══ GPS: Build "Today's Plan" context ═══
+    // When session is part of a learning plan, provide rich context about
+    // why this concept was chosen and where the student is in their journey.
+    let todaysPlan = null;
+    if (resolvedPlanId) {
+      try {
+        const plan = await prisma.learningPlan.findUnique({
+          where: { id: resolvedPlanId },
+          include: { goal: true },
+        });
+        if (plan) {
+          const idx = plan.conceptSequence.indexOf(targetNode.nodeCode);
+          const progress = plan.conceptSequence.length > 0
+            ? Math.round((plan.currentConceptIndex / plan.conceptSequence.length) * 100)
+            : 0;
+
+          todaysPlan = {
+            planId: plan.id,
+            goalName: plan.goal.name,
+            goalCategory: plan.goal.category,
+            positionInPlan: idx >= 0 ? idx + 1 : plan.currentConceptIndex + 1,
+            totalInPlan: plan.conceptSequence.length,
+            progress,
+            isAheadOfSchedule: plan.isAheadOfSchedule,
+            reason: nodeCode
+              ? "You selected this concept"
+              : planId
+                ? "Next in your learning plan"
+                : "Most urgent across your active plans",
+          };
+        }
+      } catch (e) {
+        console.error("Today's Plan context error (non-critical):", e);
+      }
+    }
+
     // Return session metadata immediately — teaching content will stream
     // via /api/session/teach-stream SSE endpoint.
     return NextResponse.json({
@@ -206,6 +242,7 @@ export async function POST(request: Request) {
       reviewSuggestion,
       // Plan-aware metadata
       ...(resolvedPlanId ? { planId: resolvedPlanId } : {}),
+      todaysPlan,
     });
   } catch (err) {
     console.error("Session start error:", err);

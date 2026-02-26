@@ -155,6 +155,22 @@ enum AssignmentStatus {
   ARCHIVED
 }
 
+// ─── Learning GPS Enums ───
+
+enum GoalCategory {
+  GRADE_PROFICIENCY
+  EXAM_PREP
+  SKILL_BUILDING
+  CUSTOM
+}
+
+enum PlanStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ABANDONED
+}
+
 // ─── Models ───
 
 model User {
@@ -204,6 +220,7 @@ model Student {
   interventionAlerts    InterventionAlert[]
   questionResponses     QuestionResponse[]
   branchUnlocks         BranchUnlock[]
+  learningPlans         LearningPlan[]
 
   @@index([parentId])
   @@map("students")
@@ -623,4 +640,94 @@ model InterventionAlert {
   @@index([studentId])
   @@index([status])
   @@map("intervention_alerts")
+}
+
+// ─── Learning GPS Models ───
+
+model LearningGoal {
+  id                String        @id @default(cuid())
+  name              String
+  description       String
+  category          GoalCategory
+  gradeLevel        Int?
+  examType          String?
+  standardsCovered  String[]
+  requiredNodeIds   String[]
+  estimatedHours    Float
+  createdAt         DateTime      @default(now())
+  learningPlans     LearningPlan[]
+
+  @@map("learning_goals")
+}
+
+model LearningPlan {
+  id                      String           @id @default(cuid())
+  studentId               String
+  student                 Student          @relation(fields: [studentId], references: [id])
+  goalId                  String
+  goal                    LearningGoal     @relation(fields: [goalId], references: [id])
+  status                  PlanStatus       @default(ACTIVE)
+  conceptSequence         String[]
+  totalEstimatedHours     Float
+  hoursCompleted          Float            @default(0)
+  projectedCompletionDate DateTime
+  targetCompletionDate    DateTime?
+  weeklyMilestones        Json
+  currentConceptIndex     Int              @default(0)
+  velocityHoursPerWeek    Float            @default(0)
+  isAheadOfSchedule       Boolean          @default(true)
+  lastRecalculatedAt      DateTime         @default(now())
+  createdAt               DateTime         @default(now())
+  etaHistory              ETASnapshot[]
+  milestoneResults        MilestoneResult[]
+
+  @@index([studentId])
+  @@index([goalId])
+  @@index([status])
+  @@map("learning_plans")
+}
+
+model ETASnapshot {
+  id                    String       @id @default(cuid())
+  planId                String
+  plan                  LearningPlan @relation(fields: [planId], references: [id])
+  hoursRemaining        Float
+  projectedCompletion   DateTime
+  velocityAtSnapshot    Float
+  conceptsRemaining     Int
+  triggeredBySessionId  String?
+  createdAt             DateTime     @default(now())
+
+  @@index([planId])
+  @@index([createdAt])
+  @@map("eta_snapshots")
+}
+
+model MilestoneResult {
+  id             String       @id @default(cuid())
+  planId         String
+  plan           LearningPlan @relation(fields: [planId], references: [id])
+  weekNumber     Int
+  passed         Boolean
+  score          Float
+  conceptsTested String[]
+  completedAt    DateTime     @default(now())
+
+  @@index([planId])
+  @@map("milestone_results")
+}
+
+model StandardsMapping {
+  id            String   @id @default(cuid())
+  standardId    String   @unique
+  standardCode  String
+  description   String
+  subject       String
+  gradeLevel    Int
+  category      String
+  nodeIds       String[]
+  examType      String?
+
+  @@index([subject, gradeLevel])
+  @@map("standards_mappings")
 }

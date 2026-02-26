@@ -124,8 +124,21 @@ export async function GET(request: Request) {
     bktProbability: existing?.bktProbability ?? 0.3,
   };
 
+  // Fetch previously asked questions in this session to avoid repeats
+  const previousResponses = await prisma.questionResponse.findMany({
+    where: { sessionId, nodeId: node.id },
+    select: { questionText: true },
+    orderBy: { createdAt: "desc" },
+    take: 10,
+  });
+  const previousQuestions = previousResponses.length > 0
+    ? previousResponses.map((r) => r.questionText).join("\n- ")
+    : undefined;
+
   // Generate step-aware question
-  const prompt = stepPrompt.buildStepPrompt(promptParams, stepType);
+  const prompt = stepPrompt.buildStepPrompt(promptParams, stepType, {
+    previousQuestions,
+  });
   const claudeResponse = await callClaude(prompt);
 
   if (claudeResponse) {

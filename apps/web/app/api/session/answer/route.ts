@@ -204,6 +204,25 @@ export async function POST(request: Request) {
 
     const promptParams = buildPromptParams(student, node, updatedMastery);
 
+    // ═══ Fetch previous questions to avoid repeats ═══
+    let prevQuestions: string | undefined;
+    try {
+      const prevResponses = await prisma.questionResponse.findMany({
+        where: { sessionId, nodeId: node.id },
+        select: { questionText: true },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+      });
+      if (prevResponses.length > 0) {
+        prevQuestions = prevResponses
+          .map((r) => r.questionText)
+          .filter(Boolean)
+          .join("\n- ");
+      }
+    } catch (e) {
+      console.error("Previous questions query error (non-critical):", e);
+    }
+
     // ═══════════════════════════════════════════════════════════
     // STEP 2: CHECK UNDERSTANDING (1 question)
     // Correct or wrong → always advance to Step 3 (guided practice)
@@ -219,7 +238,8 @@ export async function POST(request: Request) {
         promptParams,
         node.nodeCode,
         node.title,
-        "guided_practice"
+        "guided_practice",
+        prevQuestions
       );
 
       return NextResponse.json({
@@ -292,7 +312,8 @@ export async function POST(request: Request) {
             promptParams,
             node.nodeCode,
             node.title,
-            "independent_practice"
+            "independent_practice",
+            prevQuestions
           );
 
           return NextResponse.json({
@@ -328,7 +349,8 @@ export async function POST(request: Request) {
             promptParams,
             node.nodeCode,
             node.title,
-            "check_understanding"
+            "check_understanding",
+            prevQuestions
           );
 
           return NextResponse.json({
@@ -356,7 +378,8 @@ export async function POST(request: Request) {
         promptParams,
         node.nodeCode,
         node.title,
-        "guided_practice"
+        "guided_practice",
+        prevQuestions
       );
 
       return NextResponse.json({
@@ -404,7 +427,8 @@ export async function POST(request: Request) {
             promptParams,
             node.nodeCode,
             node.title,
-            "mastery_proof"
+            "mastery_proof",
+            prevQuestions
           );
 
           return NextResponse.json({
@@ -439,7 +463,8 @@ export async function POST(request: Request) {
             promptParams,
             node.nodeCode,
             node.title,
-            "check_understanding"
+            "check_understanding",
+            prevQuestions
           );
 
           return NextResponse.json({
@@ -466,7 +491,8 @@ export async function POST(request: Request) {
         promptParams,
         node.nodeCode,
         node.title,
-        "independent_practice"
+        "independent_practice",
+        prevQuestions
       );
 
       return NextResponse.json({
@@ -550,7 +576,8 @@ export async function POST(request: Request) {
             promptParams,
             node.nodeCode,
             node.title,
-            "check_understanding"
+            "check_understanding",
+            prevQuestions
           );
 
           await prisma.learningSession.update({
@@ -587,7 +614,8 @@ export async function POST(request: Request) {
             promptParams,
             node.nodeCode,
             node.title,
-            "check_understanding"
+            "check_understanding",
+            prevQuestions
           );
 
           await prisma.learningSession.update({
@@ -709,7 +737,8 @@ export async function POST(request: Request) {
           promptParams,
           node.nodeCode,
           node.title,
-          "check_understanding"
+          "check_understanding",
+          prevQuestions
         );
 
         return NextResponse.json({

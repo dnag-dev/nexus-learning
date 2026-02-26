@@ -62,7 +62,8 @@ export function startPrefetch(
   promptParams: PromptParams,
   fallbackNodeCode: string,
   fallbackTitle: string,
-  stepType?: LearningStepType
+  stepType?: LearningStepType,
+  previousQuestions?: string
 ): void {
   console.log(
     `[prefetch] Starting prefetch for session ${sessionId} (step: ${stepType ?? "legacy"}, cache size: ${cache.size})`
@@ -71,7 +72,8 @@ export function startPrefetch(
     promptParams,
     fallbackNodeCode,
     fallbackTitle,
-    stepType
+    stepType,
+    previousQuestions
   );
   cache.set(sessionId, { promise, createdAt: Date.now() });
   console.log(
@@ -106,12 +108,15 @@ async function generateQuestion(
   params: PromptParams,
   fallbackNodeCode: string,
   fallbackTitle: string,
-  stepType?: LearningStepType
+  stepType?: LearningStepType,
+  previousQuestions?: string
 ): Promise<PrefetchedQuestion> {
   try {
     let prompt: string;
     if (stepType) {
-      prompt = stepPrompt.buildStepPrompt(params, stepType);
+      prompt = stepPrompt.buildStepPrompt(params, stepType, {
+        previousQuestions,
+      });
     } else {
       prompt = practicePrompt.buildPrompt(params);
     }

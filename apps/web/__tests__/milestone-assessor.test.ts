@@ -10,7 +10,20 @@
  * - PASS_THRESHOLD constant
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+
+// Mock transitive dependencies that fail to resolve in vitest
+vi.mock("@/lib/session/claude-client", () => ({
+  callClaude: vi.fn().mockResolvedValue(null),
+}));
+vi.mock("@aauti/db", () => ({
+  prisma: {},
+}));
+vi.mock("@/lib/prompts/types", () => ({
+  getPersonaName: vi.fn().mockReturnValue("Cosmo"),
+  getAgeInstruction: vi.fn().mockReturnValue(""),
+}));
+
 import {
   evaluateMilestone,
   getMilestoneSession,
@@ -37,6 +50,7 @@ function makeQuestion(overrides: Partial<MilestoneQuestion> = {}): MilestoneQues
       { id: "c", text: "7", isCorrect: false },
       { id: "d", text: "5", isCorrect: false },
     ],
+    explanation: "6 comes after 5 in counting.",
     difficulty: 3,
     ...overrides,
   };
@@ -248,7 +262,7 @@ describe("Milestone Assessor", () => {
         questions: [makeQuestion()],
         answers: new Map(),
         startedAt: new Date(),
-        currentQuestionIndex: 0,
+        timeLimitSeconds: 1200,
       };
 
       const key = "test-session-1";
@@ -273,7 +287,7 @@ describe("Milestone Assessor", () => {
         questions: [],
         answers: new Map(),
         startedAt: new Date(),
-        currentQuestionIndex: 0,
+        timeLimitSeconds: 1200,
       };
 
       const key = "test-session-delete";
@@ -293,7 +307,7 @@ describe("Milestone Assessor", () => {
         questions: [],
         answers: new Map(),
         startedAt: new Date(),
-        currentQuestionIndex: 0,
+        timeLimitSeconds: 1200,
       });
 
       setMilestoneSession(key, {
@@ -303,7 +317,7 @@ describe("Milestone Assessor", () => {
         questions: [],
         answers: new Map(),
         startedAt: new Date(),
-        currentQuestionIndex: 3,
+        timeLimitSeconds: 1200,
       });
 
       const result = getMilestoneSession(key);

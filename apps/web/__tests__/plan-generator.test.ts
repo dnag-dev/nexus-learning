@@ -10,7 +10,22 @@
  * - Weekly milestone generation structure
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+
+// Mock transitive dependencies that fail to resolve in vitest
+vi.mock("@/lib/session/claude-client", () => ({
+  callClaude: vi.fn().mockResolvedValue(null),
+}));
+vi.mock("@aauti/db", () => ({
+  prisma: {},
+  getShortestLearningPath: vi.fn().mockResolvedValue([]),
+  getAllNodes: vi.fn().mockResolvedValue([]),
+}));
+vi.mock("@/lib/prompts/types", () => ({
+  getPersonaName: vi.fn().mockReturnValue("Cosmo"),
+  getAgeInstruction: vi.fn().mockReturnValue(""),
+}));
+
 import {
   getGradeFactor,
   getVelocityFactor,

@@ -12,7 +12,10 @@
  */
 
 import { NextResponse } from "next/server";
+import { prisma } from "@aauti/db";
 import { generateLearningPlan } from "@/lib/learning-plan/plan-generator";
+
+const MAX_CONCURRENT_PLANS = 3;
 
 export const maxDuration = 30;
 
@@ -29,6 +32,37 @@ export async function POST(request: Request) {
     if (!goalId || !studentId) {
       return NextResponse.json(
         { error: "goalId and studentId are required" },
+        { status: 400 }
+      );
+    }
+
+    // Enforce max concurrent plans limit
+    const activePlanCount = await prisma.learningPlan.count({
+      where: { studentId, status: "ACTIVE" },
+    });
+
+    if (activePlanCount >= MAX_CONCURRENT_PLANS) {
+      return NextResponse.json(
+        {
+          error: `Maximum ${MAX_CONCURRENT_PLANS} concurrent goals allowed. Please complete or pause an existing goal first.`,
+          activePlanCount,
+          maxAllowed: MAX_CONCURRENT_PLANS,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Check for duplicate goal
+    const existingPlanForGoal = await prisma.learningPlan.findFirst({
+      where: { studentId, goalId, status: "ACTIVE" },
+    });
+
+    if (existingPlanForGoal) {
+      return NextResponse.json(
+        {
+          error: "You already have an active plan for this goal",
+          existingPlanId: existingPlanForGoal.id,
+        },
         { status: 400 }
       );
     }

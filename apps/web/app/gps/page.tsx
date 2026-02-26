@@ -341,7 +341,7 @@ function GPSDashboard() {
               + New Goal
             </a>
             <a
-              href={`/session?studentId=${STUDENT_ID}`}
+              href={`/session?studentId=${STUDENT_ID}${data?.plan?.id ? `&planId=${data.plan.id}` : ""}`}
               className="px-3 py-1.5 rounded-lg bg-purple-600 text-white text-xs font-medium hover:bg-purple-700 transition-colors"
             >
               Start Session
@@ -515,7 +515,7 @@ function GPSDashboard() {
                     </span>
                   </div>
                   <a
-                    href={`/session?studentId=${STUDENT_ID}`}
+                    href={`/session?studentId=${STUDENT_ID}${data.plan?.id ? `&planId=${data.plan.id}` : ""}${data.todaysMission?.nodeCode ? `&nodeCode=${data.todaysMission.nodeCode}` : ""}`}
                     className="block w-full py-2.5 text-center text-sm font-semibold text-white bg-purple-600 rounded-xl hover:bg-purple-700 transition-colors"
                   >
                     Start Learning &rarr;

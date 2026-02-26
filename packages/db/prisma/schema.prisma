@@ -271,6 +271,8 @@ model LearningSession {
   stepTotalCount       Int            @default(0)  // total answers in current step
   // 3-Engine: session mode
   mode                 String         @default("standard") // "standard" | "fluency" | "challenge"
+  // Learning Plan linkage (Step 12: Multiple Goals)
+  planId               String?        // links session to a specific learning plan
   // Review session fields
   reviewNodeIds        String[]       @default([])
   completedNodeIds     String[]       @default([])
@@ -282,6 +284,7 @@ model LearningSession {
 
   @@index([studentId])
   @@index([currentNodeId])
+  @@index([planId])
   @@index([sessionType])
   @@map("learning_sessions")
 }

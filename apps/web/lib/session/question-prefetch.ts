@@ -123,24 +123,51 @@ async function generateQuestion(
     const claudeResponse = await callClaude(prompt);
 
     if (claudeResponse) {
-      return stepType
+      const parsed = stepType
         ? stepPrompt.parseStepResponse(claudeResponse)
         : practicePrompt.parseResponse(claudeResponse);
+      if (parsed) return parsed;
+      console.warn("[prefetch] Parse failed, using fallback");
     }
   } catch (err) {
     console.warn("Prefetch question generation failed:", err);
   }
 
-  // Fallback
-  return {
-    questionText: `Practice question for ${fallbackTitle}: What is 5 + 3?`,
-    options: [
-      { id: "A", text: "7", isCorrect: false },
-      { id: "B", text: "8", isCorrect: true },
-      { id: "C", text: "9", isCorrect: false },
-      { id: "D", text: "6", isCorrect: false },
-    ],
-    correctAnswer: "B",
-    explanation: "5 + 3 = 8",
-  };
+  // Fallback — pick a random topic-specific question
+  const fallbacks: PrefetchedQuestion[] = [
+    {
+      questionText: `${fallbackTitle}: If you have 12 stickers and give away 5, how many do you have left?`,
+      options: [
+        { id: "A", text: "6", isCorrect: false },
+        { id: "B", text: "7", isCorrect: true },
+        { id: "C", text: "8", isCorrect: false },
+        { id: "D", text: "5", isCorrect: false },
+      ],
+      correctAnswer: "B",
+      explanation: "12 - 5 = 7. You started with 12 and gave away 5, so you have 7 left!",
+    },
+    {
+      questionText: `${fallbackTitle}: A baker made 9 cupcakes in the morning and 6 more in the afternoon. How many cupcakes did the baker make in total?`,
+      options: [
+        { id: "A", text: "14", isCorrect: false },
+        { id: "B", text: "16", isCorrect: false },
+        { id: "C", text: "15", isCorrect: true },
+        { id: "D", text: "13", isCorrect: false },
+      ],
+      correctAnswer: "C",
+      explanation: "9 + 6 = 15. The baker made 15 cupcakes total!",
+    },
+    {
+      questionText: `${fallbackTitle}: There are 4 rows of desks with 5 desks in each row. How many desks are there?`,
+      options: [
+        { id: "A", text: "20", isCorrect: true },
+        { id: "B", text: "9", isCorrect: false },
+        { id: "C", text: "25", isCorrect: false },
+        { id: "D", text: "15", isCorrect: false },
+      ],
+      correctAnswer: "A",
+      explanation: "4 × 5 = 20. Four groups of 5 makes 20!",
+    },
+  ];
+  return fallbacks[Math.floor(Math.random() * fallbacks.length)];
 }

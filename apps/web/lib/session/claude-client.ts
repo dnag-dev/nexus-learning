@@ -11,7 +11,7 @@ const ANTHROPIC_VERSION = "2023-06-01";
 
 const MODEL = "claude-sonnet-4-5-20250929";
 const MAX_TOKENS = 1024;
-const TEMPERATURE = 0.7;
+const TEMPERATURE = 0.3; // Lower temperature for more predictable JSON output
 
 let resolvedKey: string | null = null;
 
@@ -82,6 +82,7 @@ export async function callClaude(
         model: MODEL,
         max_tokens: maxTokens,
         temperature: TEMPERATURE,
+        system: "You are a JSON API. You MUST respond with ONLY valid JSON — no markdown, no code fences, no commentary, no text before or after the JSON object. Your entire response must be parseable by JSON.parse().",
         messages: [{ role: "user", content: prompt }],
       }),
     });
@@ -105,10 +106,13 @@ export async function callClaude(
     );
 
     if (content?.type === "text" && content.text) {
+      console.log(
+        `[Claude] Response preview: ${content.text.substring(0, 200)}`
+      );
       return content.text;
     }
 
-    console.warn("[Claude] No text content in response");
+    console.warn("[Claude] No text content in response:", JSON.stringify(data).substring(0, 300));
     return null;
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);

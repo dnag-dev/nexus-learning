@@ -153,7 +153,7 @@ function shuffleOptions(
   return { options: result, correctAnswer };
 }
 
-export function parseResponse(rawResponse: string): PracticeResponse {
+export function parseResponse(rawResponse: string): PracticeResponse | null {
   try {
     // Strategy 1: Strip markdown code blocks and parse
     let cleaned = rawResponse.replace(/```(?:json)?\n?|\n?```/g, "").trim();
@@ -193,17 +193,6 @@ export function parseResponse(rawResponse: string): PracticeResponse {
       "| Raw response (first 500 chars):",
       rawResponse?.substring(0, 500) ?? "NULL"
     );
-    // Fallback — this gets overridden per-subject in the route handler
-    return {
-      questionText: "What is 3 + 4?",
-      options: [
-        { id: "A", text: "6", isCorrect: false },
-        { id: "B", text: "7", isCorrect: true },
-        { id: "C", text: "8", isCorrect: false },
-        { id: "D", text: "5", isCorrect: false },
-      ],
-      correctAnswer: "B",
-      explanation: "3 + 4 = 7",
-    };
+    return null;
   }
 }

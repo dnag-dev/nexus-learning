@@ -146,16 +146,19 @@ export async function GET(request: Request) {
       `[next-question] Claude generated ${stepType} question for ${sessionId}`
     );
     const question = stepPrompt.parseStepResponse(claudeResponse);
-    return NextResponse.json({
-      question,
-      source: "on-demand",
-      learningStep: step,
-    });
+    if (question) {
+      return NextResponse.json({
+        question,
+        source: "on-demand",
+        learningStep: step,
+      });
+    }
+    console.warn(`[next-question] Parse failed for ${sessionId} — using fallback`);
   }
 
   // Fallback
   console.error(
-    `[next-question] Claude FAILED for ${sessionId} — using fallback`
+    `[next-question] Claude unavailable/unparseable for ${sessionId} — using fallback`
   );
 
   const question = generateFallbackQuestion(

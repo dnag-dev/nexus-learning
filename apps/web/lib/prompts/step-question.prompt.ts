@@ -235,7 +235,7 @@ function shuffleOptions(
   return { options: result, correctAnswer };
 }
 
-export function parseStepResponse(rawResponse: string): PracticeResponse {
+export function parseStepResponse(rawResponse: string): PracticeResponse | null {
   try {
     // Strategy 1: Strip markdown code blocks and parse
     let cleaned = rawResponse.replace(/```(?:json)?\n?|\n?```/g, "").trim();
@@ -276,17 +276,7 @@ export function parseStepResponse(rawResponse: string): PracticeResponse {
       "| Raw response (first 500 chars):",
       rawResponse?.substring(0, 500) ?? "NULL"
     );
-    return {
-      questionText: "Which of these is correct?",
-      options: [
-        { id: "A", text: "Option A", isCorrect: false },
-        { id: "B", text: "Option B", isCorrect: true },
-        { id: "C", text: "Option C", isCorrect: false },
-        { id: "D", text: "Option D", isCorrect: false },
-      ],
-      correctAnswer: "B",
-      explanation: "Let's try another one.",
-    };
+    return null;
   }
 }
 

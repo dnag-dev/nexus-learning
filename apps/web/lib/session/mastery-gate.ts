@@ -50,15 +50,16 @@ export async function evaluateTrueMastery(
 
   const totalResponses = responses.length;
 
-  // If fewer than 10 responses, can't evaluate — need more practice
+  // If fewer than required responses, let the student through —
+  // don't block advancement when there isn't enough data to evaluate
   if (totalResponses < MIN_RESPONSES_FOR_GATE) {
     return {
-      passed: false,
-      accuracy: { score: 0, passed: false },
-      consistency: { score: 0, passed: false, typesCorrect: [] },
-      retention: { score: 0, passed: false },
-      speed: { score: 0, passed: false, trendDirection: "flat" },
-      recommendation: "practice",
+      passed: true,
+      accuracy: { score: 1, passed: true },
+      consistency: { score: 1, passed: true, typesCorrect: [] },
+      retention: { score: 1, passed: true },
+      speed: { score: 1, passed: true, trendDirection: "improving" },
+      recommendation: "advance",
       totalResponses,
     };
   }
@@ -84,8 +85,9 @@ export async function evaluateTrueMastery(
     where: { studentId_nodeId: { studentId, nodeId } },
     select: { retentionScore: true },
   });
-  const retentionScore = mastery?.retentionScore ?? 0;
-  const retentionPassed = retentionScore >= RETENTION_THRESHOLD;
+  const retentionScore = mastery?.retentionScore ?? null;
+  // If retention has never been measured, don't block advancement
+  const retentionPassed = retentionScore === null || retentionScore >= RETENTION_THRESHOLD;
 
   // ─── 4. Speed: response time trending down ───
   // Compare first half avg vs second half avg (chronological order)
@@ -141,7 +143,7 @@ export async function evaluateTrueMastery(
     passed: allPassed,
     accuracy: { score: accuracyScore, passed: accuracyPassed },
     consistency: { score: consistencyScore, passed: consistencyPassed, typesCorrect },
-    retention: { score: retentionScore, passed: retentionPassed },
+    retention: { score: retentionScore ?? 1, passed: retentionPassed },
     speed: { score: speedScore, passed: speedPassed, trendDirection },
     recommendation,
     totalResponses,

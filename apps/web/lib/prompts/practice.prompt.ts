@@ -134,7 +134,18 @@ Respond ONLY with valid JSON.`;
 
 export function parseResponse(rawResponse: string): PracticeResponse {
   try {
-    const cleaned = rawResponse.replace(/```json\n?|\n?```/g, "").trim();
+    // Strategy 1: Strip markdown code blocks and parse
+    let cleaned = rawResponse.replace(/```(?:json)?\n?|\n?```/g, "").trim();
+
+    // Strategy 2: If that doesn't start with {, extract JSON object from the text
+    if (!cleaned.startsWith("{")) {
+      const jsonStart = cleaned.indexOf("{");
+      const jsonEnd = cleaned.lastIndexOf("}");
+      if (jsonStart !== -1 && jsonEnd > jsonStart) {
+        cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
+      }
+    }
+
     const parsed = JSON.parse(cleaned);
 
     if (
@@ -151,7 +162,13 @@ export function parseResponse(rawResponse: string): PracticeResponse {
       correctAnswer: parsed.correctAnswer,
       explanation: parsed.explanation,
     };
-  } catch {
+  } catch (err) {
+    console.error(
+      "[parseResponse] FAILED to parse Claude response:",
+      err instanceof Error ? err.message : err,
+      "| Raw response (first 500 chars):",
+      rawResponse?.substring(0, 500) ?? "NULL"
+    );
     // Fallback — this gets overridden per-subject in the route handler
     return {
       questionText: "What is 3 + 4?",

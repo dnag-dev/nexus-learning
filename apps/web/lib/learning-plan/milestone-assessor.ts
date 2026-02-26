@@ -69,7 +69,8 @@ export interface MilestoneEvaluation {
 // ─── Constants ──────────────────────────────────────────────────────────────
 
 const QUESTIONS_PER_MILESTONE = 8;
-const PASS_THRESHOLD = 0.75; // 75% to pass
+/** @internal exported for testing */
+export const PASS_THRESHOLD = 0.75; // 75% to pass
 const TIME_LIMIT_SECONDS = 1200; // 20 minutes
 const QUESTIONS_PER_CONCEPT = 2;
 

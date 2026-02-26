@@ -78,7 +78,8 @@ const BASE_HOURS_BY_DIFFICULTY: Record<number, number> = {
  * If a student is below the concept's grade level, they'll take longer.
  * If above, they'll be faster.
  */
-function getGradeFactor(studentGradeNum: number, conceptGradeNum: number): number {
+/** @internal exported for testing */
+export function getGradeFactor(studentGradeNum: number, conceptGradeNum: number): number {
   const diff = conceptGradeNum - studentGradeNum;
   if (diff <= -2) return 0.6;  // Student is 2+ grades above → faster
   if (diff === -1) return 0.8; // Student is 1 grade above
@@ -91,7 +92,8 @@ function getGradeFactor(studentGradeNum: number, conceptGradeNum: number): numbe
  * Velocity factor adjusts estimates based on student's historical learning speed.
  * A velocity > 1 means student learns faster than average.
  */
-function getVelocityFactor(historicalVelocity: number | null): number {
+/** @internal exported for testing */
+export function getVelocityFactor(historicalVelocity: number | null): number {
   if (!historicalVelocity || historicalVelocity <= 0) return 1.0;
   // If student typically completes 1.5x faster, reduce estimates by 1/1.5
   return Math.max(0.5, Math.min(2.0, 1.0 / historicalVelocity));
@@ -101,7 +103,8 @@ function getVelocityFactor(historicalVelocity: number | null): number {
  * Partial mastery discount: if a student already has some BKT probability,
  * reduce the estimated hours proportionally.
  */
-function getPartialMasteryDiscount(bktProbability: number): number {
+/** @internal exported for testing */
+export function getPartialMasteryDiscount(bktProbability: number): number {
   if (bktProbability <= 0.3) return 1.0;   // No prior knowledge
   if (bktProbability <= 0.5) return 0.75;  // Some exposure
   if (bktProbability <= 0.7) return 0.5;   // Developing
@@ -111,9 +114,11 @@ function getPartialMasteryDiscount(bktProbability: number): number {
 
 // ─── Grade Level Helpers ────────────────────────────────────────────────────
 
-const GRADE_ORDER = ["K", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9", "G10"];
+/** @internal exported for testing */
+export const GRADE_ORDER = ["K", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9", "G10"];
 
-function gradeToNum(grade: string): number {
+/** @internal exported for testing */
+export function gradeToNum(grade: string): number {
   const idx = GRADE_ORDER.indexOf(grade);
   return idx >= 0 ? idx : 0;
 }
@@ -256,7 +261,8 @@ async function getStudentMasteryMap(
 
 // ─── Core: Estimate Hours per Concept ───────────────────────────────────────
 
-function estimateHoursPerConcept(
+/** @internal exported for testing */
+export function estimateHoursPerConcept(
   difficulty: number,
   conceptGradeNum: number,
   studentGradeNum: number,

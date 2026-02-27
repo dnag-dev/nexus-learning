@@ -511,7 +511,6 @@ async function seedMathG6G12() {
         domain: node.domain,
         difficulty: node.difficulty,
         subject: node.subject,
-        prerequisites: [],
       },
     });
   }
@@ -530,7 +529,7 @@ async function seedMathG6G12() {
       if (prereqNodes.length > 0) {
         await prisma.knowledgeNode.update({
           where: { nodeCode: node.nodeCode },
-          data: { prerequisites: prereqNodes.map((n) => n.id) },
+          data: { prerequisites: { connect: prereqNodes.map((n) => ({ id: n.id })) } },
         });
         prereqCount += prereqNodes.length;
       }

@@ -68,6 +68,10 @@ const GRADE_OPTIONS = [
   { value: 6, label: "Grade 6", short: "G6" },
   { value: 7, label: "Grade 7", short: "G7" },
   { value: 8, label: "Grade 8", short: "G8" },
+  { value: 9, label: "Grade 9", short: "G9" },
+  { value: 10, label: "Grade 10", short: "G10" },
+  { value: 11, label: "Grade 11", short: "G11" },
+  { value: 12, label: "Grade 12", short: "G12" },
 ];
 
 const SUBJECT_OPTIONS = [
@@ -470,10 +474,10 @@ function GoalSelectionPage() {
                     </p>
                     <div className="flex flex-wrap gap-2">
                       <span className="text-xs px-2 py-1 rounded-full bg-blue-50 text-blue-600">
-                        K-8 Math
+                        K-12 Math
                       </span>
                       <span className="text-xs px-2 py-1 rounded-full bg-purple-50 text-purple-600">
-                        K-8 ELA
+                        K-12 ELA
                       </span>
                       <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-500">
                         Standards-aligned

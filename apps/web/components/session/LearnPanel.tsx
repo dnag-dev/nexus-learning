@@ -14,6 +14,8 @@ interface LearnPanelProps {
   nodeTitle: string;
   personaId: string;
   isVisible: boolean;
+  /** When true, the floating button shifts left to avoid the desktop stats sidebar */
+  hasSidebar?: boolean;
   onEvent?: (type: string, detail?: string) => void;
 }
 
@@ -22,6 +24,7 @@ export default function LearnPanel({
   nodeTitle,
   personaId,
   isVisible,
+  hasSidebar = false,
   onEvent,
 }: LearnPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -117,7 +120,7 @@ export default function LearnPanel({
   if (!isVisible) return null;
 
   const TABS: { id: TabId; icon: string; label: string }[] = [
-    { id: "watch", icon: "🎬", label: "Watch" },
+    { id: "watch", icon: "📖", label: "Explain" },
     { id: "examples", icon: "📝", label: "Examples" },
     { id: "ask", icon: "💬", label: "Ask" },
   ];
@@ -133,7 +136,9 @@ export default function LearnPanel({
             exit={{ opacity: 0, scale: 0.8, y: 20 }}
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
             onClick={openPanel}
-            className="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-purple-600 to-aauti-primary text-white rounded-full shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:-translate-y-0.5 transition-all duration-200"
+            className={`fixed bottom-6 right-6 z-40 flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-purple-600 to-aauti-primary text-white rounded-full shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:-translate-y-0.5 transition-all duration-200 ${
+              hasSidebar ? "lg:right-[296px]" : ""
+            }`}
             aria-label="Open Learn More panel"
           >
             <span className="text-lg">📚</span>

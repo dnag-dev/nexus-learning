@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 interface WatchStep {
@@ -24,9 +24,16 @@ export default function WatchTab({
 }: WatchTabProps) {
   const [currentStep, setCurrentStep] = useState(-1); // -1 = showing definition only
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  // Opt-in narration — only triggered when user clicks the 🔊 button
   const speakNarration = useCallback(
     async (text: string) => {
+      // Stop any currently playing audio
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
       try {
         setIsSpeaking(true);
         const res = await fetch("/api/voice/speak", {
@@ -46,10 +53,12 @@ export default function WatchTab({
         const blob = new Blob([arrayBuffer], { type: "audio/mpeg" });
         const url = URL.createObjectURL(blob);
         const audio = new Audio(url);
+        audioRef.current = audio;
         audio.play().catch(() => {});
         audio.onended = () => {
           URL.revokeObjectURL(url);
           setIsSpeaking(false);
+          audioRef.current = null;
         };
       } catch {
         setIsSpeaking(false);
@@ -58,15 +67,21 @@ export default function WatchTab({
     [personaId]
   );
 
+  // Navigate to step WITHOUT auto-triggering speech
   const goToStep = useCallback(
     (index: number) => {
+      // Stop any currently playing audio
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+        setIsSpeaking(false);
+      }
       setCurrentStep(index);
       if (index >= 0 && index < steps.length) {
-        onEvent?.("learn_panel_watch_step", `step_${index + 1}`);
-        speakNarration(steps[index].narration);
+        onEvent?.("learn_panel_explain_step", `step_${index + 1}`);
       }
     },
-    [steps, speakNarration, onEvent]
+    [steps, onEvent]
   );
 
   const nextStep = useCallback(() => {
@@ -77,6 +92,11 @@ export default function WatchTab({
   }, [currentStep, steps.length, goToStep]);
 
   const restart = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+      setIsSpeaking(false);
+    }
     setCurrentStep(-1);
   }, []);
 
@@ -123,15 +143,15 @@ export default function WatchTab({
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
               className="text-center py-8"
             >
-              <p className="text-4xl mb-4">🎬</p>
+              <p className="text-4xl mb-4">📖</p>
               <p className="text-white/80 text-sm mb-6">
-                Watch a step-by-step explanation of this concept
+                Step-by-step explanation of this concept
               </p>
               <button
                 onClick={() => goToStep(0)}
                 className="px-6 py-3 bg-aauti-primary text-white rounded-xl font-medium hover:bg-aauti-primary/90 transition-colors"
               >
-                Start Watching ▶️
+                Start Learning ▶️
               </button>
             </motion.div>
           ) : (
@@ -145,9 +165,35 @@ export default function WatchTab({
             >
               {/* Current step card */}
               <div className="bg-white/5 rounded-xl p-5 border border-white/10">
-                <p className="text-sm font-semibold text-aauti-primary mb-2">
-                  {steps[currentStep].label}
-                </p>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-semibold text-aauti-primary">
+                    {steps[currentStep].label}
+                  </p>
+                  {/* Opt-in listen button */}
+                  <button
+                    onClick={() => speakNarration(steps[currentStep].narration)}
+                    disabled={isSpeaking}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                      isSpeaking
+                        ? "bg-purple-500/20 text-purple-300"
+                        : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white"
+                    }`}
+                    aria-label="Listen to this step"
+                  >
+                    {isSpeaking ? (
+                      <>
+                        <span className="flex gap-0.5 items-end">
+                          <span className="w-0.5 h-2 bg-purple-400 rounded-full animate-pulse" />
+                          <span className="w-0.5 h-3 bg-purple-400 rounded-full animate-pulse" style={{ animationDelay: "100ms" }} />
+                          <span className="w-0.5 h-1.5 bg-purple-400 rounded-full animate-pulse" style={{ animationDelay: "200ms" }} />
+                        </span>
+                        <span>Playing...</span>
+                      </>
+                    ) : (
+                      <>🔊 Listen</>
+                    )}
+                  </button>
+                </div>
                 <div className="text-3xl mb-3 text-center py-2 bg-white/5 rounded-lg">
                   {steps[currentStep].visual}
                 </div>
@@ -155,24 +201,6 @@ export default function WatchTab({
                   {steps[currentStep].narration}
                 </p>
               </div>
-
-              {/* Speaking indicator */}
-              {isSpeaking && (
-                <div className="flex items-center gap-2 text-xs text-purple-400">
-                  <div className="flex gap-0.5">
-                    <div className="w-1 h-3 bg-purple-400 rounded-full animate-pulse" />
-                    <div
-                      className="w-1 h-4 bg-purple-400 rounded-full animate-pulse"
-                      style={{ animationDelay: "100ms" }}
-                    />
-                    <div
-                      className="w-1 h-2 bg-purple-400 rounded-full animate-pulse"
-                      style={{ animationDelay: "200ms" }}
-                    />
-                  </div>
-                  Speaking...
-                </div>
-              )}
 
               {/* Previous steps (dimmed) */}
               {currentStep > 0 && (

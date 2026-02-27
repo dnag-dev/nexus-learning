@@ -1684,6 +1684,7 @@ function SessionPage() {
         sessionId={sessionId}
         nodeTitle={node.title}
         personaId={personaId}
+        hasSidebar={showStats}
         isVisible={
           phase === "practice" ||
           phase === "feedback" ||

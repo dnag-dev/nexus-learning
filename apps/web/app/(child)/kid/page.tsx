@@ -187,9 +187,12 @@ export default function KidDashboardPage() {
         }
       }
 
-      // Navigate to session with subject parameter
+      // Navigate to session with subject + topic parameters
+      const topicParam = focusText.trim()
+        ? `&topic=${encodeURIComponent(focusText.trim())}`
+        : "";
       router.push(
-        `/session?studentId=${studentId}&subject=${selectedSubject}&returnTo=/kid`
+        `/session?studentId=${studentId}&subject=${selectedSubject}&returnTo=/kid${topicParam}`
       );
     } catch {
       setStartingSession(false);

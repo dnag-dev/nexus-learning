@@ -177,9 +177,10 @@ function SessionPage() {
   const subjectParam = searchParams.get("subject") || "MATH";
   const planIdParam = searchParams.get("planId") || undefined;
   const nodeCodeParam = searchParams.get("nodeCode") || undefined;
+  const topicParam = searchParams.get("topic") || "";
 
   // ─── Topic Search State ───
-  const [topicInput, setTopicInput] = useState("");
+  const [topicInput, setTopicInput] = useState(topicParam);
 
   // ─── Core State ───
   const [phase, setPhase] = useState<SessionPhase>("idle");
@@ -306,6 +307,16 @@ function SessionPage() {
         break;
     }
   }, [phase, feedback]);
+
+  // ─── Auto-start when topic is passed via URL (from dashboard) ───
+  const autoStarted = useRef(false);
+  useEffect(() => {
+    if (topicParam && !autoStarted.current && phase === "idle") {
+      autoStarted.current = true;
+      startSession();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [topicParam]);
 
   // ─── SSE connection for teaching content ───
 

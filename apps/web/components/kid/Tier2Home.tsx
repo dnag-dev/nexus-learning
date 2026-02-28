@@ -5,8 +5,13 @@
  *
  * Dark background, three sections:
  * - Mission briefing card
- * - 3 stat cards (level, streak, goal)
+ * - 3 stat cards (level, streak, mastered)
  * - Recent badges
+ *
+ * Uses /api/student/:id/gamification which returns:
+ *   { xp, level, streak: { current, ... } | null,
+ *     badges: [{ badgeType, category, earnedAt }],
+ *     masteryMap: [{ level: "MASTERED"|... }] }
  */
 
 import { useState, useEffect } from "react";
@@ -23,18 +28,40 @@ const PERSONA_EMOJI: Record<string, string> = {
   zara: "🦋",
 };
 
-interface GamProfile {
-  level: number;
+// Map badgeType to display info
+const BADGE_DISPLAY: Record<string, { name: string; emoji: string }> = {
+  first_session: { name: "First Steps", emoji: "🎯" },
+  session_10: { name: "10 Sessions", emoji: "🏅" },
+  session_50: { name: "50 Sessions", emoji: "🏆" },
+  session_100: { name: "Century", emoji: "💯" },
+  mastery_1: { name: "First Star", emoji: "⭐" },
+  mastery_5: { name: "Rising Star", emoji: "🌟" },
+  mastery_10: { name: "Star Cluster", emoji: "✨" },
+  mastery_25: { name: "Galaxy", emoji: "🌌" },
+  mastery_50: { name: "Constellation", emoji: "💫" },
+  perfect_session: { name: "Perfect!", emoji: "💎" },
+  streak_3: { name: "3-Day Streak", emoji: "🔥" },
+  streak_7: { name: "Week Warrior", emoji: "🔥" },
+  streak_14: { name: "Fortnight", emoji: "🔥" },
+  streak_30: { name: "Monthly", emoji: "🔥" },
+  early_bird: { name: "Early Bird", emoji: "🐦" },
+  night_owl: { name: "Night Owl", emoji: "🦉" },
+};
+
+interface GamData {
   xp: number;
-  xpToNextLevel: number;
-  totalMastered: number;
-  streakDays: number;
-  badges: Array<{ id: string; name: string; emoji: string; earnedAt: string }>;
+  level: number;
+  streak: {
+    current: number;
+    longest: number;
+  } | null;
+  badges: Array<{ badgeType: string; category: string; earnedAt: string }>;
+  masteryMap: Array<{ level: string }>;
 }
 
 export default function Tier2Home() {
   const { studentId, displayName, avatarPersonaId, level, xp } = useChild();
-  const [gam, setGam] = useState<GamProfile | null>(null);
+  const [gam, setGam] = useState<GamData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -55,9 +82,16 @@ export default function Tier2Home() {
   }, [studentId]);
 
   const emoji = PERSONA_EMOJI[avatarPersonaId] || "🐻";
-  const streakDays = gam?.streakDays ?? 0;
-  const xpToNext = gam?.xpToNextLevel ?? 100;
-  const xpProgress = xpToNext > 0 ? Math.min(((xp % xpToNext) / xpToNext) * 100, 100) : 0;
+  const streakDays = gam?.streak?.current ?? 0;
+  const totalMastered = gam?.masteryMap?.filter((n) => n.level === "MASTERED").length ?? 0;
+  const xpForLevel = 100; // Simple XP per level
+  const xpProgress = Math.min(((xp % xpForLevel) / xpForLevel) * 100, 100);
+
+  // Map raw badges to display format
+  const displayBadges = (gam?.badges ?? []).map((b) => {
+    const info = BADGE_DISPLAY[b.badgeType] || { name: b.badgeType, emoji: "🏅" };
+    return { id: b.badgeType, name: info.name, emoji: info.emoji, earnedAt: b.earnedAt };
+  });
 
   return (
     <div className="space-y-5">
@@ -103,21 +137,21 @@ export default function Tier2Home() {
             {streakDays > 0 ? `🔥 ${streakDays}` : "—"}
           </p>
           <p className="text-xs text-gray-500 mt-1">
-            {streakDays === 1 ? "day streak" : "day streak"}
+            day streak
           </p>
         </div>
 
         {/* Mastered */}
         <div className="bg-[#141d30] rounded-xl p-4 border border-white/5 text-center">
           <p className="text-2xl font-bold text-green-400">
-            {gam?.totalMastered ?? 0}
+            {totalMastered}
           </p>
           <p className="text-xs text-gray-500 mt-1">mastered</p>
         </div>
       </div>
 
       {/* Recent Badges */}
-      {gam && gam.badges.length > 0 && (
+      {displayBadges.length > 0 && (
         <div className="bg-[#141d30] rounded-xl p-5 border border-white/5">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-gray-300">
@@ -130,8 +164,8 @@ export default function Tier2Home() {
               See all →
             </Link>
           </div>
-          <div className="flex gap-3">
-            {gam.badges.slice(-3).map((badge) => (
+          <div className="flex gap-3 flex-wrap">
+            {displayBadges.slice(-3).map((badge) => (
               <div
                 key={badge.id}
                 className="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-2"
@@ -143,6 +177,22 @@ export default function Tier2Home() {
           </div>
         </div>
       )}
+
+      {/* Secondary Nav */}
+      <div className="grid grid-cols-2 gap-3">
+        <Link
+          href="/kid/constellation"
+          className="flex items-center justify-center gap-2 py-4 bg-[#141d30] rounded-xl border border-white/5 text-white font-medium hover:border-purple-500/30 transition-colors text-sm"
+        >
+          🌌 Constellation
+        </Link>
+        <Link
+          href="/kid/review"
+          className="flex items-center justify-center gap-2 py-4 bg-[#141d30] rounded-xl border border-white/5 text-white font-medium hover:border-purple-500/30 transition-colors text-sm"
+        >
+          📊 Review
+        </Link>
+      </div>
     </div>
   );
 }

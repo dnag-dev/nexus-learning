@@ -36,27 +36,27 @@ const TYPE_CONFIG: Record<string, { icon: string; color: string; link: (childId:
   REVIEW_DUE: {
     icon: "📚",
     color: "bg-orange-50 border-orange-200",
-    link: (id) => `/child/${id}/progress`,
+    link: (id) => `/dashboard/child/${id}?tab=progress`,
   },
   BADGE_EARNED: {
     icon: "🏅",
     color: "bg-purple-50 border-purple-200",
-    link: (id) => `/child/${id}/progress`,
+    link: (id) => `/dashboard/child/${id}?tab=progress`,
   },
   LEVEL_UP: {
     icon: "⭐",
     color: "bg-blue-50 border-blue-200",
-    link: (id) => `/child/${id}/progress`,
+    link: (id) => `/dashboard/child/${id}?tab=progress`,
   },
   REPORT_READY: {
     icon: "📝",
     color: "bg-green-50 border-green-200",
-    link: (id) => `/child/${id}/reports`,
+    link: (id) => `/dashboard/child/${id}?tab=insights`,
   },
   STREAK_REMINDER: {
     icon: "🔥",
     color: "bg-amber-50 border-amber-200",
-    link: (id) => `/child/${id}/progress`,
+    link: (id) => `/dashboard/child/${id}?tab=progress`,
   },
 };
 

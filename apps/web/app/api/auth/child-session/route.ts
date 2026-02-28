@@ -39,6 +39,9 @@ export async function GET(request: NextRequest) {
         avatarPersonaId: true,
         xp: true,
         level: true,
+        gradeLevel: true,
+        ageGroup: true,
+        firstLoginComplete: true,
       },
     });
 
@@ -55,6 +58,9 @@ export async function GET(request: NextRequest) {
       avatarPersonaId: student.avatarPersonaId,
       xp: student.xp,
       level: student.level,
+      gradeLevel: student.gradeLevel,
+      ageGroup: student.ageGroup,
+      firstLoginComplete: student.firstLoginComplete,
     });
   } catch (error) {
     console.error("Child session verify error:", error);

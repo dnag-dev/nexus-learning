@@ -17,6 +17,9 @@ interface ChildProfile {
   avatarPersonaId: string;
   xp: number;
   level: number;
+  gradeLevel: string;
+  ageGroup: string;
+  firstLoginComplete: boolean;
 }
 
 const PERSONA_EMOJI: Record<string, string> = {

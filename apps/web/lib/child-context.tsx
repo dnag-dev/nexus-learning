@@ -8,6 +8,9 @@ interface ChildContextValue {
   avatarPersonaId: string;
   xp: number;
   level: number;
+  gradeLevel: string;
+  ageGroup: string;
+  firstLoginComplete: boolean;
 }
 
 export const ChildContext = createContext<ChildContextValue>({
@@ -16,6 +19,9 @@ export const ChildContext = createContext<ChildContextValue>({
   avatarPersonaId: "cosmo",
   xp: 0,
   level: 1,
+  gradeLevel: "G3",
+  ageGroup: "MID_8_10",
+  firstLoginComplete: true,
 });
 
 export function useChild() {

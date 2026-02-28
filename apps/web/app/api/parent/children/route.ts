@@ -30,6 +30,11 @@ export async function GET(request: Request) {
         username: true,
         pinHash: true,
         avatarPersonaId: true,
+        country: true,
+        learningGoal: true,
+        dailyMinutesTarget: true,
+        targetDate: true,
+        subjectFocus: true,
       },
       orderBy: { createdAt: "asc" },
     });
@@ -43,6 +48,11 @@ export async function GET(request: Request) {
         username: child.username,
         hasKidLogin: !!child.username && !!child.pinHash,
         avatarPersonaId: child.avatarPersonaId,
+        country: child.country,
+        learningGoal: child.learningGoal,
+        dailyMinutesTarget: child.dailyMinutesTarget,
+        targetDate: child.targetDate,
+        subjectFocus: child.subjectFocus,
       })),
     });
   } catch (err) {

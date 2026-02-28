@@ -1,15 +1,16 @@
 "use client";
 
 /**
- * ChildCard — Phase 9: Parent Dashboard
+ * ChildCard — Phase 9 UX Overhaul
  *
- * Per-child summary card showing key metrics:
- * display name, avatar, grade, XP/level, today's activity,
- * streak, mastery trend, last active timestamp.
- * Includes "Learning Focus" input for parent blueprints (Phase 4: ELA).
+ * Redesigned card with:
+ * - Avatar + name + grade + level badge
+ * - Status banner (practiced today / not yet)
+ * - 3 stats: sessions this week, concepts mastered, streak
+ * - Last active
+ * - Two buttons: View Progress / Start Session
  */
 
-import { useState } from "react";
 import Link from "next/link";
 
 // ─── Types ───
@@ -74,112 +75,85 @@ const GRADE_LABELS: Record<string, string> = {
 export default function ChildCard({ child }: ChildCardProps) {
   const emoji = PERSONA_EMOJI[child.avatarPersonaId] || "👤";
   const gradeLabel = GRADE_LABELS[child.gradeLevel] || child.gradeLevel;
-
-  // Mastery trend
-  const trendDiff =
-    child.nodesMasteredThisWeek - child.nodesMasteredLastWeek;
-  const trendArrow =
-    trendDiff > 0 ? "↑" : trendDiff < 0 ? "↓" : "→";
-  const trendColor =
-    trendDiff > 0
-      ? "text-green-600"
-      : trendDiff < 0
-        ? "text-red-500"
-        : "text-gray-400";
-
-  // Last active
+  const practicedToday = child.todaySessions > 0;
   const lastActiveLabel = child.lastActiveAt
     ? formatRelativeTime(new Date(child.lastActiveAt))
     : "Never";
 
   return (
-    <Link
-      href={`/child/${child.id}/progress`}
-      className="block bg-white rounded-xl border border-gray-100 p-5 hover:shadow-md hover:border-purple-200 transition-all duration-200"
-    >
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-4">
-        <div className="text-3xl">{emoji}</div>
+    <div className="bg-white rounded-xl border border-gray-100 p-5 hover:shadow-md hover:border-purple-200 transition-all duration-200">
+      {/* Header: avatar + name + grade + level */}
+      <div className="flex items-center gap-3 mb-3">
+        <div className="text-3xl w-10 h-10 flex items-center justify-center">
+          {emoji}
+        </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-gray-900 truncate">
+          <h3 className="font-bold text-gray-900 truncate text-[15px]">
             {child.displayName}
           </h3>
           <p className="text-xs text-gray-500">{gradeLabel}</p>
         </div>
-        <div className="text-right">
-          <p className="text-sm font-medium text-purple-600">
-            Lv. {child.level}
-          </p>
-          <p className="text-xs text-gray-400">{child.xp} XP</p>
-        </div>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-3 gap-3 mb-4">
-        {/* Today's Activity */}
-        <div className="bg-blue-50 rounded-lg p-2 text-center">
-          <p className="text-lg font-bold text-blue-700">
-            {child.todaySessions}
-          </p>
-          <p className="text-xs text-blue-500">
-            {child.todaySessions === 1 ? "session" : "sessions"}
-          </p>
-        </div>
-
-        {/* Time today */}
-        <div className="bg-green-50 rounded-lg p-2 text-center">
-          <p className="text-lg font-bold text-green-700">
-            {child.todayMinutes}
-          </p>
-          <p className="text-xs text-green-500">min today</p>
-        </div>
-
-        {/* Streak */}
-        <div className="bg-orange-50 rounded-lg p-2 text-center">
-          <p className="text-lg font-bold text-orange-700">
-            {child.currentStreak > 0 ? `🔥 ${child.currentStreak}` : "—"}
-          </p>
-          <p className="text-xs text-orange-500">
-            {child.currentStreak === 1 ? "day" : "days"}
-          </p>
-        </div>
-      </div>
-
-      {/* Mastery Trend */}
-      <div className="flex items-center justify-between text-sm mb-3">
-        <div className="flex items-center gap-1">
-          <span className="text-gray-500">Mastered this week:</span>
-          <span className="font-medium">{child.nodesMasteredThisWeek}</span>
-          <span className={`text-sm font-medium ${trendColor}`}>
-            {trendArrow} {Math.abs(trendDiff)}
-          </span>
-        </div>
-        <span className="text-xs text-gray-400">
-          Active {lastActiveLabel}
+        <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
+          Lv. {child.level}
         </span>
       </div>
 
-      {/* Learning Focus (Blueprint) */}
-      <BlueprintInput childId={child.id} />
+      {/* Status Banner */}
+      <div
+        className={`px-3 py-2 rounded-lg text-sm mb-3 ${
+          practicedToday
+            ? "bg-green-50 text-green-700"
+            : "bg-amber-50 text-amber-700"
+        }`}
+      >
+        {practicedToday
+          ? `✓ Practiced today · ${child.todayMinutes}m`
+          : "Not yet today"}
+      </div>
 
-      {/* Start Learning Button */}
+      {/* 3 Stats Row */}
+      <div className="grid grid-cols-3 gap-3 mb-3">
+        <div className="text-center">
+          <p className="text-lg font-bold text-gray-900">
+            {child.todaySessions}
+          </p>
+          <p className="text-xs text-gray-500">sessions</p>
+        </div>
+        <div className="text-center">
+          <p className="text-lg font-bold text-gray-900">
+            {child.nodesMasteredThisWeek}
+          </p>
+          <p className="text-xs text-gray-500">mastered</p>
+        </div>
+        <div className="text-center">
+          <p className="text-lg font-bold text-gray-900">
+            {child.currentStreak > 0 ? `🔥 ${child.currentStreak}` : "—"}
+          </p>
+          <p className="text-xs text-gray-500">streak</p>
+        </div>
+      </div>
+
+      {/* Last Active */}
+      <p className="text-xs text-gray-400 mb-4">
+        Active {lastActiveLabel}
+      </p>
+
+      {/* Action Buttons */}
       <div className="flex gap-2">
+        <Link
+          href={`/dashboard/child/${child.id}`}
+          className="flex-1 py-2 px-3 border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-lg text-center transition-colors"
+        >
+          View Progress →
+        </Link>
         <a
           href={`/session?studentId=${child.id}`}
-          onClick={(e) => e.stopPropagation()}
           className="flex-1 py-2 px-3 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg text-center transition-colors"
         >
-          ▶ Start Learning
-        </a>
-        <a
-          href={`/diagnostic?studentId=${child.id}`}
-          onClick={(e) => e.stopPropagation()}
-          className="py-2 px-3 border border-gray-200 hover:bg-gray-50 text-gray-600 text-sm font-medium rounded-lg text-center transition-colors"
-        >
-          🎯 Diagnostic
+          Start Session →
         </a>
       </div>
-    </Link>
+    </div>
   );
 }
 
@@ -198,93 +172,6 @@ function formatRelativeTime(date: Date): string {
   if (diffDays === 1) return "yesterday";
   if (diffDays < 7) return `${diffDays}d ago`;
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
-// ─── Blueprint Input (Learning Focus) ───
-
-function BlueprintInput({ childId }: { childId: string }) {
-  const [open, setOpen] = useState(false);
-  const [text, setText] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-
-  const handleSave = async () => {
-    if (!text.trim()) return;
-    setSaving(true);
-    try {
-      const res = await fetch(`/api/parent/child/${childId}/blueprint`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text: text.trim(),
-          source: "PARENT",
-        }),
-      });
-      if (res.ok) {
-        setSaved(true);
-        setTimeout(() => {
-          setOpen(false);
-          setSaved(false);
-        }, 1500);
-      }
-    } catch {
-      // Non-critical
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  if (!open) {
-    return (
-      <button
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          setOpen(true);
-        }}
-        className="w-full mb-3 py-2 text-xs text-purple-600 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors text-center font-medium"
-      >
-        📝 Set Learning Focus
-      </button>
-    );
-  }
-
-  return (
-    <div
-      className="mb-3 bg-purple-50 rounded-lg p-3"
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-      }}
-    >
-      <p className="text-xs text-gray-600 mb-2">
-        What should this child focus on? (e.g. &ldquo;Practice nouns and adjectives&rdquo; or &ldquo;Work on fractions&rdquo;)
-      </p>
-      <textarea
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder="e.g. Focus on comma rules and sentence structure"
-        className="w-full px-2 py-1.5 border border-gray-200 rounded text-sm resize-none focus:ring-1 focus:ring-purple-400 focus:border-purple-400"
-        rows={2}
-        maxLength={300}
-      />
-      <div className="flex gap-2 mt-2">
-        <button
-          onClick={handleSave}
-          disabled={saving || !text.trim()}
-          className="px-3 py-1 bg-purple-600 text-white text-xs rounded font-medium hover:bg-purple-700 disabled:opacity-50 transition-colors"
-        >
-          {saved ? "✓ Saved!" : saving ? "Saving..." : "Save Focus"}
-        </button>
-        <button
-          onClick={() => setOpen(false)}
-          className="px-3 py-1 text-xs text-gray-500 hover:text-gray-700"
-        >
-          Cancel
-        </button>
-      </div>
-    </div>
-  );
 }
 
 // ─── Export helper for tests ───

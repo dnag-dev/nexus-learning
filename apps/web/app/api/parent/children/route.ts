@@ -3,6 +3,58 @@ import { prisma } from "@aauti/db";
 import { hashPin, validatePin, validateUsername } from "@/lib/child-auth";
 
 /**
+ * GET /api/parent/children?parentId=xxx
+ *
+ * List all children for a parent, including kid-login status.
+ * Used by the Settings page for PIN management.
+ */
+export async function GET(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const parentId = searchParams.get("parentId");
+
+    if (!parentId) {
+      return NextResponse.json(
+        { error: "parentId query parameter is required" },
+        { status: 400 }
+      );
+    }
+
+    const children = await prisma.student.findMany({
+      where: { parentId },
+      select: {
+        id: true,
+        displayName: true,
+        gradeLevel: true,
+        ageGroup: true,
+        username: true,
+        pinHash: true,
+        avatarPersonaId: true,
+      },
+      orderBy: { createdAt: "asc" },
+    });
+
+    return NextResponse.json({
+      children: children.map((child) => ({
+        id: child.id,
+        displayName: child.displayName,
+        gradeLevel: child.gradeLevel,
+        ageGroup: child.ageGroup,
+        username: child.username,
+        hasKidLogin: !!child.username && !!child.pinHash,
+        avatarPersonaId: child.avatarPersonaId,
+      })),
+    });
+  } catch (err) {
+    console.error("[parent/children GET] Error:", err);
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Internal error" },
+      { status: 500 }
+    );
+  }
+}
+
+/**
  * POST /api/parent/children
  *
  * Add a child profile to a parent account.

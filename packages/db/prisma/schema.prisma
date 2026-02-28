@@ -41,6 +41,8 @@ enum AgeGroup {
   EARLY_5_7
   MID_8_10
   UPPER_11_12
+  TEEN_13_15
+  HIGH_16_18
 }
 
 enum KnowledgeDomain {

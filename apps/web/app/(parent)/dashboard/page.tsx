@@ -173,6 +173,13 @@ export default function ParentDashboardPage() {
                   <option value="G3">Grade 3</option>
                   <option value="G4">Grade 4</option>
                   <option value="G5">Grade 5</option>
+                  <option value="G6">Grade 6</option>
+                  <option value="G7">Grade 7</option>
+                  <option value="G8">Grade 8</option>
+                  <option value="G9">Grade 9</option>
+                  <option value="G10">Grade 10</option>
+                  <option value="G11">Grade 11</option>
+                  <option value="G12">Grade 12</option>
                 </select>
               </div>
               <div>
@@ -187,6 +194,8 @@ export default function ParentDashboardPage() {
                   <option value="EARLY_5_7">Ages 5-7</option>
                   <option value="MID_8_10">Ages 8-10</option>
                   <option value="UPPER_11_12">Ages 11-12</option>
+                  <option value="TEEN_13_15">Ages 13-15</option>
+                  <option value="HIGH_16_18">Ages 16-18</option>
                 </select>
               </div>
             </div>

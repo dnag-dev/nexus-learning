@@ -7,7 +7,7 @@
  * Syncs Auth0 session → DB user, provides parent context.
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { useRouter, usePathname } from "next/navigation";
 import ParentSidebar, {
@@ -44,6 +44,7 @@ export default function ParentLayout({
   const [parentData, setParentData] = useState<ParentData | null>(null);
   const [notifications, setNotifications] = useState<ParentNotification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   // Extract child ID from URL
   const childIdMatch = pathname.match(/\/child\/([^/]+)/);
@@ -57,9 +58,10 @@ export default function ParentLayout({
       return;
     }
 
+    setSyncError(null);
     fetch("/api/auth/sync")
       .then((res) => {
-        if (!res.ok) throw new Error("Sync failed");
+        if (!res.ok) throw new Error(`Sync failed (HTTP ${res.status})`);
         return res.json();
       })
       .then((data) => {
@@ -72,12 +74,16 @@ export default function ParentLayout({
       })
       .catch((err) => {
         console.error("Auth sync failed:", err);
+        setSyncError(
+          err.message || "Failed to sync your account. Please try again."
+        );
+        setLoading(false);
       });
   }, [user, authLoading, router]);
 
   // Step 2: Fetch parent data once we have the DB user ID
   const fetchData = useCallback(async () => {
-    if (!profile) return;
+    if (!profile?.id) return;
 
     try {
       const [parentRes, notifRes] = await Promise.all([
@@ -96,18 +102,18 @@ export default function ParentLayout({
 
       if (notifRes.ok) {
         const data = await notifRes.json();
-        setNotifications(data.notifications);
+        setNotifications(data.notifications ?? []);
       }
     } catch (err) {
       console.error("Failed to load parent data:", err);
     } finally {
       setLoading(false);
     }
-  }, [profile]);
+  }, [profile?.id]);
 
   useEffect(() => {
-    if (profile) fetchData();
-  }, [profile, fetchData]);
+    if (profile?.id) fetchData();
+  }, [profile?.id, fetchData]);
 
   const handleMarkAllRead = async () => {
     if (!profile) return;
@@ -135,8 +141,19 @@ export default function ParentLayout({
     }
   };
 
+  // Memoize context value to avoid unnecessary re-renders
+  const contextValue = useMemo(
+    () => ({
+      parentId: profile?.id ?? "",
+      email: profile?.email ?? "",
+      name: profile?.name ?? "",
+      plan: parentData?.plan ?? profile?.plan ?? "SPARK",
+    }),
+    [profile?.id, profile?.email, profile?.name, profile?.plan, parentData?.plan]
+  );
+
   // Loading states
-  if (authLoading || (!profile && user)) {
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-pulse text-gray-400">
@@ -150,6 +167,46 @@ export default function ParentLayout({
     return null; // Redirecting to login
   }
 
+  // Sync error — show retry UI instead of stuck loading
+  if (syncError && !profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center max-w-sm">
+          <p className="text-4xl mb-4">😕</p>
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">
+            Something went wrong
+          </h2>
+          <p className="text-sm text-gray-500 mb-4">{syncError}</p>
+          <div className="flex gap-3 justify-center">
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors"
+            >
+              Try Again
+            </button>
+            <a
+              href="/api/auth/logout"
+              className="px-4 py-2 border border-gray-300 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+            >
+              Sign Out
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Waiting for profile sync
+  if (!profile && user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-pulse text-gray-400">
+          Signing you in...
+        </div>
+      </div>
+    );
+  }
+
   if (loading && !parentData) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -161,14 +218,7 @@ export default function ParentLayout({
   }
 
   return (
-    <ParentContext.Provider
-      value={{
-        parentId: profile?.id ?? "",
-        email: profile?.email ?? "",
-        name: profile?.name ?? "",
-        plan: parentData?.plan ?? profile?.plan ?? "SPARK",
-      }}
-    >
+    <ParentContext.Provider value={contextValue}>
       <div className="min-h-screen bg-gray-50 flex">
         {/* Sidebar */}
         <ParentSidebar
@@ -195,6 +245,13 @@ export default function ParentLayout({
               <span className="text-sm text-gray-500 hidden md:block">
                 {profile?.name}
               </span>
+              <a
+                href="/api/auth/logout"
+                className="text-xs text-gray-400 hover:text-gray-600 transition-colors hidden md:block"
+                title="Sign out"
+              >
+                Sign Out
+              </a>
             </div>
           </header>
 

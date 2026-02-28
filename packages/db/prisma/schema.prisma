@@ -219,6 +219,15 @@ model Student {
   username        String?          @unique
   pinHash         String?
   lastLoginAt     DateTime?
+  // ─── Wizard / onboarding fields ───
+  country             String?
+  learningGoal        String?          // CATCH_UP | STAY_ON_TRACK | GET_AHEAD | EXAM_PREP
+  dailyMinutesTarget  Int?
+  targetDate          DateTime?
+  initialChallenges   String[]         @default([])
+  subjectFocus        String?          // MATH | ENGLISH | BOTH
+  firstLoginComplete  Boolean          @default(false)
+  examType            String?
   // ─── Blueprint: Learning focus set by teacher/parent/kid ───
   blueprintText      String?
   blueprintNodes     String[]       @default([])

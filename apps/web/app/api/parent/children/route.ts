@@ -58,12 +58,28 @@ export async function GET(request: Request) {
  * POST /api/parent/children
  *
  * Add a child profile to a parent account.
- * Body: { parentId, displayName, gradeLevel, ageGroup, username?, pin? }
+ * Body: { parentId, displayName, gradeLevel, ageGroup, username?, pin?,
+ *         country?, learningGoal?, dailyMinutesTarget?, targetDate?,
+ *         initialChallenges?, subjectFocus?, examType? }
  */
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { parentId, displayName, gradeLevel, ageGroup, username, pin } = body;
+    const {
+      parentId,
+      displayName,
+      gradeLevel,
+      ageGroup,
+      username,
+      pin,
+      country,
+      learningGoal,
+      dailyMinutesTarget,
+      targetDate,
+      initialChallenges,
+      subjectFocus,
+      examType,
+    } = body;
 
     if (!parentId || !displayName) {
       return NextResponse.json(
@@ -148,6 +164,14 @@ export async function POST(request: Request) {
         avatarPersonaId: "cosmo",
         username: normalizedUsername ?? null,
         pinHash: pinHash ?? null,
+        // Wizard fields
+        country: country || null,
+        learningGoal: learningGoal || null,
+        dailyMinutesTarget: dailyMinutesTarget ? parseInt(dailyMinutesTarget) : null,
+        targetDate: targetDate ? new Date(targetDate) : null,
+        initialChallenges: initialChallenges || [],
+        subjectFocus: subjectFocus || null,
+        examType: examType || null,
       },
     });
 

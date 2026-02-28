@@ -1,5 +1,12 @@
 "use client";
 
+/**
+ * LearnPanel — Contextual help drawer.
+ *
+ * Desktop (≥768px): Button fixed bottom-left. Panel slides from LEFT as 400px overlay.
+ * Mobile  (<768px): Panel slides from BOTTOM as 85vh sheet with drag handle.
+ */
+
 import { useState, useCallback, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import WatchTab from "./learn-panel/WatchTab";
@@ -14,8 +21,6 @@ interface LearnPanelProps {
   nodeTitle: string;
   personaId: string;
   isVisible: boolean;
-  /** When true, the floating button shifts left to avoid the desktop stats sidebar */
-  hasSidebar?: boolean;
   onEvent?: (type: string, detail?: string) => void;
 }
 
@@ -24,7 +29,6 @@ export default function LearnPanel({
   nodeTitle,
   personaId,
   isVisible,
-  hasSidebar = false,
   onEvent,
 }: LearnPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -32,8 +36,17 @@ export default function LearnPanel({
   const [content, setContent] = useState<LearnMoreContent | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const openTimeRef = useRef<number>(0);
+
+  // Detect mobile
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   // Fetch content on first open
   const fetchContent = useCallback(async () => {
@@ -99,7 +112,6 @@ export default function LearnPanel({
         closePanel();
       }
     };
-    // Delay to avoid closing immediately when button is clicked
     const timer = setTimeout(() => {
       window.addEventListener("mousedown", handler);
     }, 100);
@@ -125,9 +137,124 @@ export default function LearnPanel({
     { id: "ask", icon: "💬", label: "Ask" },
   ];
 
+  // ─── Panel content (shared between desktop & mobile) ───
+  const panelContent = (
+    <>
+      {/* Header */}
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-white/10 shrink-0">
+        <span className="text-xl">📚</span>
+        <div className="flex-1 min-w-0">
+          <h2 className="text-base font-semibold text-white truncate">
+            Learn More
+          </h2>
+          <p className="text-xs text-gray-400 truncate">{nodeTitle}</p>
+        </div>
+        <button
+          onClick={closePanel}
+          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors text-gray-400 hover:text-white"
+          aria-label="Close panel"
+        >
+          ✕
+        </button>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex border-b border-white/10 shrink-0">
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => switchTab(tab.id)}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-sm font-medium transition-colors ${
+              activeTab === tab.id
+                ? "text-aauti-primary border-b-2 border-aauti-primary"
+                : "text-gray-500 hover:text-gray-300"
+            }`}
+          >
+            <span>{tab.icon}</span>
+            <span>{tab.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4">
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="flex gap-2 mb-4">
+              <div
+                className="w-3 h-3 rounded-full bg-aauti-primary animate-bounce"
+                style={{ animationDelay: "0ms" }}
+              />
+              <div
+                className="w-3 h-3 rounded-full bg-aauti-primary animate-bounce"
+                style={{ animationDelay: "100ms" }}
+              />
+              <div
+                className="w-3 h-3 rounded-full bg-aauti-primary animate-bounce"
+                style={{ animationDelay: "200ms" }}
+              />
+            </div>
+            <p className="text-sm text-gray-400">
+              Preparing your study guide...
+            </p>
+          </div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <p className="text-3xl mb-3">😕</p>
+            <p className="text-sm text-gray-400 mb-4">{error}</p>
+            <button
+              onClick={() => {
+                setContent(null);
+                setError(null);
+                fetchContent();
+              }}
+              className="px-4 py-2 bg-aauti-primary/20 text-aauti-primary text-sm rounded-lg hover:bg-aauti-primary/30 transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+        ) : content ? (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.15 }}
+              className="h-full"
+            >
+              {activeTab === "watch" && (
+                <WatchTab
+                  definition={content.definition}
+                  steps={content.steps}
+                  personaId={personaId}
+                  onEvent={onEvent}
+                />
+              )}
+              {activeTab === "examples" && (
+                <ExamplesTab
+                  examples={content.examples}
+                  onEvent={onEvent}
+                  onClose={closePanel}
+                />
+              )}
+              {activeTab === "ask" && (
+                <AskTab
+                  faqs={content.faqs}
+                  sessionId={sessionId}
+                  onEvent={onEvent}
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
+        ) : null}
+      </div>
+    </>
+  );
+
   return (
     <>
-      {/* Floating button */}
+      {/* ─── Floating button: bottom-LEFT on desktop, bottom-LEFT on mobile ─── */}
       <AnimatePresence>
         {!isOpen && (
           <motion.button
@@ -136,9 +263,7 @@ export default function LearnPanel({
             exit={{ opacity: 0, scale: 0.8, y: 20 }}
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
             onClick={openPanel}
-            className={`fixed bottom-6 right-6 z-40 flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-purple-600 to-aauti-primary text-white rounded-full shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:-translate-y-0.5 transition-all duration-200 ${
-              hasSidebar ? "lg:right-[296px]" : ""
-            }`}
+            className="fixed bottom-6 left-6 z-40 flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-purple-600 to-aauti-primary text-white rounded-full shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:-translate-y-0.5 transition-all duration-200"
             aria-label="Open Learn More panel"
           >
             <span className="text-lg">📚</span>
@@ -147,140 +272,55 @@ export default function LearnPanel({
         )}
       </AnimatePresence>
 
-      {/* Backdrop (mobile) */}
+      {/* ─── Backdrop ─── */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 z-40 md:bg-black/30"
+            className="fixed inset-0 bg-black/50 z-40"
+            onClick={closePanel}
           />
         )}
       </AnimatePresence>
 
-      {/* Panel drawer */}
+      {/* ─── Desktop: Left drawer ─── */}
       <AnimatePresence>
-        {isOpen && (
+        {isOpen && !isMobile && (
           <motion.div
             ref={panelRef}
-            initial={{ x: "100%" }}
+            initial={{ x: "-100%" }}
             animate={{ x: 0 }}
-            exit={{ x: "100%" }}
+            exit={{ x: "-100%" }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="fixed top-0 right-0 bottom-0 z-50 w-full max-w-[420px] md:w-[400px] bg-[#0D1B2A] border-l border-white/10 shadow-2xl flex flex-col"
+            className="fixed top-0 left-0 bottom-0 z-50 w-[400px] bg-[#0D1B2A] border-r border-white/10 shadow-2xl flex flex-col"
             role="dialog"
             aria-label="Learn More panel"
           >
-            {/* ─── Header ─── */}
-            <div className="flex items-center gap-3 px-5 py-4 border-b border-white/10 shrink-0">
-              <span className="text-xl">📚</span>
-              <div className="flex-1 min-w-0">
-                <h2 className="text-base font-semibold text-white truncate">
-                  Learn More
-                </h2>
-                <p className="text-xs text-gray-400 truncate">{nodeTitle}</p>
-              </div>
-              <button
-                onClick={closePanel}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors text-gray-400 hover:text-white"
-                aria-label="Close panel"
-              >
-                ✕
-              </button>
-            </div>
+            {panelContent}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-            {/* ─── Tabs ─── */}
-            <div className="flex border-b border-white/10 shrink-0">
-              {TABS.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => switchTab(tab.id)}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-sm font-medium transition-colors ${
-                    activeTab === tab.id
-                      ? "text-aauti-primary border-b-2 border-aauti-primary"
-                      : "text-gray-500 hover:text-gray-300"
-                  }`}
-                >
-                  <span>{tab.icon}</span>
-                  <span>{tab.label}</span>
-                </button>
-              ))}
+      {/* ─── Mobile: Bottom sheet ─── */}
+      <AnimatePresence>
+        {isOpen && isMobile && (
+          <motion.div
+            ref={panelRef}
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="fixed bottom-0 left-0 right-0 z-50 h-[85vh] bg-[#0D1B2A] border-t border-white/10 shadow-2xl flex flex-col rounded-t-3xl"
+            role="dialog"
+            aria-label="Learn More panel"
+          >
+            {/* Drag handle */}
+            <div className="flex justify-center py-3 shrink-0">
+              <div className="w-10 h-1 bg-gray-600 rounded-full" />
             </div>
-
-            {/* ─── Content ─── */}
-            <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4">
-              {isLoading ? (
-                <div className="flex flex-col items-center justify-center py-12">
-                  <div className="flex gap-2 mb-4">
-                    <div
-                      className="w-3 h-3 rounded-full bg-aauti-primary animate-bounce"
-                      style={{ animationDelay: "0ms" }}
-                    />
-                    <div
-                      className="w-3 h-3 rounded-full bg-aauti-primary animate-bounce"
-                      style={{ animationDelay: "100ms" }}
-                    />
-                    <div
-                      className="w-3 h-3 rounded-full bg-aauti-primary animate-bounce"
-                      style={{ animationDelay: "200ms" }}
-                    />
-                  </div>
-                  <p className="text-sm text-gray-400">
-                    Preparing your study guide...
-                  </p>
-                </div>
-              ) : error ? (
-                <div className="text-center py-12">
-                  <p className="text-3xl mb-3">😕</p>
-                  <p className="text-sm text-gray-400 mb-4">{error}</p>
-                  <button
-                    onClick={() => {
-                      setContent(null);
-                      setError(null);
-                      fetchContent();
-                    }}
-                    className="px-4 py-2 bg-aauti-primary/20 text-aauti-primary text-sm rounded-lg hover:bg-aauti-primary/30 transition-colors"
-                  >
-                    Try Again
-                  </button>
-                </div>
-              ) : content ? (
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={activeTab}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.15 }}
-                    className="h-full"
-                  >
-                    {activeTab === "watch" && (
-                      <WatchTab
-                        definition={content.definition}
-                        steps={content.steps}
-                        personaId={personaId}
-                        onEvent={onEvent}
-                      />
-                    )}
-                    {activeTab === "examples" && (
-                      <ExamplesTab
-                        examples={content.examples}
-                        onEvent={onEvent}
-                        onClose={closePanel}
-                      />
-                    )}
-                    {activeTab === "ask" && (
-                      <AskTab
-                        faqs={content.faqs}
-                        sessionId={sessionId}
-                        onEvent={onEvent}
-                      />
-                    )}
-                  </motion.div>
-                </AnimatePresence>
-              ) : null}
-            </div>
+            {panelContent}
           </motion.div>
         )}
       </AnimatePresence>

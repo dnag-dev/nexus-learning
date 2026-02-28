@@ -1,5 +1,6 @@
 "use client";
 
+import { AnimatePresence, motion } from "framer-motion";
 import { getSubjectColors } from "@/lib/session/subject-colors";
 
 interface QuestionOption {
@@ -171,26 +172,47 @@ export default function PracticeQuestion({
         </div>
       )}
 
-      {/* ─── Hint (only shown when onRequestHint provided — Steps 2-3 only) ─── */}
+      {/* ─── Hint (inline below choices — Steps 2-3 only) ─── */}
       {phase === "practice" && !isLoading && (onRequestHint || hint) && (
-        <div className="text-center">
-          {hint ? (
-            <div className="bg-aauti-accent/15 border border-aauti-accent/25 rounded-xl p-4 text-sm">
-              <p className="font-semibold mb-1 text-white">💡 Hint:</p>
-              <p className="text-white/90">{hint.hint}</p>
-              <p className="text-gray-300 mt-2 italic">
-                {hint.encouragement}
-              </p>
-            </div>
-          ) : onRequestHint ? (
-            <button
-              onClick={onRequestHint}
-              disabled={isLoading}
-              className="text-sm text-aauti-primary hover:underline"
-            >
-              💡 Need a hint?
-            </button>
-          ) : null}
+        <div className="mt-2">
+          <AnimatePresence mode="wait">
+            {hint ? (
+              <motion.div
+                key="hint-content"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="overflow-hidden"
+              >
+                <div className="bg-aauti-accent/15 border border-aauti-accent/25 rounded-xl p-4 text-sm">
+                  <p className="font-semibold mb-1 text-white">💡 Hint:</p>
+                  <p className="text-white/90">{hint.hint}</p>
+                  <p className="text-gray-300 mt-2 italic">
+                    {hint.encouragement}
+                  </p>
+                </div>
+              </motion.div>
+            ) : onRequestHint ? (
+              <motion.div
+                key="hint-button"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-center"
+              >
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onRequestHint();
+                  }}
+                  disabled={isLoading}
+                  className="text-sm text-aauti-primary hover:underline"
+                >
+                  💡 Need a hint?
+                </button>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
         </div>
       )}
 

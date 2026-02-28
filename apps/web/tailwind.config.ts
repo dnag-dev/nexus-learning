@@ -75,6 +75,10 @@ const config: Config = {
           "0%, 100%": { filter: "drop-shadow(0 0 8px rgba(253, 203, 110, 0.4))" },
           "50%": { filter: "drop-shadow(0 0 20px rgba(253, 203, 110, 0.7))" },
         },
+        "bounce-gentle": {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-6px)" },
+        },
       },
       animation: {
         ...(baseConfig.theme?.extend as Record<string, unknown>)?.animation as Record<string, unknown> ?? {},
@@ -93,6 +97,7 @@ const config: Config = {
         "streak-bump": "streak-bump 0.4s ease-out",
         "streak-shake": "streak-shake 0.4s ease-out",
         "ring-glow": "ring-glow 2s ease-in-out infinite",
+        "bounce-gentle": "bounce-gentle 3s ease-in-out infinite",
       },
     },
   },

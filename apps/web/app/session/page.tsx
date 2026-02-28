@@ -15,6 +15,8 @@ import type { FluencyAnswerResult } from "@/components/session/FluencyDrill";
 import SessionStats, { MobileStatsRow } from "@/components/session/SessionStats";
 import NexusScore from "@/components/gamification/NexusScore";
 import LearnPanel from "@/components/session/LearnPanel";
+import SessionLeftColumn from "@/components/session/SessionLeftColumn";
+import CosmoFloat from "@/components/session/CosmoFloat";
 
 // ─── Types ───
 
@@ -749,7 +751,14 @@ function SessionPage() {
   // ─── Render ───
 
   return (
-    <div className={`transition-[padding] duration-300 ${showStats ? "lg:pr-[280px]" : ""}`}>
+    <div className={`transition-[padding] duration-300 ${showStats ? "lg:pr-[260px]" : ""} ${showStats ? "lg:pl-[200px]" : ""}`}>
+    {/* ─── Desktop Left Column: Cosmo + Stepper ─── */}
+    <SessionLeftColumn
+      personaId={personaId}
+      learningStep={learningStep}
+      phase={phase}
+    />
+
     <AnimatePresence mode="wait">
       {/* ─── Idle ─── */}
       {phase === "idle" && (
@@ -1667,16 +1676,19 @@ function SessionPage() {
       {showStats && (
         <motion.aside
           key="session-stats"
-          initial={{ x: 280, opacity: 0 }}
+          initial={{ x: 260, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
-          exit={{ x: 280, opacity: 0 }}
+          exit={{ x: 260, opacity: 0 }}
           transition={{ duration: 0.3, ease: "easeOut" as const }}
-          className="hidden lg:flex fixed right-0 top-0 bottom-0 w-[280px] bg-[#0F1B2D]/95 backdrop-blur-sm border-l border-white/5 shadow-lg z-30 overflow-y-auto"
+          className="hidden lg:flex fixed right-0 top-0 bottom-0 w-[260px] bg-[#0F1B2D]/95 backdrop-blur-sm border-l border-white/5 shadow-lg z-30 overflow-y-auto"
         >
           <SessionStats {...statsProps} />
         </motion.aside>
       )}
     </AnimatePresence>
+
+    {/* ─── Mobile Floating Cosmo ─── */}
+    <CosmoFloat personaId={personaId} phase={phase} />
 
     {/* ─── Learn More Panel (available during practice/feedback/struggling) ─── */}
     {sessionId && node && (

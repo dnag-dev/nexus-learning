@@ -10,6 +10,7 @@
 import { useState, useEffect, useCallback } from "react";
 import ChildCard, { type ChildCardData } from "@/components/parent/ChildCard";
 import { useParent } from "@/lib/parent-context";
+import { DashboardSkeleton } from "@/components/ui/Skeleton";
 
 export default function ParentDashboardPage() {
   const { parentId, name } = useParent();
@@ -109,15 +110,11 @@ export default function ParentDashboardPage() {
   };
 
   if (loading) {
-    return (
-      <div className="animate-pulse text-gray-400 py-12 text-center">
-        Loading your children&apos;s progress...
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Welcome */}
       <div className="flex items-center justify-between">
         <div>
@@ -280,7 +277,7 @@ export default function ParentDashboardPage() {
 
       {/* Child Cards */}
       {children.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {children.map((child) => (
             <ChildCard key={child.id} child={child} />
           ))}

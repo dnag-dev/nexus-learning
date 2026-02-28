@@ -1,15 +1,20 @@
 "use client";
 
 /**
- * Parent Sidebar — Phase 9: Parent Dashboard
+ * Parent Sidebar — Phase 9: Parent Dashboard (UX Overhaul)
  *
- * Navigation sidebar with child switcher.
- * Responsive: full sidebar on desktop, hamburger on mobile.
+ * Three responsive modes:
+ *   Desktop (≥1025px): Traditional left sidebar (w-64, static)
+ *   Tablet  (769–1024px): Horizontal tab bar below header
+ *   Mobile  (≤768px): Hamburger menu overlay
+ *
+ * Sidebar never disappears on zoom — converts modes instead.
  */
 
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useBreakpoint } from "@/lib/hooks/useBreakpoint";
 
 // ─── Types ───
 
@@ -18,13 +23,16 @@ export interface ChildSummary {
   displayName: string;
   avatarPersonaId: string;
   gradeLevel: string;
+  lastActiveAt?: string | null;
 }
 
 interface ParentSidebarProps {
   parentName: string;
+  parentEmail?: string;
   subscriptionPlan: string;
   children: ChildSummary[];
   selectedChildId?: string;
+  onAddChild?: () => void;
 }
 
 // ─── Persona Emoji Map ───
@@ -56,185 +64,322 @@ const PLAN_COLORS: Record<string, string> = {
   ANNUAL: "bg-amber-100 text-amber-700",
 };
 
-// ─── Nav Items ───
+// ─── Nav Items (simplified: only 3 main items) ───
 
 interface NavItem {
   label: string;
   icon: string;
   href: string;
-  requiresChild?: boolean;
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: "Overview", icon: "📊", href: "/dashboard" },
-  {
-    label: "GPS",
-    icon: "🧭",
-    href: "/child/{id}/gps",
-    requiresChild: true,
-  },
-  {
-    label: "Progress",
-    icon: "🌟",
-    href: "/child/{id}/progress",
-    requiresChild: true,
-  },
-  {
-    label: "Sessions",
-    icon: "📚",
-    href: "/child/{id}/sessions",
-    requiresChild: true,
-  },
-  {
-    label: "Reports",
-    icon: "📝",
-    href: "/child/{id}/reports",
-    requiresChild: true,
-  },
+  { label: "Home", icon: "🏠", href: "/dashboard" },
+  { label: "Reports", icon: "📊", href: "/dashboard" },
   { label: "Settings", icon: "⚙️", href: "/settings" },
 ];
+
+// ─── Helpers ───
+
+/** Returns true if child was active within the last 24 hours. */
+function isActiveToday(lastActiveAt?: string | null): boolean {
+  if (!lastActiveAt) return false;
+  const diff = Date.now() - new Date(lastActiveAt).getTime();
+  return diff < 24 * 60 * 60 * 1000;
+}
 
 // ─── Component ───
 
 export default function ParentSidebar({
   parentName,
+  parentEmail,
   subscriptionPlan,
   children: childList,
   selectedChildId,
+  onAddChild,
 }: ParentSidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
-
-  const resolveHref = (item: NavItem) => {
-    if (!item.requiresChild) return item.href;
-    const childId = selectedChildId || childList[0]?.id;
-    if (!childId) return "#";
-    return item.href.replace("{id}", childId);
-  };
-
-  const isActive = (item: NavItem) => {
-    const href = resolveHref(item);
-    if (href === "#") return false;
-    return pathname === href || pathname.startsWith(href + "/");
-  };
+  const breakpoint = useBreakpoint();
 
   const planLabel = subscriptionPlan || "SPARK";
   const planColor = PLAN_COLORS[planLabel] || PLAN_COLORS.SPARK;
 
-  return (
-    <>
-      {/* Mobile hamburger */}
-      <button
-        onClick={() => setMobileOpen(!mobileOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-md"
-        aria-label="Toggle menu"
-      >
-        <span className="text-xl">{mobileOpen ? "✕" : "☰"}</span>
-      </button>
+  const isNavActive = (item: NavItem) => {
+    if (item.href === "/dashboard") {
+      return pathname === "/dashboard";
+    }
+    return pathname === item.href || pathname.startsWith(item.href + "/");
+  };
 
-      {/* Mobile overlay */}
-      {mobileOpen && (
-        <div
-          className="lg:hidden fixed inset-0 bg-black/30 z-40"
-          onClick={() => setMobileOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <aside
-        className={`
-          fixed lg:static inset-y-0 left-0 z-40
-          w-64 bg-white border-r border-gray-100
-          transform transition-transform duration-200 ease-in-out
-          ${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
-        `}
-      >
-        <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="p-4 border-b border-gray-100">
-            <h2 className="font-bold text-lg text-gray-900">Aauti Learn</h2>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-sm text-gray-500">{parentName}</span>
-              <span
-                className={`text-xs px-2 py-0.5 rounded-full font-medium ${planColor}`}
-              >
-                {planLabel}
-              </span>
-            </div>
-          </div>
-
-          {/* Child Switcher */}
-          {childList.length > 0 && (
-            <div className="p-4 border-b border-gray-100">
-              <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">
-                Children
-              </p>
-              <div className="space-y-1">
-                {childList.map((child) => (
-                  <Link
-                    key={child.id}
-                    href={`/child/${child.id}/progress`}
-                    onClick={() => setMobileOpen(false)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
-                      selectedChildId === child.id
-                        ? "bg-purple-50 text-purple-700 font-medium"
-                        : "text-gray-600 hover:bg-gray-50"
-                    }`}
-                  >
-                    <span className="text-lg">
-                      {PERSONA_EMOJI[child.avatarPersonaId] || "👤"}
-                    </span>
-                    <span>{child.displayName}</span>
-                    <span className="text-xs text-gray-400 ml-auto">
-                      {child.gradeLevel}
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Navigation */}
-          <nav className="flex-1 p-4">
-            <div className="space-y-1">
-              {NAV_ITEMS.map((item) => {
-                const href = resolveHref(item);
-                const active = isActive(item);
-                const disabled = item.requiresChild && !selectedChildId && childList.length === 0;
-
-                return (
-                  <Link
-                    key={item.label}
-                    href={disabled ? "#" : href}
-                    onClick={() => setMobileOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                      active
-                        ? "bg-purple-50 text-purple-700 font-medium"
-                        : disabled
-                          ? "text-gray-300 cursor-not-allowed"
-                          : "text-gray-600 hover:bg-gray-50"
-                    }`}
-                  >
-                    <span className="text-lg">{item.icon}</span>
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
-            </div>
-          </nav>
-
-          {/* Footer */}
-          <div className="p-4 border-t border-gray-100">
+  // ─── TABLET MODE: Horizontal tab bar ───
+  if (breakpoint === "tablet") {
+    return (
+      <nav className="bg-white border-b border-gray-100 px-4 py-2">
+        <div className="max-w-[1100px] mx-auto flex items-center gap-1 overflow-x-auto">
+          {/* Nav items */}
+          {NAV_ITEMS.map((item) => (
             <Link
-              href="/api/auth/logout"
-              className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+              key={item.label}
+              href={item.href}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm whitespace-nowrap transition-colors ${
+                isNavActive(item)
+                  ? "bg-purple-50 text-purple-700 font-medium"
+                  : "text-gray-600 hover:bg-gray-50"
+              }`}
             >
-              <span>🚪</span>
-              <span>Sign Out</span>
+              <span>{item.icon}</span>
+              <span>{item.label}</span>
             </Link>
-          </div>
+          ))}
+
+          {/* Divider */}
+          <div className="w-px h-6 bg-gray-200 mx-1 shrink-0" />
+
+          {/* Children chips */}
+          {childList.map((child) => {
+            const active = isActiveToday(child.lastActiveAt);
+            const isSelected =
+              selectedChildId === child.id ||
+              pathname.includes(`/child/${child.id}`);
+            return (
+              <Link
+                key={child.id}
+                href={`/dashboard/child/${child.id}`}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm whitespace-nowrap transition-colors ${
+                  isSelected
+                    ? "bg-purple-50 text-purple-700 font-medium"
+                    : "text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                <span
+                  className={`w-2 h-2 rounded-full shrink-0 ${
+                    active ? "bg-green-500" : "bg-gray-300"
+                  }`}
+                />
+                <span>{child.displayName}</span>
+              </Link>
+            );
+          })}
+
+          {/* Add Child */}
+          {onAddChild && (
+            <button
+              onClick={onAddChild}
+              className="flex items-center gap-1 px-3 py-1.5 text-sm text-purple-600 hover:bg-purple-50 rounded-full whitespace-nowrap transition-colors"
+            >
+              + Add
+            </button>
+          )}
         </div>
-      </aside>
-    </>
+      </nav>
+    );
+  }
+
+  // ─── MOBILE MODE: Hamburger ───
+  if (breakpoint === "mobile") {
+    return (
+      <>
+        {/* Hamburger button */}
+        <button
+          onClick={() => setMobileOpen(!mobileOpen)}
+          className="fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-md"
+          aria-label="Toggle menu"
+        >
+          <span className="text-xl">{mobileOpen ? "✕" : "☰"}</span>
+        </button>
+
+        {/* Overlay */}
+        {mobileOpen && (
+          <div
+            className="fixed inset-0 bg-black/30 z-40"
+            onClick={() => setMobileOpen(false)}
+          />
+        )}
+
+        {/* Slide-out sidebar */}
+        <aside
+          className={`
+            fixed inset-y-0 left-0 z-40
+            w-64 bg-white border-r border-gray-100
+            transform transition-transform duration-200 ease-in-out
+            ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
+          `}
+        >
+          <SidebarContent
+            parentName={parentName}
+            parentEmail={parentEmail}
+            planLabel={planLabel}
+            planColor={planColor}
+            childList={childList}
+            selectedChildId={selectedChildId}
+            pathname={pathname}
+            onAddChild={onAddChild}
+            onNavigate={() => setMobileOpen(false)}
+          />
+        </aside>
+      </>
+    );
+  }
+
+  // ─── DESKTOP MODE: Static sidebar (default + SSR fallback) ───
+  return (
+    <aside className="hidden lg:block w-64 bg-white border-r border-gray-100 shrink-0">
+      <SidebarContent
+        parentName={parentName}
+        parentEmail={parentEmail}
+        planLabel={planLabel}
+        planColor={planColor}
+        childList={childList}
+        selectedChildId={selectedChildId}
+        pathname={pathname}
+        onAddChild={onAddChild}
+        onNavigate={() => {}}
+      />
+    </aside>
+  );
+}
+
+// ─── Sidebar Content (shared between desktop and mobile) ───
+
+function SidebarContent({
+  parentName,
+  parentEmail,
+  planLabel,
+  planColor,
+  childList,
+  selectedChildId,
+  pathname,
+  onAddChild,
+  onNavigate,
+}: {
+  parentName: string;
+  parentEmail?: string;
+  planLabel: string;
+  planColor: string;
+  childList: ChildSummary[];
+  selectedChildId?: string;
+  pathname: string;
+  onAddChild?: () => void;
+  onNavigate: () => void;
+}) {
+  return (
+    <div className="flex flex-col h-full">
+      {/* Logo + Identity */}
+      <div className="p-4 border-b border-gray-100">
+        <div className="flex items-center gap-2">
+          <h2 className="font-bold text-lg text-gray-900">Aauti Learn</h2>
+          <span
+            className={`text-xs px-2 py-0.5 rounded-full font-medium ${planColor}`}
+          >
+            {planLabel}
+          </span>
+        </div>
+        <p className="text-xs text-gray-400 mt-1 truncate">
+          {parentEmail || parentName}
+        </p>
+      </div>
+
+      {/* Navigation */}
+      <nav className="p-4">
+        <div className="space-y-1">
+          {NAV_ITEMS.map((item) => {
+            const active =
+              item.href === "/dashboard"
+                ? pathname === "/dashboard"
+                : pathname === item.href ||
+                  pathname.startsWith(item.href + "/");
+
+            return (
+              <Link
+                key={item.label}
+                href={item.href}
+                onClick={onNavigate}
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                  active
+                    ? "bg-purple-50 text-purple-700 font-medium"
+                    : "text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                <span className="text-lg">{item.icon}</span>
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
+
+      {/* Children Section */}
+      <div className="px-4 flex-1">
+        <div className="border-t border-gray-100 pt-4">
+          <p className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold mb-2">
+            My Children
+          </p>
+          <div className="space-y-1">
+            {childList.map((child) => {
+              const active = isActiveToday(child.lastActiveAt);
+              const isSelected =
+                selectedChildId === child.id ||
+                pathname.includes(`/child/${child.id}`);
+
+              return (
+                <Link
+                  key={child.id}
+                  href={`/dashboard/child/${child.id}`}
+                  onClick={onNavigate}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                    isSelected
+                      ? "bg-purple-50 text-purple-700 font-medium"
+                      : "text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  <span
+                    className={`w-2 h-2 rounded-full shrink-0 ${
+                      active ? "bg-green-500" : "bg-gray-300"
+                    }`}
+                  />
+                  <span className="text-lg">
+                    {PERSONA_EMOJI[child.avatarPersonaId] || "👤"}
+                  </span>
+                  <span className="truncate">{child.displayName}</span>
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* Add Child Button */}
+          {onAddChild && (
+            <button
+              onClick={() => {
+                onAddChild();
+                onNavigate();
+              }}
+              className="mt-2 flex items-center gap-2 px-3 py-2 text-sm text-purple-600 hover:bg-purple-50 rounded-lg transition-colors w-full"
+            >
+              <span>+</span>
+              <span>Add Child</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="p-4 border-t border-gray-100 space-y-2">
+        <Link
+          href="#"
+          onClick={onNavigate}
+          className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 transition-colors"
+        >
+          <span>❓</span>
+          <span>Help</span>
+        </Link>
+        <Link
+          href="/api/auth/logout"
+          className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 transition-colors"
+        >
+          <span>🚪</span>
+          <span>Sign Out</span>
+        </Link>
+      </div>
+    </div>
   );
 }

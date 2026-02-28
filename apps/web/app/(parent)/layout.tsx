@@ -17,6 +17,7 @@ import NotificationCenter, {
   type ParentNotification,
 } from "@/components/parent/NotificationCenter";
 import { ParentContext } from "@/lib/parent-context";
+import { useBreakpoint } from "@/lib/hooks/useBreakpoint";
 
 interface ParentProfile {
   id: string;
@@ -39,6 +40,7 @@ export default function ParentLayout({
   const { user, isLoading: authLoading } = useUser();
   const router = useRouter();
   const pathname = usePathname();
+  const breakpoint = useBreakpoint();
 
   const [profile, setProfile] = useState<ParentProfile | null>(null);
   const [parentData, setParentData] = useState<ParentData | null>(null);
@@ -217,12 +219,16 @@ export default function ParentLayout({
     );
   }
 
+  // Tablet mode: sidebar renders as horizontal nav bar → need column flex
+  const isTablet = breakpoint === "tablet";
+
   return (
     <ParentContext.Provider value={contextValue}>
-      <div className="min-h-screen bg-gray-50 flex">
-        {/* Sidebar */}
+      <div className={`min-h-screen bg-gray-50 flex ${isTablet ? "flex-col" : ""}`}>
+        {/* Sidebar — desktop: left column, tablet: horizontal bar, mobile: hamburger overlay */}
         <ParentSidebar
           parentName={profile?.name || "Parent"}
+          parentEmail={profile?.email}
           subscriptionPlan={parentData?.plan || profile?.plan || "SPARK"}
           children={parentData?.children || []}
           selectedChildId={selectedChildId}
@@ -233,7 +239,7 @@ export default function ParentLayout({
           {/* Top Bar */}
           <header className="bg-white border-b border-gray-100 px-6 py-3 flex items-center justify-between">
             <div className="lg:hidden w-10" />
-            <h1 className="text-lg font-semibold text-gray-900 hidden lg:block">
+            <h1 className="text-2xl font-bold text-gray-900 hidden lg:block">
               Parent Dashboard
             </h1>
             <div className="flex items-center gap-3">
@@ -256,7 +262,7 @@ export default function ParentLayout({
           </header>
 
           {/* Page Content */}
-          <main className="p-6 max-w-6xl mx-auto">{children}</main>
+          <main className="p-5 max-w-[1100px] mx-auto">{children}</main>
         </div>
       </div>
     </ParentContext.Provider>

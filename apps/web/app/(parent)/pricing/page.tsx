@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useParent } from "@/lib/parent-context";
 
@@ -16,11 +17,10 @@ const PLANS = [
       "Basic progress reports",
       "AI-powered tutoring",
     ],
-    cta: "Current Plan",
     highlight: false,
   },
   {
-    key: "GROW",
+    key: "PRO",
     name: "Grow",
     price: "$9.99",
     period: "/mo",
@@ -32,7 +32,6 @@ const PLANS = [
       "Learning GPS with milestones",
       "Priority email support",
     ],
-    cta: "Upgrade to Grow",
     highlight: true,
   },
   {
@@ -48,13 +47,50 @@ const PLANS = [
       "Custom learning goals",
       "Priority support & onboarding",
     ],
-    cta: "Upgrade to Family",
     highlight: false,
   },
 ];
 
 export default function PricingPage() {
-  const { plan } = useParent();
+  const { parentId, plan } = useParent();
+  const [upgrading, setUpgrading] = useState<string | null>(null);
+  const [successPlan, setSuccessPlan] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleUpgrade = async (planKey: string) => {
+    setUpgrading(planKey);
+    setError(null);
+    setSuccessPlan(null);
+
+    try {
+      const res = await fetch("/api/parent/upgrade", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ parentId, plan: planKey }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Failed to upgrade");
+        return;
+      }
+
+      setSuccessPlan(planKey);
+      // Reload page after a brief delay so parent context refreshes with new plan
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setUpgrading(null);
+    }
+  };
+
+  // Determine plan rank for comparison
+  const planRank: Record<string, number> = { SPARK: 0, PRO: 1, FAMILY: 2 };
+  const currentRank = planRank[plan] ?? 0;
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -64,7 +100,7 @@ export default function PricingPage() {
           href="/settings"
           className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
         >
-          ← Back to Settings
+          &larr; Back to Settings
         </Link>
         <h2 className="text-2xl font-bold text-gray-900 mt-4">
           Choose Your Plan
@@ -74,10 +110,28 @@ export default function PricingPage() {
         </p>
       </div>
 
+      {/* Success banner */}
+      {successPlan && (
+        <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-700 text-center">
+          &#10003; Successfully upgraded to{" "}
+          {PLANS.find((p) => p.key === successPlan)?.name}! Refreshing...
+        </div>
+      )}
+
+      {/* Error banner */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700 text-center">
+          {error}
+        </div>
+      )}
+
       {/* Plan Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {PLANS.map((p) => {
           const isCurrent = plan === p.key;
+          const isUpgrade = (planRank[p.key] ?? 0) > currentRank;
+          const isDowngrade = (planRank[p.key] ?? 0) < currentRank;
+          const isLoading = upgrading === p.key;
 
           return (
             <div
@@ -131,11 +185,21 @@ export default function PricingPage() {
                 <div className="py-2.5 text-center text-sm font-medium text-gray-500 bg-gray-100 rounded-xl">
                   Current Plan
                 </div>
-              ) : (
-                <button className="py-2.5 text-center text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-xl transition-colors">
-                  {p.cta} — Coming Soon
+              ) : isUpgrade ? (
+                <button
+                  onClick={() => handleUpgrade(p.key)}
+                  disabled={isLoading || upgrading !== null}
+                  className="py-2.5 text-center text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-xl transition-colors disabled:opacity-50"
+                >
+                  {isLoading
+                    ? "Upgrading..."
+                    : `Upgrade to ${p.name}`}
                 </button>
-              )}
+              ) : isDowngrade ? (
+                <div className="py-2.5 text-center text-sm font-medium text-gray-400 bg-gray-50 rounded-xl">
+                  Included in your plan
+                </div>
+              ) : null}
             </div>
           );
         })}

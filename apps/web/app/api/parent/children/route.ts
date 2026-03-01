@@ -112,9 +112,9 @@ export async function POST(request: Request) {
     const plan = parent.subscription?.plan ?? "SPARK";
     const limits: Record<string, number> = {
       SPARK: 1,
-      PRO: 2,
-      FAMILY: 4,
-      ANNUAL: 2,
+      PRO: 3,
+      FAMILY: 99,
+      ANNUAL: 3,
     };
     const maxChildren = limits[plan] ?? 1;
 

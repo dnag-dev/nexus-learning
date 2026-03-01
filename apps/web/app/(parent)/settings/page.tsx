@@ -247,19 +247,19 @@ export default function ParentSettingsPage() {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-lg">
-                {plan === "FAMILY" ? "👨‍👩‍👧‍👦" : plan === "GROW" ? "🌱" : "⭐"}
+                {plan === "FAMILY" ? "👨‍👩‍👧‍👦" : plan === "PRO" ? "🌱" : "⭐"}
               </span>
               <span className="font-bold text-gray-900">
-                {plan === "FAMILY" ? "Family" : plan === "GROW" ? "Grow" : "Spark"}
+                {plan === "FAMILY" ? "Family" : plan === "PRO" ? "Grow" : "Spark"}
               </span>
               <span className="text-sm text-gray-500">
-                — {plan === "FAMILY" ? "$19.99/mo" : plan === "GROW" ? "$9.99/mo" : "Free"}
+                — {plan === "FAMILY" ? "$19.99/mo" : plan === "PRO" ? "$9.99/mo" : "Free"}
               </span>
             </div>
             <p className="text-xs text-gray-500 mt-1">
               {plan === "FAMILY"
                 ? "Unlimited children · All features · Priority support"
-                : plan === "GROW"
+                : plan === "PRO"
                   ? "Up to 3 children · All subjects · Detailed reports"
                   : "1 child profile · Basic features"}
             </p>
@@ -272,7 +272,7 @@ export default function ParentSettingsPage() {
               Upgrade to Grow →
             </Link>
           )}
-          {plan === "GROW" && (
+          {plan === "PRO" && (
             <Link
               href="/pricing"
               className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors shrink-0"

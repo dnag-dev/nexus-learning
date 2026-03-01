@@ -137,8 +137,10 @@ export default function SessionsTab({ childId }: SessionsTabProps) {
                   })}
                 </span>
                 <span className="text-sm text-gray-700 flex-1 truncate">
-                  {session.nodesCovered.length} concept
-                  {session.nodesCovered.length !== 1 ? "s" : ""} ·{" "}
+                  {session.nodesCovered.length > 0
+                    ? session.nodesCovered.join(", ")
+                    : "No concepts"}{" "}
+                  ·{" "}
                   {session.durationMinutes > 0 ? `${session.durationMinutes}m` : "—"}
                 </span>
                 <span

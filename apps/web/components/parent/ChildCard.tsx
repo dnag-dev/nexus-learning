@@ -28,6 +28,7 @@ export interface ChildCardData {
   nodesMasteredThisWeek: number;
   nodesMasteredLastWeek: number;
   lastActiveAt: string | null; // ISO
+  nextConceptTitle?: string | null;
 }
 
 interface ChildCardProps {
@@ -132,6 +133,13 @@ export default function ChildCard({ child }: ChildCardProps) {
           <p className="text-xs text-gray-500">streak</p>
         </div>
       </div>
+
+      {/* Next Up */}
+      {child.nextConceptTitle && (
+        <p className="text-xs text-purple-600 mb-2 truncate">
+          Next up: <span className="font-medium">{child.nextConceptTitle}</span>
+        </p>
+      )}
 
       {/* Last Active */}
       <p className="text-xs text-gray-400 mb-4">

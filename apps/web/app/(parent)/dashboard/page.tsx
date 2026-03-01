@@ -16,15 +16,6 @@ import AddChildWizard from "@/components/parent/wizard/AddChildWizard";
 export default function ParentDashboardPage() {
   const { parentId, name } = useParent();
   const [children, setChildren] = useState<ChildCardData[]>([]);
-  const [insights, setInsights] = useState<
-    Array<{
-      title: string;
-      description: string;
-      metric: string;
-      priority: string;
-      recommendation: string;
-    }>
-  >([]);
   const [loading, setLoading] = useState(true);
   const [showWizard, setShowWizard] = useState(false);
 
@@ -35,7 +26,6 @@ export default function ParentDashboardPage() {
       if (res.ok) {
         const data = await res.json();
         setChildren(data.childCards || []);
-        setInsights(data.insights || []);
       }
     } catch (err) {
       console.error("Failed to load dashboard:", err);
@@ -102,43 +92,6 @@ export default function ParentDashboardPage() {
         </div>
       )}
 
-      {/* Insights */}
-      {insights.length > 0 && (
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Insights
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {insights.map((insight, i) => (
-              <div
-                key={i}
-                className={`bg-white rounded-xl border p-4 ${
-                  insight.priority === "HIGH"
-                    ? "border-red-200 bg-red-50/30"
-                    : insight.priority === "MEDIUM"
-                      ? "border-amber-200 bg-amber-50/30"
-                      : "border-gray-100"
-                }`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium text-gray-900 text-sm">
-                    {insight.title}
-                  </h4>
-                  <span className="text-sm font-bold text-purple-600">
-                    {insight.metric}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-600 mb-2">
-                  {insight.description}
-                </p>
-                <p className="text-xs text-purple-600 italic">
-                  💡 {insight.recommendation}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

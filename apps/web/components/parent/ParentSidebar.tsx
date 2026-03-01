@@ -74,6 +74,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { label: "Home", icon: "🏠", href: "/dashboard" },
+  { label: "GPS", icon: "🧭", href: "/gps" },
   { label: "Reports", icon: "📊", href: "/dashboard" },
   { label: "Settings", icon: "⚙️", href: "/settings" },
 ];
@@ -104,6 +105,15 @@ export default function ParentSidebar({
   const planLabel = subscriptionPlan || "SPARK";
   const planColor = PLAN_COLORS[planLabel] || PLAN_COLORS.SPARK;
 
+  // Build dynamic GPS href using selected or first child
+  const gpsStudentId = selectedChildId || childList[0]?.id;
+  const gpsHref = gpsStudentId ? `/gps?studentId=${gpsStudentId}` : "/gps";
+
+  const getNavHref = (item: NavItem) => {
+    if (item.label === "GPS") return gpsHref;
+    return item.href;
+  };
+
   const isNavActive = (item: NavItem) => {
     if (item.href === "/dashboard") {
       return pathname === "/dashboard";
@@ -120,7 +130,7 @@ export default function ParentSidebar({
           {NAV_ITEMS.map((item) => (
             <Link
               key={item.label}
-              href={item.href}
+              href={getNavHref(item)}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm whitespace-nowrap transition-colors ${
                 isNavActive(item)
                   ? "bg-purple-50 text-purple-700 font-medium"
@@ -215,6 +225,7 @@ export default function ParentSidebar({
             pathname={pathname}
             onAddChild={onAddChild}
             onNavigate={() => setMobileOpen(false)}
+            getNavHref={getNavHref}
           />
         </aside>
       </>
@@ -234,6 +245,7 @@ export default function ParentSidebar({
         pathname={pathname}
         onAddChild={onAddChild}
         onNavigate={() => {}}
+        getNavHref={getNavHref}
       />
     </aside>
   );
@@ -251,6 +263,7 @@ function SidebarContent({
   pathname,
   onAddChild,
   onNavigate,
+  getNavHref,
 }: {
   parentName: string;
   parentEmail?: string;
@@ -261,6 +274,7 @@ function SidebarContent({
   pathname: string;
   onAddChild?: () => void;
   onNavigate: () => void;
+  getNavHref: (item: NavItem) => string;
 }) {
   return (
     <div className="flex flex-col h-full">
@@ -292,7 +306,7 @@ function SidebarContent({
             return (
               <Link
                 key={item.label}
-                href={item.href}
+                href={getNavHref(item)}
                 onClick={onNavigate}
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                   active

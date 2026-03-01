@@ -82,6 +82,40 @@ export async function GET(
           todaySessions.reduce((sum, s) => sum + s.durationSeconds, 0) / 60
         );
 
+        // Next concept for this child
+        let nextConceptTitle: string | null = null;
+        try {
+          const plan = await prisma.learningPlan.findFirst({
+            where: { studentId: child.id, status: "ACTIVE" },
+            orderBy: { createdAt: "desc" },
+          });
+          if (plan && plan.currentConceptIndex < plan.conceptSequence.length) {
+            const nodeCode = plan.conceptSequence[plan.currentConceptIndex];
+            const node = await prisma.knowledgeNode.findFirst({
+              where: { nodeCode },
+              select: { title: true },
+            });
+            nextConceptTitle = node?.title ?? null;
+          }
+          if (!nextConceptTitle) {
+            const masteredIds = (await prisma.masteryScore.findMany({
+              where: { studentId: child.id, bktProbability: { gte: 0.85 } },
+              select: { nodeId: true },
+            })).map((m) => m.nodeId);
+            const nextNode = await prisma.knowledgeNode.findFirst({
+              where: {
+                gradeLevel: child.gradeLevel,
+                id: { notIn: masteredIds.length > 0 ? masteredIds : ["__none__"] },
+              },
+              orderBy: { difficulty: "asc" },
+              select: { title: true },
+            });
+            nextConceptTitle = nextNode?.title ?? null;
+          }
+        } catch {
+          // Non-critical
+        }
+
         return {
           id: child.id,
           displayName: child.displayName,
@@ -96,6 +130,7 @@ export async function GET(
           nodesMasteredLastWeek: lastWeekMastered,
           lastActiveAt:
             child.sessions[0]?.startedAt?.toISOString() ?? null,
+          nextConceptTitle,
         };
       })
     );

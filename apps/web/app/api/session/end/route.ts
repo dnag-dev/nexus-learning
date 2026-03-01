@@ -184,14 +184,25 @@ const GRADE_LABELS: Record<string, string> = {
   G12: "Grade 12",
 };
 
+// Grade ordering for proximity checks
+const GRADE_ORDER = ["K", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9", "G10", "G11", "G12"];
+
+function gradeDistance(a: string, b: string): number {
+  const ia = GRADE_ORDER.indexOf(a);
+  const ib = GRADE_ORDER.indexOf(b);
+  if (ia < 0 || ib < 0) return 99;
+  return Math.abs(ia - ib);
+}
+
 async function buildSummary(sessionId: string, studentId: string) {
   const session = await prisma.learningSession.findUnique({
     where: { id: sessionId },
-    include: { currentNode: true },
+    include: { currentNode: true, student: { select: { gradeLevel: true } } },
   });
 
   if (!session) return null;
 
+  const studentGrade = session.student.gradeLevel;
   const durationMinutes = Math.round((session.durationSeconds || 0) / 60);
   const accuracy =
     session.questionsAnswered > 0
@@ -205,10 +216,10 @@ async function buildSummary(sessionId: string, studentId: string) {
     where: { studentId },
     include: { node: true },
     orderBy: { lastPracticed: "desc" },
-    take: 10, // Fetch more to split across subjects
+    take: 10,
   });
 
-  // Group mastery by subject — default to MATH if node has no subject
+  // Group mastery by subject
   const mathMastery = recentMasteryScores
     .filter((ms) => (ms.node.subject ?? "MATH") === "MATH")
     .map((ms) => ({
@@ -231,8 +242,27 @@ async function buildSummary(sessionId: string, studentId: string) {
       gradeLevel: ms.node.gradeLevel,
     }));
 
-  // ═══ Phase 2: Grade-level progress across all time ═══
-  // Fetch ALL mastery scores (not just recent) and ALL knowledge nodes
+  // ═══ Phase 1b: Concepts newly mastered THIS session ═══
+  // Find mastery scores updated during this session with MASTERED level
+  const sessionStart = session.startedAt;
+  const newlyMasteredThisSession = await prisma.masteryScore.findMany({
+    where: {
+      studentId,
+      level: "MASTERED",
+      lastPracticed: { gte: sessionStart },
+    },
+    include: { node: { select: { nodeCode: true, title: true, subject: true, gradeLevel: true } } },
+  });
+
+  const masteredThisSession = newlyMasteredThisSession.map((ms) => ({
+    nodeCode: ms.node.nodeCode,
+    title: ms.node.title,
+    subject: ms.node.subject ?? "MATH",
+    gradeLevel: ms.node.gradeLevel,
+    probability: Math.round(ms.bktProbability * 100),
+  }));
+
+  // ═══ Phase 2: Grade-level progress (filtered to student's grade ±1) ═══
   const [allMastery, allNodes] = await Promise.all([
     prisma.masteryScore.findMany({
       where: { studentId },
@@ -243,8 +273,6 @@ async function buildSummary(sessionId: string, studentId: string) {
     }),
   ]);
 
-  // Build grade-level progress: { subject, gradeLevel, mastered, total, label }
-  // Group all nodes by subject + gradeLevel
   const nodeCountMap = new Map<string, number>();
   for (const n of allNodes) {
     const subject = n.subject ?? "MATH";
@@ -252,7 +280,6 @@ async function buildSummary(sessionId: string, studentId: string) {
     nodeCountMap.set(key, (nodeCountMap.get(key) ?? 0) + 1);
   }
 
-  // Count mastered nodes (bktProbability >= 0.8) per subject + gradeLevel
   const masteredCountMap = new Map<string, number>();
   const attemptedGrades = new Set<string>();
   for (const ms of allMastery) {
@@ -264,7 +291,7 @@ async function buildSummary(sessionId: string, studentId: string) {
     }
   }
 
-  // Only include grades where student has at least attempted one node
+  // Filter to grades within ±1 of student's grade for the session complete screen
   const gradeProgress: Array<{
     subject: string;
     gradeLevel: string;
@@ -274,8 +301,18 @@ async function buildSummary(sessionId: string, studentId: string) {
     percentage: number;
   }> = [];
 
+  // Always include student's grade and ±1 neighbors
+  const relevantGrades = new Set<string>();
+  const studentGradeIdx = GRADE_ORDER.indexOf(studentGrade);
+  if (studentGradeIdx >= 1) relevantGrades.add(GRADE_ORDER[studentGradeIdx - 1]);
+  relevantGrades.add(studentGrade);
+  if (studentGradeIdx < GRADE_ORDER.length - 1) relevantGrades.add(GRADE_ORDER[studentGradeIdx + 1]);
+
   for (const key of attemptedGrades) {
     const [subject, gradeLevel] = key.split(":");
+    // Only show grades within ±1 of student's grade
+    if (!relevantGrades.has(gradeLevel)) continue;
+
     const total = nodeCountMap.get(key) ?? 0;
     const mastered = masteredCountMap.get(key) ?? 0;
     if (total === 0) continue;
@@ -293,45 +330,72 @@ async function buildSummary(sessionId: string, studentId: string) {
     });
   }
 
-  // Sort: by subject (ENGLISH first for display), then grade ascending
-  const gradeOrder = ["K", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9", "G10", "G11", "G12"];
   gradeProgress.sort((a, b) => {
     if (a.subject !== b.subject) return a.subject === "ENGLISH" ? -1 : 1;
-    return gradeOrder.indexOf(a.gradeLevel) - gradeOrder.indexOf(b.gradeLevel);
+    return GRADE_ORDER.indexOf(a.gradeLevel) - GRADE_ORDER.indexOf(b.gradeLevel);
   });
 
-  // ═══ Phase 4: Next-up nodes per subject ═══
-  // Find the first unmastered node in each subject for "What's Next"
+  // ═══ Phase 4: Next-up nodes per subject (filtered by grade proximity) ═══
   const nextUpNodes: Array<{ subject: string; nodeCode: string; title: string }> = [];
 
   for (const subject of ["MATH", "ENGLISH"] as const) {
-    // Get all nodes for this subject ordered by difficulty
+    // Prefer nodes within ±2 of student's grade
     const subjectNodes = await prisma.knowledgeNode.findMany({
       where: { subject },
       orderBy: [{ difficulty: "asc" }],
     });
 
-    // Find the first one that isn't mastered (bkt < 0.9)
+    // Sort by grade proximity to student, then difficulty
+    const proximityNodes = subjectNodes
+      .filter((n) => gradeDistance(n.gradeLevel, studentGrade) <= 2)
+      .sort((a, b) => {
+        const dA = gradeDistance(a.gradeLevel, studentGrade);
+        const dB = gradeDistance(b.gradeLevel, studentGrade);
+        if (dA !== dB) return dA - dB;
+        return a.difficulty - b.difficulty;
+      });
+
     let found = false;
-    for (const node of subjectNodes) {
+    for (const node of proximityNodes) {
       const ms = allMastery.find((m) => m.nodeId === node.id);
       if (!ms || ms.bktProbability < 0.9) {
-        nextUpNodes.push({
-          subject,
-          nodeCode: node.nodeCode,
-          title: node.title,
-        });
+        nextUpNodes.push({ subject, nodeCode: node.nodeCode, title: node.title });
         found = true;
         break;
       }
     }
-    // If all mastered, flag it
     if (!found && subjectNodes.length > 0) {
-      nextUpNodes.push({
-        subject,
-        nodeCode: "__ALL_MASTERED__",
-        title: "All caught up!",
-      });
+      nextUpNodes.push({ subject, nodeCode: "__ALL_MASTERED__", title: "All caught up!" });
+    }
+  }
+
+  // ═══ Phase 5: Goal progress (current grade proficiency %) ═══
+  // Calculate progress toward current grade proficiency
+  let goalProgress = null;
+  {
+    const sessionSubjectKey = (session.subject ?? "MATH") + ":" + studentGrade;
+    const totalInGrade = nodeCountMap.get(sessionSubjectKey) ?? 0;
+    const masteredInGrade = masteredCountMap.get(sessionSubjectKey) ?? 0;
+    if (totalInGrade > 0) {
+      const currentPct = Math.round((masteredInGrade / totalInGrade) * 100);
+      // Estimate previous percentage (before this session's mastery gains)
+      const newMasteredCount = masteredThisSession.filter(
+        (m) => m.gradeLevel === studentGrade && m.subject === (session.subject ?? "MATH")
+      ).length;
+      const previousMastered = Math.max(0, masteredInGrade - newMasteredCount);
+      const previousPct = Math.round((previousMastered / totalInGrade) * 100);
+
+      const subjectLabel = (session.subject ?? "MATH") === "ENGLISH" ? "English" : "Math";
+      const gradeLabel = GRADE_LABELS[studentGrade] ?? studentGrade;
+
+      goalProgress = {
+        label: `${gradeLabel} ${subjectLabel} Proficiency`,
+        currentPct,
+        previousPct,
+        change: currentPct - previousPct,
+        mastered: masteredInGrade,
+        total: totalInGrade,
+      };
     }
   }
 
@@ -351,7 +415,6 @@ async function buildSummary(sessionId: string, studentId: string) {
     // Streak is non-critical
   }
 
-  // ═══ Phase 3: Session subject (for XP display split) ═══
   const sessionSubject = session.subject ?? "MATH";
 
   return {
@@ -362,6 +425,7 @@ async function buildSummary(sessionId: string, studentId: string) {
     accuracy,
     hintsUsed: session.hintsUsed,
     sessionSubject,
+    studentGrade,
     currentNode: session.currentNode
       ? {
           nodeCode: session.currentNode.nodeCode,
@@ -369,10 +433,8 @@ async function buildSummary(sessionId: string, studentId: string) {
           subject: session.currentNode.subject ?? "MATH",
         }
       : null,
-    // Phase 1: Subject-grouped mastery
     mathMastery,
     englishMastery,
-    // Legacy field for backward compat
     recentMastery: recentMasteryScores.map((ms) => ({
       nodeCode: ms.node.nodeCode,
       title: ms.node.title,
@@ -380,13 +442,13 @@ async function buildSummary(sessionId: string, studentId: string) {
       probability: Math.round(ms.bktProbability * 100),
       subject: ms.node.subject ?? "MATH",
     })),
-    // Phase 2: Grade progress
+    // NEW: Concepts mastered THIS session only
+    masteredThisSession,
     gradeProgress,
-    // Phase 4: Next-up nodes
     nextUpNodes,
-    // Phase 6: Streak
+    // NEW: Goal progress toward current grade proficiency
+    goalProgress,
     streak,
-    // Phase 7: Plan context (for GPS-aware navigation)
     planId: session.planId ?? null,
   };
 }

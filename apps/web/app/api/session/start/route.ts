@@ -107,14 +107,34 @@ export async function POST(request: Request) {
       }
 
       // Priority 2: First unmastered node for the subject
+      // Enforce grade-level proximity: search within ±2 of student's grade first,
+      // only going wider if nothing found (prevents G5 student learning G1 content)
       if (!targetNode) {
-        const startIdx = gradeLevels.indexOf(student.gradeLevel);
-        // If student's grade isn't in this subject's list, start from beginning
-        const effectiveStart = startIdx >= 0 ? startIdx : 0;
-        const orderedGrades = [
-          ...gradeLevels.slice(effectiveStart),
-          ...gradeLevels.slice(0, effectiveStart),
-        ];
+        const studentGradeIdx = gradeLevels.indexOf(student.gradeLevel);
+        const effectiveIdx = studentGradeIdx >= 0 ? studentGradeIdx : 0;
+
+        // Build ordered grade search: student's grade first, then ±1, ±2
+        // Only go beyond ±2 as absolute last resort
+        const orderedGrades: string[] = [];
+        const seen = new Set<string>();
+        for (let distance = 0; distance <= Math.max(effectiveIdx, gradeLevels.length - effectiveIdx - 1); distance++) {
+          for (const offset of [0, 1, -1]) {
+            const idx = effectiveIdx + (distance * (offset || 1));
+            if (idx >= 0 && idx < gradeLevels.length && !seen.has(gradeLevels[idx])) {
+              // For grades beyond ±2, only include them after exhausting nearby grades
+              if (Math.abs(idx - effectiveIdx) <= 2 || orderedGrades.length === 0) {
+                orderedGrades.push(gradeLevels[idx]);
+              }
+              seen.add(gradeLevels[idx]);
+            }
+          }
+        }
+        // Add any remaining grades beyond ±2 at the very end
+        for (let i = 0; i < gradeLevels.length; i++) {
+          if (!seen.has(gradeLevels[i])) {
+            orderedGrades.push(gradeLevels[i]);
+          }
+        }
 
         for (const grade of orderedGrades) {
           if (targetNode) break;

@@ -1251,7 +1251,7 @@ function SessionPage() {
         </motion.div>
       )}
 
-      {/* ─── Summary (Redesigned: Phases 1-6) ─── */}
+      {/* ─── Summary (Redesigned: 5 Sections) ─── */}
       {phase === "summary" && summary && (
         <motion.div
           key="summary"
@@ -1262,290 +1262,268 @@ function SessionPage() {
           transition={pageTransition}
           className="min-h-screen bg-[#0D1B2A]"
         >
-          <main className="max-w-lg mx-auto px-4 py-12 text-center">
-            {/* Avatar */}
-            <div className="mx-auto mb-4 flex items-center justify-center">
-              <AvatarDisplay
-                ref={avatarRef}
-                personaId={personaId}
-                emotionalState="happy"
-                size="xl"
-                enableLiveAvatar={liveAvatarReady}
-                onTalkingChange={handleTalkingChange}
-              />
-            </div>
+          {(() => {
+            const s = summary as {
+              durationMinutes?: number;
+              questionsAnswered?: number;
+              correctAnswers?: number;
+              accuracy?: number;
+              hintsUsed?: number;
+              sessionSubject?: string;
+              studentGrade?: string;
+              currentNode?: { title?: string; subject?: string } | null;
+              mathMastery?: Array<{
+                nodeCode: string; title: string; level: string; probability: number; domain: string; gradeLevel: string;
+              }>;
+              englishMastery?: Array<{
+                nodeCode: string; title: string; level: string; probability: number; domain: string; gradeLevel: string;
+              }>;
+              masteredThisSession?: Array<{
+                nodeCode: string; title: string; subject: string; gradeLevel: string; probability: number;
+              }>;
+              gradeProgress?: Array<{
+                subject: string; gradeLevel: string; label: string; mastered: number; total: number; percentage: number;
+              }>;
+              goalProgress?: {
+                label: string; currentPct: number; previousPct: number; change: number; mastered: number; total: number;
+              } | null;
+              nextUpNodes?: Array<{
+                subject: string; nodeCode: string; title: string;
+              }>;
+              streak?: { current: number; longest: number };
+            };
 
-            {/* Streak Callout */}
-            {(() => {
-              const s = summary as { streak?: { current: number; longest: number } };
-              if (s.streak && s.streak.current >= 2) {
-                return (
-                  <div className="mb-4">
-                    <p className="text-amber-400 font-bold text-lg">
-                      🔥 {s.streak.current} sessions in a row! Keep it up, {studentName}!
+            const questionsAnswered = s.questionsAnswered ?? 0;
+            const correctAnswers = s.correctAnswers ?? 0;
+            const sessionSubject = s.sessionSubject ?? subjectParam;
+            const sessionXP = sessionXPEarned;
+            const mastered = s.masteredThisSession ?? [];
+            const goalProg = s.goalProgress;
+            const enoughForAccuracy = questionsAnswered >= 8;
+
+            return (
+              <main className="max-w-lg mx-auto px-4 py-8 space-y-6">
+
+                {/* ═══ SECTION 1: CELEBRATION (20%) ═══ */}
+                <div className="text-center">
+                  {/* Cosmo celebration */}
+                  <div className="mx-auto mb-3 flex items-center justify-center">
+                    <AvatarDisplay
+                      ref={avatarRef}
+                      personaId={personaId}
+                      emotionalState="happy"
+                      size="lg"
+                      speaking={true}
+                      enableLiveAvatar={liveAvatarReady}
+                      onTalkingChange={handleTalkingChange}
+                    />
+                  </div>
+
+                  <h1 className="text-2xl font-bold text-white mb-1">
+                    Session Complete!
+                  </h1>
+
+                  {/* Streak */}
+                  {s.streak && s.streak.current >= 2 && (
+                    <p className="text-amber-400 font-bold text-sm mb-3">
+                      {s.streak.current} sessions in a row!
                     </p>
-                  </div>
-                );
-              }
-              return null;
-            })()}
-
-            <h1 className="text-3xl font-bold text-white mb-2">
-              Session Complete!
-            </h1>
-            <p className="text-gray-400 mb-6">
-              Great work, {studentName}!
-            </p>
-
-            {(() => {
-              const s = summary as {
-                durationMinutes?: number;
-                questionsAnswered?: number;
-                correctAnswers?: number;
-                accuracy?: number;
-                hintsUsed?: number;
-                sessionSubject?: string;
-                currentNode?: { title?: string; subject?: string } | null;
-                mathMastery?: Array<{
-                  nodeCode: string; title: string; level: string; probability: number; domain: string; gradeLevel: string;
-                }>;
-                englishMastery?: Array<{
-                  nodeCode: string; title: string; level: string; probability: number; domain: string; gradeLevel: string;
-                }>;
-                recentMastery?: Array<{
-                  nodeCode: string; title: string; level: string; probability: number; subject?: string;
-                }>;
-                gradeProgress?: Array<{
-                  subject: string; gradeLevel: string; label: string; mastered: number; total: number; percentage: number;
-                }>;
-                nextUpNodes?: Array<{
-                  subject: string; nodeCode: string; title: string;
-                }>;
-                streak?: { current: number; longest: number };
-              };
-
-              const mathNodes = s.mathMastery ?? [];
-              const engNodes = s.englishMastery ?? [];
-              const hasMastery = mathNodes.length > 0 || engNodes.length > 0;
-              const sessionSubject = s.sessionSubject ?? subjectParam;
-              const sessionXP = sessionXPEarned;
-
-              return (
-                <>
-                  {/* Stats Row */}
-                  <div className="grid grid-cols-3 gap-4 mb-4">
-                    <div className="bg-[#1A2744] rounded-xl p-4 border border-white/10">
-                      <p className="text-2xl font-bold text-aauti-primary">
-                        {s.questionsAnswered ?? 0}
-                      </p>
-                      <p className="text-xs text-gray-400">Questions</p>
-                    </div>
-                    <div className="bg-[#1A2744] rounded-xl p-4 border border-white/10">
-                      <p className="text-2xl font-bold text-aauti-success">
-                        {s.accuracy ?? 0}%
-                      </p>
-                      <p className="text-xs text-gray-400">Accuracy</p>
-                    </div>
-                    <div className="bg-[#1A2744] rounded-xl p-4 border border-white/10">
-                      <p className="text-2xl font-bold text-aauti-accent">
-                        {s.hintsUsed ?? 0}
-                      </p>
-                      <p className="text-xs text-gray-400">Hints</p>
-                    </div>
-                  </div>
-
-                  {/* Nexus Score */}
-                  {nexusScore !== null && nexusScore > 0 && (
-                    <div className="bg-[#1A2744] rounded-2xl p-5 border border-white/10 mb-4">
-                      <h3 className="font-semibold text-white mb-3 text-center">Nexus Score</h3>
-                      <NexusScore score={nexusScore} size="sm" showBreakdown={false} />
-                    </div>
                   )}
 
-                  {/* Subject XP */}
-                  {sessionXP > 0 && (
-                    <div className="flex justify-center gap-3 mb-6">
-                      {sessionSubject === "MATH" && (
-                        <div className="inline-flex items-center gap-1.5 bg-green-500/10 border border-green-500/20 rounded-full px-4 py-2">
-                          <span className="text-green-400 font-bold text-sm">+{sessionXP} XP</span>
-                          <span className="text-green-400/70 text-xs">Math</span>
-                        </div>
-                      )}
-                      {sessionSubject === "ENGLISH" && (
-                        <div className="inline-flex items-center gap-1.5 bg-purple-500/10 border border-purple-500/20 rounded-full px-4 py-2">
-                          <span className="text-purple-400 font-bold text-sm">+{sessionXP} XP</span>
-                          <span className="text-purple-400/70 text-xs">English</span>
-                        </div>
+                  {/* 5 Stats Row */}
+                  <div className="grid grid-cols-5 gap-2 mt-4">
+                    <div className="bg-[#1A2744] rounded-xl p-2.5 border border-white/10">
+                      <p className="text-lg font-bold text-aauti-primary">{questionsAnswered}</p>
+                      <p className="text-[10px] text-gray-400 leading-tight">Questions</p>
+                    </div>
+                    <div className="bg-[#1A2744] rounded-xl p-2.5 border border-white/10">
+                      {enoughForAccuracy ? (
+                        <>
+                          <p className="text-lg font-bold text-aauti-success">{s.accuracy ?? 0}%</p>
+                          <p className="text-[10px] text-gray-400 leading-tight">{correctAnswers}/{questionsAnswered} correct</p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-lg font-bold text-gray-500">--</p>
+                          <p className="text-[10px] text-gray-500 leading-tight">Need 8+ Qs</p>
+                        </>
                       )}
                     </div>
-                  )}
+                    <div className="bg-[#1A2744] rounded-xl p-2.5 border border-white/10">
+                      <p className="text-lg font-bold text-yellow-400">{mastered.length}</p>
+                      <p className="text-[10px] text-gray-400 leading-tight">Mastered</p>
+                    </div>
+                    <div className="bg-[#1A2744] rounded-xl p-2.5 border border-white/10">
+                      <p className="text-lg font-bold text-purple-400">+{sessionXP}</p>
+                      <p className="text-[10px] text-gray-400 leading-tight">XP</p>
+                    </div>
+                    <div className="bg-[#1A2744] rounded-xl p-2.5 border border-white/10">
+                      <p className="text-lg font-bold text-cyan-400">{s.durationMinutes ?? 0}m</p>
+                      <p className="text-[10px] text-gray-400 leading-tight">Time</p>
+                    </div>
+                  </div>
+                </div>
 
-                  {/* Mastery Progress */}
-                  {hasMastery ? (
-                    <div className="bg-[#1A2744] rounded-2xl p-5 border border-white/10 mb-6 text-left">
-                      <h3 className="font-semibold text-white mb-3">Mastery Progress</h3>
-                      {engNodes.length > 0 && (
-                        <div className="mb-4 last:mb-0">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="text-sm">📖</span>
-                            <span className="text-sm font-semibold text-purple-400">English</span>
-                          </div>
-                          {engNodes.map((m) => (
-                            <div key={m.nodeCode} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0 ml-5">
-                              <p className="text-sm font-medium text-white">{m.title}</p>
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${masteryColors[m.level] ?? ""}`}>
-                                {m.level} ({m.probability}%)
-                              </span>
-                            </div>
-                          ))}
+                {/* ═══ SECTION 2: TODAY'S WIN + GOAL PROGRESS (25%) ═══ */}
+                <div className="bg-gradient-to-br from-[#1A2744] to-[#1e2a4a] rounded-2xl p-5 border border-white/10">
+                  {/* Mastered Today */}
+                  {mastered.length > 0 ? (
+                    <div className="mb-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-yellow-400 text-lg">&#11088;</span>
+                        <h3 className="font-semibold text-white">Mastered Today</h3>
+                      </div>
+                      {mastered.map((m) => (
+                        <div key={m.nodeCode} className="flex items-center gap-2 py-1.5">
+                          <span className="text-yellow-400">&#10003;</span>
+                          <span className="text-white font-medium text-sm">{m.title}</span>
+                          <span className="text-xs text-gray-500 ml-auto">{m.subject === "ENGLISH" ? "English" : "Math"}</span>
                         </div>
-                      )}
-                      {mathNodes.length > 0 && (
-                        <div className="mb-0">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="text-sm">🔢</span>
-                            <span className="text-sm font-semibold text-green-400">Math</span>
-                          </div>
-                          {mathNodes.map((m) => (
-                            <div key={m.nodeCode} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0 ml-5">
-                              <p className="text-sm font-medium text-white">{m.title}</p>
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${masteryColors[m.level] ?? ""}`}>
-                                {m.level} ({m.probability}%)
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                      ))}
                     </div>
                   ) : (
-                    <div className="bg-[#1A2744] rounded-2xl p-5 border border-white/10 mb-6">
-                      <p className="text-gray-400 text-sm">Keep going — you&apos;re building mastery! 💪</p>
+                    <div className="mb-4">
+                      <h3 className="font-semibold text-white mb-1">Progress Made</h3>
+                      {s.currentNode?.title ? (
+                        <p className="text-gray-300 text-sm">
+                          You made progress on <span className="text-white font-medium">{s.currentNode.title}</span> — keep going to reach mastery!
+                        </p>
+                      ) : (
+                        <p className="text-gray-400 text-sm">No new concepts mastered — keep practicing to reach mastery!</p>
+                      )}
                     </div>
                   )}
 
-                  {/* Grade Progress */}
-                  {s.gradeProgress && s.gradeProgress.length > 0 && (
-                    <div className="bg-[#1A2744] rounded-2xl p-5 border border-white/10 mb-6 text-left">
-                      <h3 className="font-semibold text-white mb-3">Your Progress</h3>
-                      <div className="space-y-3">
-                        {s.gradeProgress.map((gp) => {
-                          const isEnglish = gp.subject === "ENGLISH";
-                          const barColor = isEnglish ? "bg-purple-500" : "bg-green-500";
-                          const barTrack = isEnglish ? "bg-purple-500/15" : "bg-green-500/15";
-                          return (
-                            <div key={`${gp.subject}-${gp.gradeLevel}`}>
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="text-sm text-gray-300">{gp.label}</span>
-                                <span className="text-xs text-gray-500">{gp.mastered} of {gp.total} topics mastered</span>
-                              </div>
-                              <div className={`h-2.5 rounded-full ${barTrack} overflow-hidden`}>
-                                <div
-                                  className={`h-full rounded-full ${barColor} transition-all duration-700 ease-out`}
-                                  style={{ width: `${Math.max(gp.percentage, 2)}%` }}
-                                />
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* GPS Plan Progress (when session was part of a plan) */}
-                  {gpsNavigation && (
-                    <div className="bg-gradient-to-r from-teal-500/10 to-cyan-500/10 rounded-2xl p-5 border border-teal-500/20 mb-6 text-left">
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="text-lg">🗺️</span>
-                        <h3 className="font-semibold text-white">Learning GPS</h3>
-                      </div>
-                      <p className="text-sm text-gray-300 mb-2">{gpsNavigation.goalName}</p>
-                      <div className="flex items-center gap-3">
-                        <div className="flex-1 h-2 bg-teal-500/20 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-teal-400 rounded-full transition-all duration-700"
-                            style={{ width: `${Math.max(gpsNavigation.progress, 3)}%` }}
-                          />
-                        </div>
-                        <span className="text-sm font-bold text-teal-400">{gpsNavigation.progress}%</span>
-                      </div>
-                      <div className="mt-2 flex items-center gap-1">
-                        <span className={`text-xs font-medium ${gpsNavigation.isAheadOfSchedule ? "text-green-400" : "text-amber-400"}`}>
-                          {gpsNavigation.isAheadOfSchedule ? "📈 Ahead of schedule" : "⏳ Keep pushing!"}
+                  {/* Goal Progress — the most important number */}
+                  {goalProg && (
+                    <div className="pt-3 border-t border-white/10">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-gray-300">{goalProg.label}</span>
+                        <span className="text-sm font-bold text-white">
+                          {goalProg.previousPct}% → {goalProg.currentPct}%
+                          {goalProg.change > 0 && (
+                            <span className="text-green-400 ml-1">&#9650;{goalProg.change}%</span>
+                          )}
                         </span>
                       </div>
-                    </div>
-                  )}
-
-                  {/* What's Next */}
-                  {s.nextUpNodes && s.nextUpNodes.length > 0 && (
-                    <div className="bg-[#1A2744] rounded-2xl p-5 border border-white/10 mb-6 text-left">
-                      <h3 className="font-semibold text-white mb-3">What&apos;s Next</h3>
-                      <div className="space-y-2">
-                        {s.nextUpNodes.map((nu) => {
-                          const isEnglish = nu.subject === "ENGLISH";
-                          const allMastered = nu.nodeCode === "__ALL_MASTERED__";
-                          return (
-                            <button
-                              key={nu.subject}
-                              onClick={() => {
-                                if (!allMastered) {
-                                  router.push(
-                                    `/session?studentId=${DEMO_STUDENT_ID}&subject=${nu.subject}&returnTo=${returnTo}`
-                                  );
-                                }
-                              }}
-                              disabled={allMastered}
-                              className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors text-left ${
-                                allMastered
-                                  ? "opacity-60 cursor-default"
-                                  : "hover:bg-white/5 cursor-pointer active:bg-white/10"
-                              }`}
-                            >
-                              <span className="text-lg">{isEnglish ? "📖" : "🔢"}</span>
-                              <span className={`text-sm font-medium ${isEnglish ? "text-purple-400" : "text-green-400"}`}>
-                                {isEnglish ? "English" : "Math"}
-                              </span>
-                              <span className="text-gray-500 text-sm">→</span>
-                              <span className="text-sm text-white flex-1">
-                                {allMastered ? "🎉 All caught up!" : nu.title}
-                              </span>
-                              {!allMastered && (
-                                <span className="text-gray-500 text-xs">▶</span>
-                              )}
-                            </button>
-                          );
-                        })}
+                      <div className="relative h-3 bg-white/10 rounded-full overflow-hidden">
+                        {/* Previous value (dim) */}
+                        <motion.div
+                          className="absolute inset-y-0 left-0 bg-aauti-primary/30 rounded-full"
+                          initial={{ width: `${goalProg.previousPct}%` }}
+                          animate={{ width: `${goalProg.currentPct}%` }}
+                          transition={{ duration: 0 }}
+                        />
+                        {/* Current value (animated) */}
+                        <motion.div
+                          className="absolute inset-y-0 left-0 bg-gradient-to-r from-aauti-primary to-purple-400 rounded-full"
+                          initial={{ width: `${goalProg.previousPct}%` }}
+                          animate={{ width: `${goalProg.currentPct}%` }}
+                          transition={{ duration: 1.5, delay: 0.3, ease: "easeOut" }}
+                        />
                       </div>
+                      <p className="text-xs text-gray-500 mt-1.5">
+                        {goalProg.mastered} of {goalProg.total} concepts mastered
+                      </p>
                     </div>
                   )}
+                </div>
 
-                  {/* Share */}
+                {/* ═══ SECTION 3: WHAT'S NEXT (15%) ═══ */}
+                {s.nextUpNodes && s.nextUpNodes.length > 0 && (
+                  <div className="bg-[#1A2744] rounded-2xl p-5 border border-white/10 text-left">
+                    <h3 className="font-semibold text-white mb-3">What&apos;s Next</h3>
+                    <div className="space-y-2">
+                      {s.nextUpNodes.map((nu) => {
+                        const isEnglish = nu.subject === "ENGLISH";
+                        const allMastered = nu.nodeCode === "__ALL_MASTERED__";
+                        return (
+                          <button
+                            key={nu.subject}
+                            onClick={() => {
+                              if (!allMastered) {
+                                router.push(
+                                  `/session?studentId=${DEMO_STUDENT_ID}&subject=${nu.subject}&returnTo=${returnTo}`
+                                );
+                              }
+                            }}
+                            disabled={allMastered}
+                            className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors text-left ${
+                              allMastered
+                                ? "opacity-60 cursor-default"
+                                : "hover:bg-white/5 cursor-pointer active:bg-white/10"
+                            }`}
+                          >
+                            <span className="text-lg">{isEnglish ? "&#128214;" : "&#128290;"}</span>
+                            <span className={`text-sm font-medium ${isEnglish ? "text-purple-400" : "text-green-400"}`}>
+                              {isEnglish ? "English" : "Math"}
+                            </span>
+                            <span className="text-gray-500 text-sm">→</span>
+                            <span className="text-sm text-white flex-1">
+                              {allMastered ? "All caught up!" : nu.title}
+                            </span>
+                            {!allMastered && (
+                              <span className="text-gray-500 text-xs">&#9654;</span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* ═══ SECTION 4: YOUR PROGRESS (collapsed by default) ═══ */}
+                {s.gradeProgress && s.gradeProgress.length > 0 && (
+                  <details className="group">
+                    <summary className="flex items-center justify-between bg-[#1A2744] rounded-2xl p-4 border border-white/10 cursor-pointer list-none hover:bg-[#1e2d48] transition-colors">
+                      <span className="text-sm font-semibold text-gray-300">See full progress →</span>
+                      <span className="text-gray-500 text-xs group-open:rotate-90 transition-transform">&#9654;</span>
+                    </summary>
+                    <div className="bg-[#1A2744] rounded-b-2xl p-5 border border-t-0 border-white/10 -mt-2 space-y-3 text-left">
+                      {s.gradeProgress.map((gp) => {
+                        const isEnglish = gp.subject === "ENGLISH";
+                        const barColor = isEnglish ? "bg-purple-500" : "bg-green-500";
+                        const barTrack = isEnglish ? "bg-purple-500/15" : "bg-green-500/15";
+                        return (
+                          <div key={`${gp.subject}-${gp.gradeLevel}`}>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm text-gray-300">{gp.label}</span>
+                              <span className="text-xs text-gray-500">{gp.mastered} of {gp.total}</span>
+                            </div>
+                            <div className={`h-2 rounded-full ${barTrack} overflow-hidden`}>
+                              <div
+                                className={`h-full rounded-full ${barColor} transition-all duration-700 ease-out`}
+                                style={{ width: `${Math.max(gp.percentage, 2)}%` }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </details>
+                )}
+
+                {/* ═══ SECTION 5: ACTIONS (always visible) ═══ */}
+                <div className="space-y-3 pt-2">
+                  {/* Share with Parent */}
                   <button
                     onClick={async () => {
                       const date = new Date().toLocaleDateString("en-US", {
                         month: "short", day: "numeric", year: "numeric",
                       });
-                      const masteredList = [
-                        ...engNodes.filter((m) => m.level === "MASTERED").map((m) => `- ${m.title} (English)`),
-                        ...mathNodes.filter((m) => m.level === "MASTERED").map((m) => `- ${m.title} (Math)`),
-                      ];
-                      const progressLines = (s.gradeProgress ?? []).map(
-                        (gp) => `- ${gp.label}: ${gp.mastered} of ${gp.total} topics mastered`
+                      const masteredList = mastered.map(
+                        (m) => `- ${m.title} (${m.subject === "ENGLISH" ? "English" : "Math"})`
                       );
-                      const nextUpLines = (s.nextUpNodes ?? [])
-                        .filter((nu) => nu.nodeCode !== "__ALL_MASTERED__")
-                        .map((nu) => `${nu.title} (${nu.subject === "ENGLISH" ? "English" : "Math"})`);
-
                       const shareText = [
-                        `🎓 Nexus Learning Update — ${studentName}`,
+                        `Nexus Learning Update — ${studentName}`,
                         "",
                         `Session: ${date}`,
-                        `Accuracy: ${s.accuracy ?? 0}%`,
-                        `Questions: ${s.questionsAnswered ?? 0}`,
+                        `Questions: ${questionsAnswered}`,
+                        enoughForAccuracy ? `Accuracy: ${s.accuracy ?? 0}%` : "",
+                        `XP Earned: +${sessionXP}`,
                         "",
-                        masteredList.length > 0 ? `✅ Mastered Today:\n${masteredList.join("\n")}` : "",
-                        progressLines.length > 0 ? `\n📊 Overall Progress:\n${progressLines.join("\n")}` : "",
-                        nextUpLines.length > 0 ? `\nNext up: ${nextUpLines.join(", ")}` : "",
+                        masteredList.length > 0 ? `Mastered Today:\n${masteredList.join("\n")}` : "",
+                        goalProg ? `\n${goalProg.label}: ${goalProg.currentPct}%` : "",
                         "",
                         "Powered by Nexus Learning",
                       ].filter(Boolean).join("\n");
@@ -1564,49 +1542,48 @@ function SessionPage() {
                         setTimeout(() => setShareToast(false), 2000);
                       }
                     }}
-                    className="w-full py-3 mb-3 text-base font-semibold text-gray-300 bg-transparent border border-white/15 rounded-2xl hover:bg-white/5 hover:border-white/25 transition-colors"
+                    className="w-full py-3 text-base font-semibold text-gray-300 bg-transparent border border-white/15 rounded-2xl hover:bg-white/5 hover:border-white/25 transition-colors"
                   >
-                    Share with Parent 📤
+                    Share with Parent
                   </button>
 
                   {shareToast && (
                     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-green-600 text-white text-sm font-medium px-4 py-2 rounded-full shadow-lg z-50 animate-fade-in-up">
-                      Copied! ✓
+                      Copied!
                     </div>
                   )}
-                </>
-              );
-            })()}
 
-            {/* GPS Dashboard Button (when session was part of a plan) */}
-            {gpsNavigation && (
-              <a
-                href={gpsNavigation.redirectUrl}
-                className="block w-full py-4 text-center text-lg font-semibold text-white bg-gradient-to-r from-teal-500 to-cyan-600 rounded-2xl hover:from-teal-600 hover:to-cyan-700 transition-all mb-3"
-              >
-                🗺️ View GPS Dashboard
-              </a>
-            )}
-            {/* GPS link for students with active plans but session wasn't plan-linked */}
-            {!gpsNavigation && hasActivePlans && (
-              <a
-                href={`/gps?studentId=${DEMO_STUDENT_ID}`}
-                className="block w-full py-3 text-center text-base font-semibold text-teal-400 bg-teal-500/10 border border-teal-500/20 rounded-2xl hover:bg-teal-500/20 transition-colors mb-3"
-              >
-                🗺️ View Learning GPS
-              </a>
-            )}
-            <a
-              href={returnTo}
-              className={`block w-full py-4 text-center text-lg font-semibold rounded-2xl transition-colors ${
-                gpsNavigation
-                  ? "text-gray-300 bg-transparent border border-white/10 hover:bg-white/5"
-                  : "text-white bg-aauti-primary hover:bg-aauti-primary/90"
-              }`}
-            >
-              Back to Dashboard
-            </a>
-          </main>
+                  {/* GPS / Dashboard */}
+                  {gpsNavigation && (
+                    <a
+                      href={gpsNavigation.redirectUrl}
+                      className="block w-full py-3.5 text-center text-base font-semibold text-white bg-gradient-to-r from-teal-500 to-cyan-600 rounded-2xl hover:from-teal-600 hover:to-cyan-700 transition-all"
+                    >
+                      View GPS Dashboard
+                    </a>
+                  )}
+                  {!gpsNavigation && hasActivePlans && (
+                    <a
+                      href={`/gps?studentId=${DEMO_STUDENT_ID}`}
+                      className="block w-full py-3 text-center text-base font-semibold text-teal-400 bg-teal-500/10 border border-teal-500/20 rounded-2xl hover:bg-teal-500/20 transition-colors"
+                    >
+                      View Learning GPS
+                    </a>
+                  )}
+                  <a
+                    href={returnTo}
+                    className={`block w-full py-3.5 text-center text-base font-semibold rounded-2xl transition-colors ${
+                      gpsNavigation
+                        ? "text-gray-300 bg-transparent border border-white/10 hover:bg-white/5"
+                        : "text-white bg-aauti-primary hover:bg-aauti-primary/90"
+                    }`}
+                  >
+                    Back to Dashboard
+                  </a>
+                </div>
+              </main>
+            );
+          })()}
         </motion.div>
       )}
     </AnimatePresence>

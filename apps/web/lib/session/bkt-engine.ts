@@ -216,9 +216,20 @@ export async function updateMasteryInDB(
   return updated;
 }
 
+// Grade ordering for proximity checks
+const GRADE_ORDER_LIST = ["K", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9", "G10", "G11", "G12"];
+
+function gradeProximity(a: string, b: string): number {
+  const ia = GRADE_ORDER_LIST.indexOf(a);
+  const ib = GRADE_ORDER_LIST.indexOf(b);
+  if (ia < 0 || ib < 0) return 99;
+  return Math.abs(ia - ib);
+}
+
 /**
  * Recommend the next knowledge node for a student.
  * Tries Neo4j successors first, falls back to PostgreSQL if Neo4j is unavailable.
+ * Enforces grade-level proximity: successors must be within ±2 of the current node's grade.
  */
 export async function recommendNextNode(
   studentId: string,
@@ -246,11 +257,15 @@ export async function recommendNextNode(
     }
   }
 
-  // If still no successors (neither source has data), pick next by difficulty
+  // Get current node's grade for proximity filtering
+  const currentNode = await prisma.knowledgeNode.findUnique({
+    where: { nodeCode: currentNodeCode },
+    select: { gradeLevel: true, difficulty: true },
+  });
+  const currentGrade = currentNode?.gradeLevel ?? "G5";
+
+  // If still no successors, pick next by difficulty within same grade
   if (successors.length === 0) {
-    const currentNode = await prisma.knowledgeNode.findUnique({
-      where: { nodeCode: currentNodeCode },
-    });
     if (!currentNode) return null;
 
     const nextByDifficulty = await prisma.knowledgeNode.findFirst({
@@ -268,12 +283,15 @@ export async function recommendNextNode(
     return null;
   }
 
-  // Check mastery for each successor
+  // Check mastery for each successor, filtering by grade proximity (±2)
   for (const successor of successors) {
     const node = await prisma.knowledgeNode.findUnique({
       where: { nodeCode: successor.nodeCode },
     });
     if (!node) continue;
+
+    // Skip successors that are too far from the current grade level
+    if (gradeProximity(node.gradeLevel, currentGrade) > 2) continue;
 
     const mastery = await prisma.masteryScore.findUnique({
       where: { studentId_nodeId: { studentId, nodeId: node.id } },
@@ -285,7 +303,18 @@ export async function recommendNextNode(
     }
   }
 
-  // All successors mastered — return the first one for further practice
+  // All grade-appropriate successors mastered — return the first grade-appropriate one
+  for (const successor of successors) {
+    const node = await prisma.knowledgeNode.findUnique({
+      where: { nodeCode: successor.nodeCode },
+      select: { nodeCode: true, title: true, gradeLevel: true },
+    });
+    if (node && gradeProximity(node.gradeLevel, currentGrade) <= 2) {
+      return { nodeCode: node.nodeCode, title: node.title };
+    }
+  }
+
+  // Absolute fallback: first successor regardless of grade
   return {
     nodeCode: successors[0].nodeCode,
     title: successors[0].title,

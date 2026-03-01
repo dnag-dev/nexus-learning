@@ -9,20 +9,12 @@
 
 import { useChild } from "@/lib/child-context";
 import Link from "next/link";
-
-const PERSONA_EMOJI: Record<string, string> = {
-  cosmo: "🐻",
-  luna: "🐱",
-  rex: "🦖",
-  nova: "🦊",
-  pip: "🦉",
-  koda: "🐶",
-  zara: "🦋",
-};
+import { getPersonaById } from "@/lib/personas/persona-config";
 
 export default function Tier1Home() {
   const { displayName, avatarPersonaId, studentId } = useChild();
-  const emoji = PERSONA_EMOJI[avatarPersonaId] || "🐻";
+  const persona = getPersonaById(avatarPersonaId);
+  const emoji = persona?.avatarPlaceholder || "🤖";
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-6">

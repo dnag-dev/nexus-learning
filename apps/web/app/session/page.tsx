@@ -179,10 +179,7 @@ function SessionPage() {
   const subjectParam = searchParams.get("subject") || "MATH";
   const planIdParam = searchParams.get("planId") || undefined;
   const nodeCodeParam = searchParams.get("nodeCode") || undefined;
-  const topicParam = searchParams.get("topic") || "";
-
-  // ─── Topic Search State ───
-  const [topicInput, setTopicInput] = useState(topicParam);
+  // topic param no longer used — session auto-picks next concept
 
   // ─── Core State ───
   const [phase, setPhase] = useState<SessionPhase>("idle");
@@ -310,15 +307,15 @@ function SessionPage() {
     }
   }, [phase, feedback]);
 
-  // ─── Auto-start when topic is passed via URL (from dashboard) ───
+  // ─── Auto-start session immediately (no idle screen) ───
   const autoStarted = useRef(false);
   useEffect(() => {
-    if (topicParam && !autoStarted.current && phase === "idle") {
+    if (!autoStarted.current && phase === "idle") {
       autoStarted.current = true;
       startSession();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [topicParam]);
+  }, [phase]);
 
   // ─── SSE connection for teaching content ───
 
@@ -406,7 +403,6 @@ function SessionPage() {
           subject: subjectParam,
           ...(planIdParam ? { planId: planIdParam } : {}),
           ...(nodeCodeParam ? { nodeCode: nodeCodeParam } : {}),
-          ...(topicInput.trim().length >= 2 && !nodeCodeParam ? { topic: topicInput.trim() } : {}),
         }),
         signal: controller.signal,
       });
@@ -760,7 +756,7 @@ function SessionPage() {
     />
 
     <AnimatePresence mode="wait">
-      {/* ─── Idle ─── */}
+      {/* ─── Idle — auto-starts, show loading spinner ─── */}
       {phase === "idle" && (
         <motion.div
           key="idle"
@@ -771,75 +767,19 @@ function SessionPage() {
           transition={pageTransition}
           className="min-h-screen bg-[#0D1B2A] flex items-center justify-center px-4"
         >
-          <div className="max-w-lg text-center">
-            <div className="mx-auto mb-6 flex items-center justify-center">
-              <AvatarDisplay
-                ref={avatarRef}
-                personaId={personaId}
-                size="xl"
-                emotionalState="neutral"
-                enableLiveAvatar={true}
-                onStreamReady={() => setLiveAvatarReady(true)}
-                onTalkingChange={handleTalkingChange}
-              />
-            </div>
-            <h1 className="text-3xl font-bold text-white mb-3">
-              Ready to Learn?
-            </h1>
-            <p className="text-gray-400 mb-6">
-              Type a topic you want to learn, or just press Start and your AI
-              tutor will pick the next best concept for you!
-            </p>
-            <div className="relative mb-4">
-              <input
-                type="text"
-                value={topicInput}
-                onChange={(e) => setTopicInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !isLoading) startSession();
-                }}
-                placeholder="e.g. exponents, fractions, algebra..."
-                className="w-full px-5 py-4 bg-slate-800/80 border border-white/10 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 text-base"
-              />
-              {topicInput.length > 0 && (
-                <button
-                  onClick={() => setTopicInput("")}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-            <button
-              onClick={startSession}
-              disabled={isLoading}
-              className="w-full py-4 text-lg font-semibold text-white bg-aauti-primary rounded-2xl hover:bg-aauti-primary/90 transition-colors disabled:opacity-50"
-            >
-              {isLoading
-                ? "Setting up..."
-                : topicInput.trim().length >= 2
-                  ? `Learn "${topicInput.trim()}" 🚀`
-                  : "Start Learning! 🚀"}
-            </button>
-            {/* GPS navigation — show when student has active plans */}
-            {planIdParam && (
-              <a
-                href={`/gps?studentId=${DEMO_STUDENT_ID}`}
-                className="block w-full mt-3 py-3 text-center text-sm font-medium text-teal-400 bg-teal-500/10 border border-teal-500/20 rounded-xl hover:bg-teal-500/20 transition-colors"
-              >
-                🗺️ View your Learning GPS Dashboard
-              </a>
-            )}
-            {!planIdParam && (
-              <a
-                href={`/goals?studentId=${DEMO_STUDENT_ID}`}
-                className="block w-full mt-3 py-3 text-center text-sm font-medium text-gray-400 hover:text-white transition-colors"
-              >
-                🎯 Set a Learning Goal
-              </a>
-            )}
+          <div className="text-center">
+            <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-gray-400 text-sm">Starting your session...</p>
             {error && (
-              <p className="mt-4 text-sm text-aauti-danger">{error}</p>
+              <div className="mt-4">
+                <p className="text-sm text-aauti-danger mb-2">{error}</p>
+                <button
+                  onClick={startSession}
+                  className="text-sm text-aauti-primary hover:underline"
+                >
+                  Try again
+                </button>
+              </div>
             )}
           </div>
         </motion.div>

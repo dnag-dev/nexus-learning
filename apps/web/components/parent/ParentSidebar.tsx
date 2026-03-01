@@ -223,7 +223,7 @@ export default function ParentSidebar({
 
   // ─── DESKTOP MODE: Static sidebar (default + SSR fallback) ───
   return (
-    <aside className="hidden lg:block w-64 bg-white border-r border-gray-100 shrink-0">
+    <aside className="hidden lg:block w-60 min-w-[240px] bg-white border-r border-gray-100 flex-shrink-0">
       <SidebarContent
         parentName={parentName}
         parentEmail={parentEmail}

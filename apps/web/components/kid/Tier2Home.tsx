@@ -3,30 +3,19 @@
 /**
  * Tier2Home — Grades 4 through 7
  *
- * Dark background, three sections:
- * - Mission briefing card
+ * Dark background, four sections:
+ * - Mission briefing card (with real next concept & persona avatar)
  * - 3 stat cards (level, streak, mastered)
  * - Recent badges
+ * - Your Progress (goal name + progress bar + ETA)
  *
- * Uses /api/student/:id/gamification which returns:
- *   { xp, level, streak: { current, ... } | null,
- *     badges: [{ badgeType, category, earnedAt }],
- *     masteryMap: [{ level: "MASTERED"|... }] }
+ * Uses /api/student/:id/gamification AND /api/gps/dashboard
  */
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useChild } from "@/lib/child-context";
-
-const PERSONA_EMOJI: Record<string, string> = {
-  cosmo: "🐻",
-  luna: "🐱",
-  rex: "🦖",
-  nova: "🦊",
-  pip: "🦉",
-  koda: "🐶",
-  zara: "🦋",
-};
+import { getPersonaById } from "@/lib/personas/persona-config";
 
 // Map badgeType to display info
 const BADGE_DISPLAY: Record<string, { name: string; emoji: string }> = {
@@ -59,18 +48,36 @@ interface GamData {
   masteryMap: Array<{ level: string }>;
 }
 
+interface GPSData {
+  goal?: { name: string };
+  progress?: { masteredCount: number; totalConcepts: number; percentage: number };
+  eta?: { projectedDate: string };
+  todaysMission?: { title: string; description: string; estimatedHours: number };
+}
+
 export default function Tier2Home() {
   const { studentId, displayName, avatarPersonaId, level, xp } = useChild();
   const [gam, setGam] = useState<GamData | null>(null);
+  const [gps, setGps] = useState<GPSData | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Get persona info for the avatar
+  const persona = getPersonaById(avatarPersonaId);
+  const personaEmoji = persona?.avatarPlaceholder || "🤖";
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await fetch(`/api/student/${studentId}/gamification`);
-        if (res.ok) {
-          const data = await res.json();
-          setGam(data);
+        const [gamRes, gpsRes] = await Promise.allSettled([
+          fetch(`/api/student/${studentId}/gamification`),
+          fetch(`/api/gps/dashboard?studentId=${studentId}`),
+        ]);
+
+        if (gamRes.status === "fulfilled" && gamRes.value.ok) {
+          setGam(await gamRes.value.json());
+        }
+        if (gpsRes.status === "fulfilled" && gpsRes.value.ok) {
+          setGps(await gpsRes.value.json());
         }
       } catch {
         // Non-critical
@@ -81,10 +88,9 @@ export default function Tier2Home() {
     fetchData();
   }, [studentId]);
 
-  const emoji = PERSONA_EMOJI[avatarPersonaId] || "🐻";
   const streakDays = gam?.streak?.current ?? 0;
   const totalMastered = gam?.masteryMap?.filter((n) => n.level === "MASTERED").length ?? 0;
-  const xpForLevel = 100; // Simple XP per level
+  const xpForLevel = 100;
   const xpProgress = Math.min(((xp % xpForLevel) / xpForLevel) * 100, 100);
 
   // Map raw badges to display format
@@ -93,22 +99,61 @@ export default function Tier2Home() {
     return { id: b.badgeType, name: info.name, emoji: info.emoji, earnedAt: b.earnedAt };
   });
 
+  // Mission card data from GPS
+  const missionTitle = gps?.todaysMission?.title;
+  const missionDesc = gps?.todaysMission?.description;
+  const missionEst = gps?.todaysMission?.estimatedHours
+    ? Math.round(gps.todaysMission.estimatedHours * 60)
+    : null;
+
+  // Progress data
+  const goalName = gps?.goal?.name;
+  const progressPct = gps?.progress?.percentage ?? 0;
+  const etaDate = gps?.eta?.projectedDate;
+  const etaFormatted = etaDate
+    ? new Date(etaDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+    : null;
+
   return (
     <div className="space-y-5">
       {/* Mission Briefing */}
       <div className="bg-gradient-to-r from-[#1a1f3a] to-[#1e2a4a] rounded-2xl p-6 border-l-4 border-purple-500 relative overflow-hidden">
-        <div className="absolute top-3 right-4 text-5xl opacity-20">
-          {emoji}
+        {/* Persona avatar — circular with gold ring */}
+        <div className="absolute top-4 right-4 w-[60px] h-[60px] rounded-full bg-[#0D1B2A] ring-2 ring-amber-400 flex items-center justify-center text-3xl">
+          {personaEmoji}
         </div>
+
         <p className="text-xs text-purple-400 uppercase tracking-widest font-bold mb-2">
           TODAY&apos;S MISSION
         </p>
-        <h2 className="text-xl font-bold text-white mb-1">
-          Hey {displayName}! Time to level up!
-        </h2>
-        <p className="text-sm text-gray-400 mb-4">
-          Keep your streak going and master new concepts today.
-        </p>
+
+        {missionTitle ? (
+          <>
+            <h2 className="text-xl font-bold text-white mb-1 pr-16">
+              {missionTitle}
+            </h2>
+            {missionDesc && (
+              <p className="text-sm text-gray-400 mb-1 pr-16 line-clamp-2">
+                {missionDesc}
+              </p>
+            )}
+            {missionEst && (
+              <p className="text-xs text-gray-500 mb-4">
+                Est. {missionEst} minutes
+              </p>
+            )}
+          </>
+        ) : (
+          <>
+            <h2 className="text-xl font-bold text-white mb-1 pr-16">
+              Hey {displayName}! Time to level up!
+            </h2>
+            <p className="text-sm text-gray-400 mb-4 pr-16">
+              Keep your streak going and master new concepts today.
+            </p>
+          </>
+        )}
+
         <Link
           href={`/session?studentId=${studentId}`}
           className="inline-block px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-sm font-bold transition-colors shadow-lg"
@@ -193,6 +238,26 @@ export default function Tier2Home() {
           📊 Review
         </Link>
       </div>
+
+      {/* Your Progress — Fix 6: fill empty bottom space */}
+      {goalName && (
+        <div className="bg-[#141d30] rounded-xl p-5 border border-white/5">
+          <h3 className="text-sm font-semibold text-gray-300 mb-3">
+            Your Progress
+          </h3>
+          <p className="text-white text-sm font-medium mb-2">{goalName}</p>
+          <div className="w-full h-2.5 bg-gray-700 rounded-full overflow-hidden mb-2">
+            <div
+              className="h-full bg-gradient-to-r from-purple-500 to-purple-400 rounded-full transition-all duration-500"
+              style={{ width: `${Math.min(progressPct, 100)}%` }}
+            />
+          </div>
+          <div className="flex items-center justify-between text-xs text-gray-500">
+            <span>{Math.round(progressPct)}% complete</span>
+            {etaFormatted && <span>ETA: {etaFormatted}</span>}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

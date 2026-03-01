@@ -262,7 +262,7 @@ export default function ParentLayout({
           </header>
 
           {/* Page Content */}
-          <main className="p-5 max-w-[1100px] mx-auto">{children}</main>
+          <main className="flex-1 max-w-5xl mx-auto px-8 py-6">{children}</main>
         </div>
       </div>
     </ParentContext.Provider>

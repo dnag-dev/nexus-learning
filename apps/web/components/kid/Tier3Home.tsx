@@ -4,15 +4,13 @@
  * Tier3Home — Grades 8 through 12
  *
  * Clean, minimal, data-driven:
- * - Welcome + Continue button
+ * - Welcome + Continue button (with next concept name)
  * - Stats row: level, streak, mastered, badges
  * - Learning Progress from mastery data
+ * - Your Progress (goal + bar + ETA)
  * - Bottom links
  *
- * Uses /api/student/:id/gamification which returns:
- *   { xp, level, streak: { current, ... } | null,
- *     badges: [{ badgeType, category, earnedAt }],
- *     masteryMap: [{ nodeCode, nodeTitle, domain, level }] }
+ * Uses /api/student/:id/gamification AND /api/gps/dashboard
  */
 
 import { useState, useEffect } from "react";
@@ -36,18 +34,32 @@ interface GamData {
   }>;
 }
 
+interface GPSData {
+  goal?: { name: string };
+  progress?: { masteredCount: number; totalConcepts: number; percentage: number };
+  eta?: { projectedDate: string };
+  todaysMission?: { title: string };
+}
+
 export default function Tier3Home() {
   const { studentId, displayName } = useChild();
   const [gam, setGam] = useState<GamData | null>(null);
+  const [gps, setGps] = useState<GPSData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await fetch(`/api/student/${studentId}/gamification`);
-        if (res.ok) {
-          const data = await res.json();
-          setGam(data);
+        const [gamRes, gpsRes] = await Promise.allSettled([
+          fetch(`/api/student/${studentId}/gamification`),
+          fetch(`/api/gps/dashboard?studentId=${studentId}`),
+        ]);
+
+        if (gamRes.status === "fulfilled" && gamRes.value.ok) {
+          setGam(await gamRes.value.json());
+        }
+        if (gpsRes.status === "fulfilled" && gpsRes.value.ok) {
+          setGps(await gpsRes.value.json());
         }
       } catch {
         // Non-critical
@@ -68,6 +80,15 @@ export default function Tier3Home() {
     .filter((n) => n.level === "PROFICIENT" || n.level === "ADVANCED" || n.level === "MASTERED")
     .slice(0, 4);
 
+  // GPS progress data
+  const goalName = gps?.goal?.name;
+  const progressPct = gps?.progress?.percentage ?? 0;
+  const etaDate = gps?.eta?.projectedDate;
+  const etaFormatted = etaDate
+    ? new Date(etaDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+    : null;
+  const nextConcept = gps?.todaysMission?.title;
+
   return (
     <div className="space-y-5">
       {/* Welcome + Continue */}
@@ -77,7 +98,7 @@ export default function Tier3Home() {
             Welcome back, {displayName}
           </h1>
           <p className="text-sm text-gray-500">
-            Pick up where you left off.
+            {nextConcept ? `Next up: ${nextConcept}` : "Pick up where you left off."}
           </p>
         </div>
         <Link
@@ -174,6 +195,26 @@ export default function Tier3Home() {
           📊 Review
         </Link>
       </div>
+
+      {/* Your Progress — goal + bar + ETA */}
+      {goalName && (
+        <div className="bg-[#141d30] rounded-xl p-5 border border-white/5">
+          <h3 className="text-sm font-semibold text-gray-300 mb-3">
+            Your Progress
+          </h3>
+          <p className="text-white text-sm font-medium mb-2">{goalName}</p>
+          <div className="w-full h-2.5 bg-gray-700 rounded-full overflow-hidden mb-2">
+            <div
+              className="h-full bg-gradient-to-r from-purple-500 to-purple-400 rounded-full transition-all duration-500"
+              style={{ width: `${Math.min(progressPct, 100)}%` }}
+            />
+          </div>
+          <div className="flex items-center justify-between text-xs text-gray-500">
+            <span>{Math.round(progressPct)}% complete</span>
+            {etaFormatted && <span>ETA: {etaFormatted}</span>}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

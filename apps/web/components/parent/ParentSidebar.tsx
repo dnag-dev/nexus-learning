@@ -376,6 +376,27 @@ function SidebarContent({
         </div>
       </div>
 
+      {/* Upgrade Nudge — only for SPARK plan */}
+      {planLabel === "SPARK" && (
+        <div className="px-4 pb-2">
+          <Link
+            href="/pricing"
+            onClick={onNavigate}
+            className="block p-3 bg-purple-50 border border-purple-100 rounded-xl hover:bg-purple-100 transition-colors"
+          >
+            <p className="text-xs font-semibold text-purple-700">
+              ⭐ Spark Plan
+            </p>
+            <p className="text-[11px] text-purple-600 mt-0.5 leading-snug">
+              Upgrade for unlimited children &amp; features
+            </p>
+            <span className="inline-block mt-1.5 text-xs font-medium text-purple-700">
+              Upgrade →
+            </span>
+          </Link>
+        </div>
+      )}
+
       {/* Footer */}
       <div className="p-4 border-t border-gray-100 space-y-2">
         <Link

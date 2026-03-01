@@ -11,6 +11,7 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { useParent } from "@/lib/parent-context";
 
 interface ChildInfo {
@@ -232,16 +233,58 @@ export default function ParentSettingsPage() {
             <span className="text-gray-500">Name</span>
             <span className="text-gray-900">{name || "—"}</span>
           </div>
-          <div className="flex items-center justify-between py-2 border-b border-gray-50">
+          <div className="flex items-center justify-between py-2">
             <span className="text-gray-500">Email</span>
             <span className="text-gray-900">{email}</span>
           </div>
-          <div className="flex items-center justify-between py-2 border-b border-gray-50">
-            <span className="text-gray-500">Subscription</span>
-            <span className="bg-purple-100 text-purple-700 text-xs px-2 py-0.5 rounded-full font-medium">
-              {plan}
-            </span>
+        </div>
+      </div>
+
+      {/* Subscription Plan Card */}
+      <div className="bg-white rounded-xl border border-gray-100 p-5">
+        <h3 className="font-semibold text-gray-900 mb-3">Current Plan</h3>
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-lg">
+                {plan === "FAMILY" ? "👨‍👩‍👧‍👦" : plan === "GROW" ? "🌱" : "⭐"}
+              </span>
+              <span className="font-bold text-gray-900">
+                {plan === "FAMILY" ? "Family" : plan === "GROW" ? "Grow" : "Spark"}
+              </span>
+              <span className="text-sm text-gray-500">
+                — {plan === "FAMILY" ? "$19.99/mo" : plan === "GROW" ? "$9.99/mo" : "Free"}
+              </span>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              {plan === "FAMILY"
+                ? "Unlimited children · All features · Priority support"
+                : plan === "GROW"
+                  ? "Up to 3 children · All subjects · Detailed reports"
+                  : "1 child profile · Basic features"}
+            </p>
           </div>
+          {plan === "SPARK" && (
+            <Link
+              href="/pricing"
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors shrink-0"
+            >
+              Upgrade to Grow →
+            </Link>
+          )}
+          {plan === "GROW" && (
+            <Link
+              href="/pricing"
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-medium hover:bg-purple-700 transition-colors shrink-0"
+            >
+              Upgrade to Family →
+            </Link>
+          )}
+          {plan === "FAMILY" && (
+            <span className="text-xs text-green-600 font-medium bg-green-50 px-3 py-1.5 rounded-lg">
+              Top plan ✓
+            </span>
+          )}
         </div>
       </div>
 

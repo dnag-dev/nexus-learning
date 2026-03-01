@@ -75,7 +75,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { label: "Home", icon: "🏠", href: "/dashboard" },
   { label: "GPS", icon: "🧭", href: "/gps" },
-  { label: "Reports", icon: "📊", href: "/dashboard" },
+  { label: "Reports", icon: "📊", href: "/reports" },
   { label: "Settings", icon: "⚙️", href: "/settings" },
 ];
 

@@ -223,7 +223,7 @@ export async function getAttentionSpanTrend(
         studentId,
         state: "COMPLETED",
         startedAt: { gte: oneWeekAgo },
-        durationSeconds: { gt: 0 },
+        durationSeconds: { gt: 0, lte: 7200 }, // Skip bad data (>120 min)
       },
       select: { durationSeconds: true },
     }),
@@ -232,7 +232,7 @@ export async function getAttentionSpanTrend(
         studentId,
         state: "COMPLETED",
         startedAt: { gte: twoWeeksAgo, lt: oneWeekAgo },
-        durationSeconds: { gt: 0 },
+        durationSeconds: { gt: 0, lte: 7200 }, // Skip bad data (>120 min)
       },
       select: { durationSeconds: true },
     }),

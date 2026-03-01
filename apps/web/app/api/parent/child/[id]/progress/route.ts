@@ -76,18 +76,21 @@ export async function GET(
       include: { currentNode: { select: { title: true } } },
     });
 
-    const recentSessions = sessions.map((s) => ({
-      id: s.id,
-      date: s.startedAt.toISOString(),
-      durationMinutes: Math.round(s.durationSeconds / 60),
-      nodesPracticed: s.currentNode ? [s.currentNode.title] : [],
-      accuracy:
-        s.questionsAnswered > 0
-          ? s.correctAnswers / s.questionsAnswered
-          : 0,
-      emotionalSummary: s.emotionalStateAtEnd || s.emotionalStateAtStart || "—",
-      sessionType: s.sessionType,
-    }));
+    const recentSessions = sessions.map((s) => {
+      const cappedDuration = s.durationSeconds > 7200 ? 0 : s.durationSeconds;
+      return {
+        id: s.id,
+        date: s.startedAt.toISOString(),
+        durationMinutes: cappedDuration > 0 ? Math.round(cappedDuration / 60) : 0,
+        nodesPracticed: s.currentNode ? [s.currentNode.title] : [],
+        accuracy:
+          s.questionsAnswered > 0
+            ? Math.round((s.correctAnswers / s.questionsAnswered) * 100)
+            : 0,
+        emotionalSummary: s.emotionalStateAtEnd || s.emotionalStateAtStart || "—",
+        sessionType: s.sessionType,
+      };
+    });
 
     // Strengths (top 3 highest BKT)
     const allMasteryWithNodes = await prisma.masteryScore.findMany({
@@ -136,6 +139,8 @@ export async function GET(
     }
 
     for (const s of recentAllSessions) {
+      // Skip sessions with bad duration data (>120 min)
+      if (s.durationSeconds > 7200) continue;
       const dateStr = s.startedAt.toISOString().split("T")[0];
       const existing = dailyMap.get(dateStr) || 0;
       dailyMap.set(dateStr, existing + Math.round(s.durationSeconds / 60));

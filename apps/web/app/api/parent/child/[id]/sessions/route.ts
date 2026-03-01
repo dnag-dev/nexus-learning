@@ -28,16 +28,19 @@ export async function GET(
       },
     });
 
-    const sessionRecords = sessions.map((s) => ({
+    const sessionRecords = sessions.map((s) => {
+      // Cap displayed duration at 120 minutes; treat longer as bad data
+      const cappedDuration = s.durationSeconds > 7200 ? 0 : s.durationSeconds;
+      return {
       id: s.id,
       date: s.startedAt.toISOString(),
-      durationMinutes: Math.round(s.durationSeconds / 60),
+      durationMinutes: cappedDuration > 0 ? Math.round(cappedDuration / 60) : 0,
       sessionType: s.sessionType,
       questionsAnswered: s.questionsAnswered,
       correctAnswers: s.correctAnswers,
       accuracy:
         s.questionsAnswered > 0
-          ? s.correctAnswers / s.questionsAnswered
+          ? Math.round((s.correctAnswers / s.questionsAnswered) * 100)
           : 0,
       emotionalStateAtStart: s.emotionalStateAtStart,
       emotionalStateAtEnd: s.emotionalStateAtEnd,
@@ -46,7 +49,8 @@ export async function GET(
       ).length,
       nodesCovered: s.currentNode ? [s.currentNode.title] : [],
       hintsUsed: s.hintsUsed,
-    }));
+    };
+    });
 
     return NextResponse.json({ sessions: sessionRecords });
   } catch (err) {

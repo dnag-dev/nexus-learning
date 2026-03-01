@@ -9,8 +9,15 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@aauti/db";
 import { getCachedETA } from "@/lib/learning-plan/eta-calculator";
-import { getNextConceptInPlan } from "@/lib/learning-plan/plan-generator";
+import { getNextConceptInPlan, generateLearningPlan } from "@/lib/learning-plan/plan-generator";
 import { callClaude } from "@/lib/session/claude-client";
+
+/** Parse grade string (K, G1, G5) to numeric (0, 1, 5) */
+function gradeToNumeric(grade: string): number {
+  if (grade === "K") return 0;
+  const match = grade.match(/G?(\d+)/);
+  return match ? parseInt(match[1]) : 5;
+}
 
 export async function GET(
   _request: Request,
@@ -45,13 +52,47 @@ export async function GET(
     });
 
     if (activePlans.length === 0) {
-      return NextResponse.json({
-        childName: student.displayName,
-        childId,
-        hasActivePlans: false,
-        plans: [],
-        weeklyInsight: null,
-      });
+      // Auto-create a default learning plan for the student's grade level
+      try {
+        const numericGrade = gradeToNumeric(student.gradeLevel);
+        // Find grade-level math proficiency goal
+        const defaultGoal = await prisma.learningGoal.findFirst({
+          where: {
+            gradeLevel: numericGrade,
+            category: "GRADE_PROFICIENCY",
+            name: { contains: "Math" },
+          },
+        });
+        if (defaultGoal) {
+          await generateLearningPlan({
+            goalId: defaultGoal.id,
+            studentId: childId,
+            weeklyHoursAvailable: 3,
+          });
+          // Re-fetch the newly created plan
+          const newPlans = await prisma.learningPlan.findMany({
+            where: { studentId: childId, status: "ACTIVE" },
+            include: { goal: true },
+            orderBy: { createdAt: "desc" },
+          });
+          if (newPlans.length > 0) {
+            activePlans.push(...newPlans);
+          }
+        }
+      } catch (e) {
+        console.error("Auto-create plan error (non-critical):", e);
+      }
+
+      // If still no plans after auto-create attempt
+      if (activePlans.length === 0) {
+        return NextResponse.json({
+          childName: student.displayName,
+          childId,
+          hasActivePlans: false,
+          plans: [],
+          weeklyInsight: null,
+        });
+      }
     }
 
     // Build GPS data for each plan

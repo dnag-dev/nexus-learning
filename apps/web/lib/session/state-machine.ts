@@ -164,7 +164,9 @@ export async function transitionState(
     updateData.endedAt = new Date();
     const durationMs =
       new Date().getTime() - new Date(session.startedAt).getTime();
-    updateData.durationSeconds = Math.round(durationMs / 1000);
+    const rawSeconds = Math.round(durationMs / 1000);
+    // Cap at 120 minutes (7200s) — anything longer indicates an abandoned session
+    updateData.durationSeconds = rawSeconds <= 7200 ? rawSeconds : 0;
   }
 
   // Update DB

@@ -87,10 +87,28 @@ const SIZE_CLASSES: Record<AvatarSize, { container: string; emoji: string; video
 };
 
 const EMOTIONAL_GLOW: Record<AvatarEmotionalState, string> = {
-  happy: "ring-4 ring-aauti-success/30 bg-aauti-success/5 animate-glow-pulse",
-  neutral: "ring-2 ring-gray-200 bg-gray-50 animate-glow-pulse",
-  thinking: "ring-4 ring-aauti-accent/30 bg-aauti-accent/5 animate-glow-pulse",
-  encouraging: "ring-4 ring-aauti-primary/30 bg-aauti-primary/5 animate-glow-pulse",
+  happy: "ring-4 ring-aauti-success/30 animate-glow-pulse",
+  neutral: "ring-2 ring-amber-400/60 animate-glow-pulse",
+  thinking: "ring-4 ring-aauti-accent/30 animate-glow-pulse",
+  encouraging: "ring-4 ring-aauti-primary/30 animate-glow-pulse",
+};
+
+// Persona-specific background gradient for styled avatar (no raw emoji look)
+const PERSONA_BG: Record<PersonaId, string> = {
+  cosmo: "bg-gradient-to-br from-indigo-600 to-blue-800",
+  luna: "bg-gradient-to-br from-purple-700 to-indigo-900",
+  rex: "bg-gradient-to-br from-green-600 to-emerald-800",
+  nova: "bg-gradient-to-br from-amber-500 to-orange-700",
+  pip: "bg-gradient-to-br from-cyan-600 to-teal-800",
+  atlas: "bg-gradient-to-br from-emerald-600 to-green-800",
+  zara: "bg-gradient-to-br from-pink-500 to-rose-700",
+  finn: "bg-gradient-to-br from-sky-500 to-blue-700",
+  echo: "bg-gradient-to-br from-violet-600 to-purple-800",
+  sage: "bg-gradient-to-br from-indigo-500 to-violet-700",
+  bolt: "bg-gradient-to-br from-slate-600 to-gray-800",
+  ivy: "bg-gradient-to-br from-lime-600 to-green-800",
+  max: "bg-gradient-to-br from-orange-500 to-red-700",
+  aria: "bg-gradient-to-br from-fuchsia-500 to-pink-700",
 };
 
 const AvatarDisplay = forwardRef<AvatarDisplayHandle, AvatarDisplayProps>(
@@ -304,14 +322,16 @@ const AvatarDisplay = forwardRef<AvatarDisplayHandle, AvatarDisplayProps>(
       );
     }
 
-    // Emoji fallback with animations
+    // Styled avatar fallback — gradient bg with emoji character
+    const bgClass = PERSONA_BG[personaId] ?? "bg-gradient-to-br from-indigo-600 to-blue-800";
+
     return (
       <div
-        className={`${sizeClass.container} rounded-full flex items-center justify-center ${glowClass} ${speakingAnimation} ${emotionalAnimation} ${transitionClass} transition-all duration-300 ${className}`}
+        className={`${sizeClass.container} rounded-full flex items-center justify-center ${bgClass} ${glowClass} ${speakingAnimation} ${emotionalAnimation} ${transitionClass} transition-all duration-300 shadow-lg ${className}`}
         role="img"
         aria-label={`${personaId} avatar — ${effectiveEmotion}`}
       >
-        <span className={`${sizeClass.emoji} select-none`}>{emoji}</span>
+        <span className={`${sizeClass.emoji} select-none drop-shadow-md`}>{emoji}</span>
       </div>
     );
   }

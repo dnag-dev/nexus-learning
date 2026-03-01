@@ -100,12 +100,38 @@ export async function POST(request: Request) {
     const node = session.currentNode;
     const currentStep = session.learningStep; // 1-5
 
-    // ═══ Update BKT mastery on every answer ═══
-    const updatedMastery = await updateMasteryInDB(
-      session.studentId,
-      node.id,
-      isCorrect
-    );
+    // ═══ Update BKT mastery — skip Step 2 (check understanding is a readiness gate, not assessment) ═══
+    let updatedMastery: MasteryData;
+    if (currentStep === 2) {
+      // Step 2 gives ZERO BKT credit — read current mastery without updating
+      const existing = await prisma.masteryScore.findUnique({
+        where: { studentId_nodeId: { studentId: session.studentId, nodeId: node.id } },
+      });
+      updatedMastery = existing
+        ? {
+            bktProbability: existing.bktProbability,
+            level: existing.level as import("@/lib/session/bkt-engine").MasteryLevelValue,
+            practiceCount: existing.practiceCount,
+            correctCount: existing.correctCount,
+            lastPracticed: existing.lastPracticed,
+            nextReviewAt: existing.nextReviewAt,
+          }
+        : {
+            bktProbability: 0.10,
+            level: "NOVICE" as const,
+            practiceCount: 0,
+            correctCount: 0,
+            lastPracticed: new Date(),
+            nextReviewAt: null,
+          };
+    } else {
+      // Steps 3, 4, 5 — update BKT normally
+      updatedMastery = await updateMasteryInDB(
+        session.studentId,
+        node.id,
+        isCorrect
+      );
+    }
 
     // ═══ Record QuestionResponse for mastery gating + speed tracking ═══
     const stepType = stepToType(currentStep);
@@ -607,8 +633,8 @@ export async function POST(request: Request) {
           });
         }
 
-        if (masteryGate && masteryGate.recommendation === "practice") {
-          // Not enough evidence yet → back to practice
+        // Catch-all: if mastery gate returned null (error), "practice", or any non-advance recommendation
+        if (!masteryGate || masteryGate.recommendation !== "advance") {
           startPrefetch(
             sessionId,
             promptParams,
@@ -645,7 +671,7 @@ export async function POST(request: Request) {
           });
         }
 
-        // ═══ TRUE MASTERY ACHIEVED! 🎉 (gate passed or no gate data) ═══
+        // ═══ TRUE MASTERY ACHIEVED! 🎉 (gate explicitly passed with "advance") ═══
         const result = await transitionState(
           sessionId,
           "CELEBRATING",

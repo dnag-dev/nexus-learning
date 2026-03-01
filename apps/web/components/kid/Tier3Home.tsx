@@ -34,32 +34,30 @@ interface GamData {
   }>;
 }
 
-interface GPSData {
-  goal?: { name: string };
-  progress?: { masteredCount: number; totalConcepts: number; percentage: number };
-  eta?: { projectedDate: string };
-  todaysMission?: { title: string };
+interface NextConceptData {
+  title: string | null;
+  goalName?: string | null;
 }
 
 export default function Tier3Home() {
   const { studentId, displayName } = useChild();
   const [gam, setGam] = useState<GamData | null>(null);
-  const [gps, setGps] = useState<GPSData | null>(null);
+  const [nextConceptData, setNextConceptData] = useState<NextConceptData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const [gamRes, gpsRes] = await Promise.allSettled([
+        const [gamRes, conceptRes] = await Promise.allSettled([
           fetch(`/api/student/${studentId}/gamification`),
-          fetch(`/api/gps/dashboard?studentId=${studentId}`),
+          fetch(`/api/student/${studentId}/next-concept`),
         ]);
 
         if (gamRes.status === "fulfilled" && gamRes.value.ok) {
           setGam(await gamRes.value.json());
         }
-        if (gpsRes.status === "fulfilled" && gpsRes.value.ok) {
-          setGps(await gpsRes.value.json());
+        if (conceptRes.status === "fulfilled" && conceptRes.value.ok) {
+          setNextConceptData(await conceptRes.value.json());
         }
       } catch {
         // Non-critical
@@ -80,14 +78,8 @@ export default function Tier3Home() {
     .filter((n) => n.level === "PROFICIENT" || n.level === "ADVANCED" || n.level === "MASTERED")
     .slice(0, 4);
 
-  // GPS progress data
-  const goalName = gps?.goal?.name;
-  const progressPct = gps?.progress?.percentage ?? 0;
-  const etaDate = gps?.eta?.projectedDate;
-  const etaFormatted = etaDate
-    ? new Date(etaDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-    : null;
-  const nextConcept = gps?.todaysMission?.title;
+  const nextConcept = nextConceptData?.title;
+  const goalName = nextConceptData?.goalName;
 
   return (
     <div className="space-y-5">
@@ -196,25 +188,26 @@ export default function Tier3Home() {
         </Link>
       </div>
 
-      {/* Your Progress — goal + bar + ETA */}
-      {goalName && (
-        <div className="bg-[#141d30] rounded-xl p-5 border border-white/5">
-          <h3 className="text-sm font-semibold text-gray-300 mb-3">
-            Your Progress
-          </h3>
-          <p className="text-white text-sm font-medium mb-2">{goalName}</p>
-          <div className="w-full h-2.5 bg-gray-700 rounded-full overflow-hidden mb-2">
-            <div
-              className="h-full bg-gradient-to-r from-purple-500 to-purple-400 rounded-full transition-all duration-500"
-              style={{ width: `${Math.min(progressPct, 100)}%` }}
-            />
+      {/* Your Progress */}
+      <div className="bg-[#141d30] rounded-xl p-5 border border-white/5">
+        <h3 className="text-sm font-semibold text-gray-300 mb-3">
+          Your Progress
+        </h3>
+        <div className="grid grid-cols-3 gap-3 text-center">
+          <div>
+            <p className="text-lg font-bold text-green-400">{totalMastered}</p>
+            <p className="text-[10px] text-gray-500 uppercase">Mastered</p>
           </div>
-          <div className="flex items-center justify-between text-xs text-gray-500">
-            <span>{Math.round(progressPct)}% complete</span>
-            {etaFormatted && <span>ETA: {etaFormatted}</span>}
+          <div>
+            <p className="text-lg font-bold text-orange-400">{streakDays > 0 ? `🔥 ${streakDays}` : "0"}</p>
+            <p className="text-[10px] text-gray-500 uppercase">Streak</p>
+          </div>
+          <div>
+            <p className="text-lg font-bold text-blue-400">{totalBadges}</p>
+            <p className="text-[10px] text-gray-500 uppercase">Badges</p>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

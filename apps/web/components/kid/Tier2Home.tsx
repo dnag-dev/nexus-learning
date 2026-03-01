@@ -48,17 +48,18 @@ interface GamData {
   masteryMap: Array<{ level: string }>;
 }
 
-interface GPSData {
-  goal?: { name: string };
-  progress?: { masteredCount: number; totalConcepts: number; percentage: number };
-  eta?: { projectedDate: string };
-  todaysMission?: { title: string; description: string; estimatedHours: number };
+interface NextConceptData {
+  title: string | null;
+  description?: string;
+  estimatedMinutes?: number;
+  unlocks?: string | null;
+  goalName?: string | null;
 }
 
 export default function Tier2Home() {
   const { studentId, displayName, avatarPersonaId, level, xp } = useChild();
   const [gam, setGam] = useState<GamData | null>(null);
-  const [gps, setGps] = useState<GPSData | null>(null);
+  const [nextConcept, setNextConcept] = useState<NextConceptData | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Get persona info for the avatar
@@ -68,16 +69,16 @@ export default function Tier2Home() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [gamRes, gpsRes] = await Promise.allSettled([
+        const [gamRes, conceptRes] = await Promise.allSettled([
           fetch(`/api/student/${studentId}/gamification`),
-          fetch(`/api/gps/dashboard?studentId=${studentId}`),
+          fetch(`/api/student/${studentId}/next-concept`),
         ]);
 
         if (gamRes.status === "fulfilled" && gamRes.value.ok) {
           setGam(await gamRes.value.json());
         }
-        if (gpsRes.status === "fulfilled" && gpsRes.value.ok) {
-          setGps(await gpsRes.value.json());
+        if (conceptRes.status === "fulfilled" && conceptRes.value.ok) {
+          setNextConcept(await conceptRes.value.json());
         }
       } catch {
         // Non-critical
@@ -99,20 +100,14 @@ export default function Tier2Home() {
     return { id: b.badgeType, name: info.name, emoji: info.emoji, earnedAt: b.earnedAt };
   });
 
-  // Mission card data from GPS
-  const missionTitle = gps?.todaysMission?.title;
-  const missionDesc = gps?.todaysMission?.description;
-  const missionEst = gps?.todaysMission?.estimatedHours
-    ? Math.round(gps.todaysMission.estimatedHours * 60)
-    : null;
+  // Mission card data from next-concept API
+  const missionTitle = nextConcept?.title;
+  const missionDesc = nextConcept?.description;
+  const missionEst = nextConcept?.estimatedMinutes ?? null;
+  const missionUnlocks = nextConcept?.unlocks;
 
   // Progress data
-  const goalName = gps?.goal?.name;
-  const progressPct = gps?.progress?.percentage ?? 0;
-  const etaDate = gps?.eta?.projectedDate;
-  const etaFormatted = etaDate
-    ? new Date(etaDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-    : null;
+  const goalName = nextConcept?.goalName;
 
   return (
     <div className="space-y-5">
@@ -137,11 +132,11 @@ export default function Tier2Home() {
                 {missionDesc}
               </p>
             )}
-            {missionEst && (
-              <p className="text-xs text-gray-500 mb-4">
-                Est. {missionEst} minutes
-              </p>
-            )}
+            <div className="flex items-center gap-3 text-xs text-gray-500 mb-4">
+              {missionEst && <span>Est. {missionEst} min</span>}
+              {missionEst && missionUnlocks && <span>&middot;</span>}
+              {missionUnlocks && <span>Unlocks: {missionUnlocks}</span>}
+            </div>
           </>
         ) : (
           <>
@@ -239,25 +234,33 @@ export default function Tier2Home() {
         </Link>
       </div>
 
-      {/* Your Progress — Fix 6: fill empty bottom space */}
-      {goalName && (
-        <div className="bg-[#141d30] rounded-xl p-5 border border-white/5">
-          <h3 className="text-sm font-semibold text-gray-300 mb-3">
-            Your Progress
-          </h3>
+      {/* Your Progress */}
+      <div className="bg-[#141d30] rounded-xl p-5 border border-white/5">
+        <h3 className="text-sm font-semibold text-gray-300 mb-3">
+          Your Progress
+        </h3>
+        {goalName ? (
           <p className="text-white text-sm font-medium mb-2">{goalName}</p>
-          <div className="w-full h-2.5 bg-gray-700 rounded-full overflow-hidden mb-2">
-            <div
-              className="h-full bg-gradient-to-r from-purple-500 to-purple-400 rounded-full transition-all duration-500"
-              style={{ width: `${Math.min(progressPct, 100)}%` }}
-            />
+        ) : missionTitle ? (
+          <p className="text-white text-sm font-medium mb-2">Current: {missionTitle}</p>
+        ) : (
+          <p className="text-white text-sm font-medium mb-2">Learning Journey</p>
+        )}
+        <div className="grid grid-cols-3 gap-3 text-center">
+          <div>
+            <p className="text-lg font-bold text-purple-400">{totalMastered}</p>
+            <p className="text-[10px] text-gray-500 uppercase">Concepts Mastered</p>
           </div>
-          <div className="flex items-center justify-between text-xs text-gray-500">
-            <span>{Math.round(progressPct)}% complete</span>
-            {etaFormatted && <span>ETA: {etaFormatted}</span>}
+          <div>
+            <p className="text-lg font-bold text-orange-400">{streakDays > 0 ? `🔥 ${streakDays}` : "0"}</p>
+            <p className="text-[10px] text-gray-500 uppercase">Day Streak</p>
+          </div>
+          <div>
+            <p className="text-lg font-bold text-green-400">{displayBadges.length}</p>
+            <p className="text-[10px] text-gray-500 uppercase">Badges Earned</p>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

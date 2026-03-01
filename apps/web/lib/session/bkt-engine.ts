@@ -11,14 +11,16 @@ import { getSuccessors } from "@aauti/db";
 // ─── BKT Parameters ───
 
 export const BKT_PARAMS = {
-  /** Probability of learning on each opportunity */
-  pLearn: 0.3,
-  /** Probability of guessing correctly without mastery */
-  pGuess: 0.2,
-  /** Probability of slipping (wrong answer despite mastery) */
-  pSlip: 0.1,
-  /** Prior probability of knowing the concept */
-  pKnownPrior: 0.3,
+  /** Probability of learning on each opportunity (L) — deliberately low to require 10+ correct for mastery */
+  pLearn: 0.05,
+  /** Probability of guessing correctly without mastery (G) */
+  pGuess: 0.20,
+  /** Probability of slipping (wrong answer despite mastery) (S) */
+  pSlip: 0.10,
+  /** Prior probability of knowing the concept (L0) — student starts at 10% */
+  pKnownPrior: 0.10,
+  /** Maximum mastery increase per single correct answer */
+  maxIncreasePerAnswer: 0.08,
 } as const;
 
 // ─── Mastery Level Thresholds ───
@@ -67,7 +69,7 @@ export function updateMastery(
   correct: boolean
 ): MasteryData {
   const pK = current.bktProbability;
-  const { pLearn, pGuess, pSlip } = BKT_PARAMS;
+  const { pLearn, pGuess, pSlip, maxIncreasePerAnswer } = BKT_PARAMS;
 
   // Step 1: Posterior
   let pPosterior: number;
@@ -82,7 +84,12 @@ export function updateMastery(
   }
 
   // Step 2: Learning
-  const pNew = pPosterior + (1 - pPosterior) * pLearn;
+  let pNew = pPosterior + (1 - pPosterior) * pLearn;
+
+  // Cap maximum increase per correct answer to prevent mastery inflation
+  if (correct && pNew - pK > maxIncreasePerAnswer) {
+    pNew = pK + maxIncreasePerAnswer;
+  }
 
   // Clamp to [0, 1]
   const clamped = Math.max(0, Math.min(1, pNew));

@@ -50,16 +50,16 @@ export async function evaluateTrueMastery(
 
   const totalResponses = responses.length;
 
-  // If fewer than required responses, let the student through —
-  // don't block advancement when there isn't enough data to evaluate
+  // If fewer than required responses, require more practice —
+  // never grant mastery without sufficient assessment data
   if (totalResponses < MIN_RESPONSES_FOR_GATE) {
     return {
-      passed: true,
-      accuracy: { score: 1, passed: true },
-      consistency: { score: 1, passed: true, typesCorrect: [] },
-      retention: { score: 1, passed: true },
-      speed: { score: 1, passed: true, trendDirection: "improving" },
-      recommendation: "advance",
+      passed: false,
+      accuracy: { score: 0, passed: false },
+      consistency: { score: 0, passed: false, typesCorrect: [] },
+      retention: { score: 0, passed: false },
+      speed: { score: 0, passed: false, trendDirection: "flat" },
+      recommendation: "practice",
       totalResponses,
     };
   }

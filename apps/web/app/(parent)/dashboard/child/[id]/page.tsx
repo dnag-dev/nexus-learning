@@ -120,7 +120,7 @@ export default function ChildDetailPage() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="flex flex-col min-h-full space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -171,7 +171,7 @@ export default function ChildDetailPage() {
       </div>
 
       {/* Tab Content */}
-      <div>
+      <div className="flex-1">
         {currentTab === "overview" && (
           <OverviewTab childId={childId} parentId={parentId} child={child} />
         )}

@@ -235,7 +235,7 @@ export default function ParentLayout({
         />
 
         {/* Main Content */}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 flex flex-col">
           {/* Top Bar */}
           <header className="bg-white border-b border-gray-100 px-6 py-3 flex items-center justify-between">
             <div className="lg:hidden w-10" />

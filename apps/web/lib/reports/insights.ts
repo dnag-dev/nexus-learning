@@ -408,7 +408,7 @@ export async function generateInsightCards(
     const hour = learningTime.hourOfDay;
     // Sanity check: if calculated best time is late night (10 PM - 6 AM),
     // show a general "Evenings" label instead of a specific odd hour
-    const isLateNight = hour >= 22 || hour < 6;
+    const isLateNight = hour < 7 || hour >= 20;
     const hourLabel = isLateNight ? "Evenings" : formatHour(hour);
     const dayLabel = learningTime.dayOfWeek;
     const metricLabel = isLateNight ? `${dayLabel} evenings` : `${dayLabel} ${hourLabel}`;
@@ -422,7 +422,7 @@ export async function generateInsightCards(
       metric: metricLabel,
       trend: "positive",
       recommendation: isLateNight
-        ? `Best results on ${dayLabel} evenings. Based on your timezone settings.`
+        ? `Best results on ${dayLabel} evenings. Based on recent activity patterns.`
         : `Try scheduling study sessions on ${dayLabel}s around ${hourLabel} for the best results.`,
       priority: "MEDIUM",
     });

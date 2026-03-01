@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 
 // ─── Types ───
@@ -147,7 +148,7 @@ export default function GPSDashboardWrapper() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="bg-slate-950 rounded-2xl flex items-center justify-center py-20 -mx-8 -mt-6 min-h-[calc(100vh-73px)]">
           <div className="w-12 h-12 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin" />
         </div>
       }
@@ -231,7 +232,7 @@ function GPSDashboard() {
   // ─── Loading state ───
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+      <div className="bg-slate-950 rounded-2xl flex items-center justify-center py-20 -mx-8 -mt-6 min-h-[calc(100vh-73px)]">
         <div className="text-center">
           <div className="w-16 h-16 mx-auto mb-4 relative">
             <div className="absolute inset-0 rounded-full bg-purple-500/20 animate-pulse" />
@@ -250,7 +251,7 @@ function GPSDashboard() {
   // ─── No plans state ───
   if (error === "no-plans") {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
+      <div className="bg-slate-950 rounded-2xl flex items-center justify-center px-4 py-20 -mx-8 -mt-6 min-h-[calc(100vh-73px)]">
         <div className="max-w-md text-center">
           <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-purple-500/10 flex items-center justify-center">
             <span className="text-5xl">🧭</span>
@@ -275,7 +276,7 @@ function GPSDashboard() {
   // ─── Error state ───
   if (error || !data) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
+      <div className="bg-slate-950 rounded-2xl flex items-center justify-center px-4 py-20 -mx-8 -mt-6 min-h-[calc(100vh-73px)]">
         <div className="max-w-md text-center">
           <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-red-500/10 flex items-center justify-center">
             <span className="text-4xl">⚠️</span>
@@ -296,11 +297,18 @@ function GPSDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="bg-slate-950 rounded-2xl -mx-8 -mt-6 min-h-[calc(100vh-73px)] overflow-hidden">
       {/* ═══ Header ═══ */}
-      <header className="bg-slate-900/80 backdrop-blur-sm border-b border-white/5 px-4 py-3 sticky top-0 z-20">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
+      <header className="bg-slate-900/80 border-b border-white/5 px-6 py-3">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
+            <Link
+              href="/dashboard"
+              className="text-slate-400 hover:text-white text-sm transition-colors"
+            >
+              ← Dashboard
+            </Link>
+            <span className="text-slate-600">|</span>
             <span className="text-2xl">🧭</span>
             <div>
               <h1 className="text-white font-bold text-lg leading-tight">
@@ -351,7 +359,7 @@ function GPSDashboard() {
       </header>
 
       {/* ═══ Main Content ═══ */}
-      <main className="max-w-6xl mx-auto px-4 py-6">
+      <main className="px-6 py-6">
         <motion.div
           variants={staggerContainer}
           initial="initial"

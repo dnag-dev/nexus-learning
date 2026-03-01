@@ -56,7 +56,7 @@ export default function ParentLayout({
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
-      router.push("/api/auth/login");
+      router.push(`/api/auth/login?returnTo=${encodeURIComponent(pathname)}`);
       return;
     }
 

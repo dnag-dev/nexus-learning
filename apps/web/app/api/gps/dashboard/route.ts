@@ -85,13 +85,13 @@ export async function GET(request: Request) {
       orderBy: { createdAt: "desc" },
     });
 
-    // 3. Build concept path (2 mastered → current → 4 upcoming)
+    // 3. Build concept path — show ALL concepts in plan
     const conceptSequence = plan.conceptSequence;
     const currentIndex = plan.currentConceptIndex;
 
-    // Fetch node details for visible path
-    const pathStart = Math.max(0, currentIndex - 2);
-    const pathEnd = Math.min(conceptSequence.length, currentIndex + 5);
+    // Fetch node details for the full concept sequence
+    const pathStart = 0;
+    const pathEnd = conceptSequence.length;
     const pathCodes = conceptSequence.slice(pathStart, pathEnd);
 
     const pathNodes = await prisma.knowledgeNode.findMany({

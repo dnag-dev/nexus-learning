@@ -75,8 +75,14 @@ const EMOTIONAL_WEIGHTS: Record<string, number> = {
 
 // ─── Best Learning Time ───
 
+// Timezone offset in hours from UTC for display purposes.
+// Default: US Eastern (UTC-5). Server stores timestamps in UTC;
+// we shift to approximate the student's local time.
+const TZ_OFFSET_HOURS = -5;
+
 /**
  * Analyze session start times vs accuracy to find optimal learning windows.
+ * Applies a timezone offset to convert UTC timestamps to approximate local time.
  */
 export async function getBestLearningTime(
   studentId: string
@@ -106,11 +112,13 @@ export async function getBestLearningTime(
   }
 
   // Group by day+hour and calculate average accuracy
+  // Apply timezone offset to convert UTC → approximate local time
   const buckets: Record<string, { total: number; correct: number; count: number }> = {};
 
   for (const s of sessions) {
-    const day = s.startedAt.getDay();
-    const hour = s.startedAt.getHours();
+    const localDate = new Date(s.startedAt.getTime() + TZ_OFFSET_HOURS * 60 * 60 * 1000);
+    const day = localDate.getUTCDay();
+    const hour = localDate.getUTCHours();
     const key = `${day}-${hour}`;
 
     if (!buckets[key]) {
@@ -397,13 +405,25 @@ export async function generateInsightCards(
 
   // 3. Best learning time card
   if (learningTime.sessionCount > 0) {
-    const hourLabel = formatHour(learningTime.hourOfDay);
+    const hour = learningTime.hourOfDay;
+    // Sanity check: if calculated best time is late night (10 PM - 6 AM),
+    // show a general "Evenings" label instead of a specific odd hour
+    const isLateNight = hour >= 22 || hour < 6;
+    const hourLabel = isLateNight ? "Evenings" : formatHour(hour);
+    const dayLabel = learningTime.dayOfWeek;
+    const metricLabel = isLateNight ? `${dayLabel} evenings` : `${dayLabel} ${hourLabel}`;
+    const descTime = isLateNight
+      ? `evenings on ${dayLabel}s`
+      : `${dayLabel}s around ${hourLabel}`;
+
     cards.push({
       title: "Best Study Time",
-      description: `Peak performance on ${learningTime.dayOfWeek}s around ${hourLabel} with ${Math.round(learningTime.avgAccuracy * 100)}% accuracy.`,
-      metric: `${learningTime.dayOfWeek} ${hourLabel}`,
+      description: `Peak performance ${descTime} with ${Math.round(learningTime.avgAccuracy * 100)}% accuracy.`,
+      metric: metricLabel,
       trend: "positive",
-      recommendation: `Try scheduling study sessions on ${learningTime.dayOfWeek}s around ${hourLabel} for the best results.`,
+      recommendation: isLateNight
+        ? `Best results on ${dayLabel} evenings. Based on your timezone settings.`
+        : `Try scheduling study sessions on ${dayLabel}s around ${hourLabel} for the best results.`,
       priority: "MEDIUM",
     });
   }

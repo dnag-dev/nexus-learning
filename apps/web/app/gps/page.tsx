@@ -435,53 +435,13 @@ function GPSDashboard() {
             </div>
           </motion.div>
 
-          {/* ─── Row 2: Concept Path ─── */}
+          {/* ─── Row 2: Concept Path Grid ─── */}
           <motion.div variants={staggerItem} className="mb-4">
-            <div className="bg-slate-900/60 rounded-2xl border border-white/5 p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
-                  Your Learning Path
-                </h3>
-                <span className="text-xs text-slate-500">
-                  {data.plan.conceptsMastered} of {data.plan.totalConcepts} mastered
-                </span>
-              </div>
-
-              {/* Horizontal scrollable path */}
-              <div className="overflow-x-auto -mx-2 px-2 pb-2">
-                <div className="flex items-center gap-3 min-w-max">
-                  {data.conceptPath.map((node, i) => (
-                    <div key={node.code} className="flex items-center gap-3">
-                      <ConceptNode node={node} />
-                      {i < data.conceptPath.length - 1 && (
-                        <div
-                          className={`w-8 h-0.5 flex-shrink-0 ${
-                            node.status === "mastered"
-                              ? "bg-emerald-500/60"
-                              : "bg-slate-700"
-                          }`}
-                        />
-                      )}
-                    </div>
-                  ))}
-
-                  {/* More indicator */}
-                  {data.plan.totalConcepts > data.conceptPath.length && (
-                    <div className="flex items-center gap-2 pl-2">
-                      <div className="w-8 h-0.5 bg-slate-700" />
-                      <div className="flex items-center gap-1 text-xs text-slate-500">
-                        <span className="flex gap-0.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-slate-600" />
-                          <span className="w-1.5 h-1.5 rounded-full bg-slate-600" />
-                          <span className="w-1.5 h-1.5 rounded-full bg-slate-600" />
-                        </span>
-                        +{data.plan.totalConcepts - data.conceptPath.length} more
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+            <ConceptPathGrid
+              conceptPath={data.conceptPath}
+              totalConcepts={data.plan.totalConcepts}
+              conceptsMastered={data.plan.conceptsMastered}
+            />
           </motion.div>
 
           {/* ─── Row 3: Today's Mission + Velocity + Insight ─── */}
@@ -798,7 +758,137 @@ function ProgressRing({
   );
 }
 
-// ─── Concept Node Component ───
+// ─── Concept Path Grid ───
+
+const INITIAL_VISIBLE = 20;
+
+function ConceptPathGrid({
+  conceptPath,
+  totalConcepts,
+  conceptsMastered,
+}: {
+  conceptPath: ConceptPathNode[];
+  totalConcepts: number;
+  conceptsMastered: number;
+}) {
+  const [showAll, setShowAll] = useState(false);
+
+  // Group by grade level
+  const grouped = useMemo(() => {
+    const groups: Record<string, ConceptPathNode[]> = {};
+    for (const node of conceptPath) {
+      const grade = node.gradeLevel || "Other";
+      if (!groups[grade]) groups[grade] = [];
+      groups[grade].push(node);
+    }
+    return groups;
+  }, [conceptPath]);
+
+  // Flatten for counting how many to show
+  const allNodes = conceptPath;
+  const visibleNodes = showAll ? allNodes : allNodes.slice(0, INITIAL_VISIBLE);
+  const remaining = allNodes.length - INITIAL_VISIBLE;
+
+  // Build visible groups from visible nodes
+  const visibleGrouped = useMemo(() => {
+    const groups: Record<string, ConceptPathNode[]> = {};
+    for (const node of visibleNodes) {
+      const grade = node.gradeLevel || "Other";
+      if (!groups[grade]) groups[grade] = [];
+      groups[grade].push(node);
+    }
+    return groups;
+  }, [visibleNodes]);
+
+  const displayGroups = showAll ? grouped : visibleGrouped;
+
+  return (
+    <div className="bg-slate-900/60 rounded-2xl border border-white/5 p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+          Your Learning Path
+        </h3>
+        <span className="text-xs text-slate-500">
+          {conceptsMastered} of {totalConcepts} mastered
+        </span>
+      </div>
+
+      {/* Grouped grid */}
+      <div className="space-y-5">
+        {Object.entries(displayGroups).map(([grade, nodes]) => (
+          <div key={grade}>
+            <p className="text-xs text-slate-500 font-medium mb-2 uppercase tracking-wider">
+              {grade}
+            </p>
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
+              {nodes.map((node) => (
+                <ConceptGridNode key={node.code} node={node} />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Show more / show less */}
+      {remaining > 0 && (
+        <div className="mt-4 text-center">
+          <button
+            onClick={() => setShowAll(!showAll)}
+            className="px-4 py-2 text-xs font-medium text-purple-300 bg-purple-500/10 border border-purple-500/20 rounded-lg hover:bg-purple-500/20 transition-colors"
+          >
+            {showAll ? "Show less" : `Show all ${allNodes.length} concepts`}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Compact Grid Node ───
+
+function ConceptGridNode({ node }: { node: ConceptPathNode }) {
+  const statusStyles = {
+    mastered: "bg-emerald-500/15 border-emerald-500/30",
+    current: "bg-purple-500/15 border-purple-500/40 ring-1 ring-purple-500/30",
+    upcoming: "bg-slate-800/80 border-slate-600/20",
+    locked: "bg-slate-800/40 border-slate-700/15 opacity-50",
+    unknown: "bg-slate-800/40 border-slate-700/15",
+  };
+
+  const statusIcons = {
+    mastered: "✅",
+    current: "▶️",
+    upcoming: "○",
+    locked: "🔒",
+    unknown: "?",
+  };
+
+  const statusTextColor = {
+    mastered: "text-emerald-300",
+    current: "text-purple-300",
+    upcoming: "text-slate-400",
+    locked: "text-slate-500",
+    unknown: "text-slate-500",
+  };
+
+  return (
+    <div
+      className={`rounded-lg border p-2 transition-all ${statusStyles[node.status]}`}
+    >
+      <div className="flex items-center gap-1.5 mb-1">
+        <span className="text-xs">{statusIcons[node.status]}</span>
+        <span className={`text-[10px] font-mono ${statusTextColor[node.status]}`}>
+          {node.code}
+        </span>
+      </div>
+      <p className={`text-xs leading-tight truncate ${statusTextColor[node.status]}`}>
+        {node.title.length > 20 ? node.title.slice(0, 20) + "…" : node.title}
+      </p>
+    </div>
+  );
+}
+
+// ─── Concept Node Component (horizontal path - legacy) ───
 
 function ConceptNode({ node }: { node: ConceptPathNode }) {
   const statusStyles = {

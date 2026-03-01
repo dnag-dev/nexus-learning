@@ -2,8 +2,9 @@ import { handleAuth, handleLogin, handleLogout } from "@auth0/nextjs-auth0";
 import { NextResponse } from "next/server";
 
 const handler = handleAuth({
-  login: handleLogin({
-    returnTo: "/dashboard",
+  login: handleLogin((req) => {
+    const url = new URL(req.url ?? "http://localhost", "http://localhost");
+    return { returnTo: url.searchParams.get("returnTo") || "/dashboard" };
   }),
   logout: handleLogout({
     returnTo: "/",

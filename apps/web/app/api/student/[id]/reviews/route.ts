@@ -1,7 +1,7 @@
 /**
  * GET /api/student/:id/reviews
  *
- * Returns due review summary and upcoming review forecast.
+ * Returns due review summary, due nodes list, and upcoming review forecast.
  * Used by the dashboard review widget and review home page.
  *
  * Query params:
@@ -10,7 +10,7 @@
 
 import { NextResponse } from "next/server";
 import { getDueReviewSummary } from "@/lib/spaced-repetition/notifications";
-import { getUpcomingReviews } from "@/lib/spaced-repetition/scheduler";
+import { getDueNodes, getUpcomingReviews } from "@/lib/spaced-repetition/scheduler";
 
 export async function GET(
   request: Request,
@@ -29,13 +29,30 @@ export async function GET(
     const url = new URL(request.url);
     const forecastDays = parseInt(url.searchParams.get("forecastDays") ?? "7", 10);
 
-    const [summary, forecast] = await Promise.all([
+    const [summary, dueNodeRecords, forecast] = await Promise.all([
       getDueReviewSummary(studentId),
+      getDueNodes(studentId),
       getUpcomingReviews(studentId, forecastDays),
     ]);
 
+    // Map due nodes into the shape the kid review page expects
+    const now = new Date();
+    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const nodes = dueNodeRecords.map((ms) => ({
+      nodeId: ms.nodeId,
+      nodeCode: ms.node.nodeCode,
+      title: ms.node.title,
+      domain: ms.node.domain,
+      gradeLevel: ms.node.gradeLevel,
+      bktProbability: ms.bktProbability,
+      lastReviewedAt: ms.lastPracticed?.toISOString() ?? null,
+      nextReviewAt: ms.nextReviewAt?.toISOString() ?? now.toISOString(),
+      isOverdue: ms.nextReviewAt ? ms.nextReviewAt <= oneDayAgo : false,
+    }));
+
     return NextResponse.json({
       summary,
+      nodes,
       forecast,
     });
   } catch (err) {

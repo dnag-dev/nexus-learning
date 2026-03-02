@@ -67,9 +67,7 @@ export default function KidReviewPage() {
     );
   }
 
-  const dueNodes = nodes.filter(
-    (n) => new Date(n.nextReviewAt) <= new Date()
-  );
+  const hasDueReviews = (summary?.dueNow ?? 0) > 0 || nodes.length > 0;
 
   return (
     <div className="space-y-6">
@@ -89,8 +87,8 @@ export default function KidReviewPage() {
         </p>
       </div>
 
-      {/* Summary Card */}
-      {summary && (
+      {/* Summary Card — only show when there are due reviews */}
+      {summary && hasDueReviews && (
         <div className="bg-[#1A2744] rounded-2xl border border-white/5 p-6 text-center">
           <div className="grid grid-cols-3 gap-4">
             <div>
@@ -116,39 +114,41 @@ export default function KidReviewPage() {
       )}
 
       {/* Start Review Button */}
-      {dueNodes.length > 0 ? (
+      {hasDueReviews ? (
         <>
           <Link
             href={`/session?studentId=${studentId}&review=true&returnTo=/kid/review`}
             className="block w-full py-4 text-center text-lg font-bold text-white rounded-2xl bg-gradient-to-r from-aauti-primary to-aauti-secondary hover:from-aauti-primary/90 hover:to-aauti-secondary/90 transition-all shadow-lg shadow-aauti-primary/25"
           >
-            📖 Start Review ({dueNodes.length} topics)
+            📖 Start Review ({summary?.dueNow ?? nodes.length} topics)
           </Link>
 
           {/* Due Topics */}
-          <div className="space-y-2">
-            <h3 className="text-white font-semibold text-sm">Topics to review:</h3>
-            {dueNodes.map((node) => (
-              <div
-                key={node.nodeId}
-                className="bg-[#1A2744] rounded-xl border border-white/5 p-3 flex items-center justify-between"
-              >
-                <div>
-                  <span className="text-white text-sm font-medium">
-                    {node.title}
-                  </span>
-                  <span className="block text-xs text-gray-500">
-                    {node.domain} · {node.gradeLevel}
-                  </span>
+          {nodes.length > 0 && (
+            <div className="space-y-2">
+              <h3 className="text-white font-semibold text-sm">Topics to review:</h3>
+              {nodes.map((node) => (
+                <div
+                  key={node.nodeId}
+                  className="bg-[#1A2744] rounded-xl border border-white/5 p-3 flex items-center justify-between"
+                >
+                  <div>
+                    <span className="text-white text-sm font-medium">
+                      {node.title}
+                    </span>
+                    <span className="block text-xs text-gray-500">
+                      {node.domain} · {node.gradeLevel}
+                    </span>
+                  </div>
+                  {node.isOverdue && (
+                    <span className="text-xs text-orange-400 font-medium">
+                      Overdue
+                    </span>
+                  )}
                 </div>
-                {node.isOverdue && (
-                  <span className="text-xs text-orange-400 font-medium">
-                    Overdue
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </>
       ) : (
         <div className="bg-[#1A2744] rounded-2xl border border-white/5 p-8 text-center">

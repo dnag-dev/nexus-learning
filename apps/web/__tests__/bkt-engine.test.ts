@@ -79,7 +79,8 @@ describe("BKT Engine", () => {
 
     it("converges toward mastery with repeated correct answers", () => {
       let mastery = makeMastery({ bktProbability: 0.3 });
-      for (let i = 0; i < 10; i++) {
+      // With maxIncreasePerAnswer=0.04, need ~15 correct from 0.3 to reach 0.9
+      for (let i = 0; i < 20; i++) {
         mastery = updateMastery(mastery, true);
       }
       expect(mastery.bktProbability).toBeGreaterThan(0.9);

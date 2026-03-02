@@ -11,7 +11,7 @@ import { getSuccessors } from "@aauti/db";
 // ─── BKT Parameters ───
 
 export const BKT_PARAMS = {
-  /** Probability of learning on each opportunity (L) — deliberately low to require 10+ correct for mastery */
+  /** Probability of learning on each opportunity (L) — deliberately low to require 20+ correct for mastery */
   pLearn: 0.05,
   /** Probability of guessing correctly without mastery (G) */
   pGuess: 0.20,
@@ -19,8 +19,10 @@ export const BKT_PARAMS = {
   pSlip: 0.10,
   /** Prior probability of knowing the concept (L0) — student starts at 10% */
   pKnownPrior: 0.10,
-  /** Maximum mastery increase per single correct answer */
-  maxIncreasePerAnswer: 0.08,
+  /** Maximum mastery increase per single correct answer — keeps progression gradual
+   *  At 0.04, a student needs ~20 correct answers to go from 10% to 90% mastery.
+   *  Previous value of 0.08 allowed mastery in ~10 answers (too fast). */
+  maxIncreasePerAnswer: 0.04,
 } as const;
 
 // ─── Mastery Level Thresholds ───

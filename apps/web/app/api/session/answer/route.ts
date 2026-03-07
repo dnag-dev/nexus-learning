@@ -18,6 +18,7 @@ import {
   updateMasteryInDB,
   shouldAdvanceNode,
   recommendNextNode,
+  BKT_PARAMS,
 } from "@/lib/session/bkt-engine";
 import type { MasteryData } from "@/lib/session/bkt-engine";
 import { callClaude } from "@/lib/session/claude-client";
@@ -35,6 +36,7 @@ import {
 import { startPrefetch } from "@/lib/session/question-prefetch";
 import { evaluateTrueMastery } from "@/lib/session/mastery-gate";
 import { updateNexusScore } from "@/lib/session/nexus-score";
+import { logConceptMastered } from "@/lib/activity-log";
 
 export const maxDuration = 30;
 
@@ -208,6 +210,7 @@ export async function POST(request: Request) {
     });
 
     // ═══ Gamification: XP for correct answers ═══
+    // Note: level-up events are handled internally by gamification-service via event bus
     let gamificationXP = null;
     if (isCorrect) {
       try {
@@ -219,6 +222,53 @@ export async function POST(request: Request) {
       } catch (e) {
         console.error("Gamification XP error (non-critical):", e);
       }
+    }
+
+    // ═══ Max questions guard — prevents infinite loops ═══
+    // If the student has answered maxQuestions (15) for this node, end the session gracefully.
+    // This protects against edge cases where the loop cycles indefinitely.
+    const totalQuestionsForNode = session.questionsAnswered + 1; // +1 for this answer
+    if (totalQuestionsForNode >= BKT_PARAMS.maxQuestions) {
+      // End session gracefully — transition to celebrating with current mastery
+      const result = await transitionState(
+        sessionId,
+        "CELEBRATING",
+        "MAX_QUESTIONS_REACHED",
+        {
+          nodeCode: node.nodeCode,
+          bktProbability: updatedMastery.bktProbability,
+          questionsAnswered: totalQuestionsForNode,
+        }
+      );
+
+      let nextNode = null;
+      try {
+        nextNode = await recommendNextNode(session.studentId, node.nodeCode);
+      } catch (e) {
+        console.error("Next node recommendation error:", e);
+      }
+
+      return NextResponse.json({
+        state: result.newState,
+        recommendedAction: result.recommendedAction,
+        learningStep: currentStep,
+        isCorrect,
+        mastery: formatMastery(updatedMastery),
+        maxQuestionsReached: true,
+        celebration: {
+          celebration: `Great effort on ${node.title}! You've practiced a lot today.`,
+          funFact: "Even experts need breaks! Your brain is processing what you learned.",
+          nextTeaser: nextNode
+            ? `Ready for more? Up next: ${nextNode.title}!`
+            : "Take a break and come back stronger!",
+        },
+        nextNode,
+        gamification: gamificationXP,
+        feedback: {
+          message: "You've put in great effort! Let's take a break from this topic. 🌟",
+          type: "max_questions",
+        },
+      });
     }
 
     // Ensure we're in PRACTICE state (transition from TEACHING if needed)
@@ -696,6 +746,14 @@ export async function POST(request: Request) {
         } catch {
           // Non-critical
         }
+
+        // ─── Activity Log: concept mastered ───
+        logConceptMastered(
+          session.studentId,
+          node.nodeCode,
+          node.title,
+          updatedMastery.bktProbability
+        );
 
         // Gamification: Node mastered
         let masteryGamification = null;

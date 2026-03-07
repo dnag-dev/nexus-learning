@@ -19,6 +19,7 @@ import ProgressTab from "@/components/parent/detail/ProgressTab";
 import SessionsTab from "@/components/parent/detail/SessionsTab";
 import InsightsTab from "@/components/parent/detail/InsightsTab";
 import ChildSettingsTab from "@/components/parent/detail/ChildSettingsTab";
+import ActivityTab from "@/components/parent/detail/ActivityTab";
 
 // ─── Types ───
 
@@ -54,6 +55,7 @@ const TABS = [
   { key: "overview", label: "Overview" },
   { key: "progress", label: "Progress" },
   { key: "sessions", label: "Sessions" },
+  { key: "activity", label: "Activity" },
   { key: "insights", label: "Insights" },
   { key: "settings", label: "Settings" },
 ];
@@ -180,6 +182,9 @@ export default function ChildDetailPage() {
         )}
         {currentTab === "sessions" && (
           <SessionsTab childId={childId} />
+        )}
+        {currentTab === "activity" && (
+          <ActivityTab childId={childId} childName={child.displayName} />
         )}
         {currentTab === "insights" && (
           <InsightsTab parentId={parentId} />

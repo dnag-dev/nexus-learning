@@ -3,6 +3,7 @@ import { prisma } from "@aauti/db";
 import { transitionState } from "@/lib/session/state-machine";
 import { checkReviewsOnSessionStart } from "@/lib/spaced-repetition/scheduler-job";
 import { getNextConceptInPlan } from "@/lib/learning-plan/plan-generator";
+import { logSessionStarted } from "@/lib/activity-log";
 
 // Allow up to 30s (Pro plan); on Hobby plan this is capped at 10s
 export const maxDuration = 30;
@@ -261,6 +262,9 @@ export async function POST(request: Request) {
         console.error("Today's Plan context error (non-critical):", e);
       }
     }
+
+    // ─── Activity Log: session started ───
+    logSessionStarted(studentId, session.id, targetNode.nodeCode, targetNode.title);
 
     // Return session metadata immediately — teaching content will stream
     // via /api/session/teach-stream SSE endpoint.

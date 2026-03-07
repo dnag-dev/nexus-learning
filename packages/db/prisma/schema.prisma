@@ -250,6 +250,7 @@ model Student {
   questionResponses     QuestionResponse[]
   branchUnlocks         BranchUnlock[]
   learningPlans         LearningPlan[]
+  activityLogs          ActivityLog[]
 
   @@index([parentId])
   @@map("students")
@@ -766,4 +767,43 @@ model StandardsMapping {
 
   @@index([subject, gradeLevel])
   @@map("standards_mappings")
+}
+
+// ─── Activity Log ───
+// Tracks all student learning events for parent visibility.
+// Events are logged by the activity-log utility and displayed in the parent dashboard.
+
+enum ActivityEventType {
+  SESSION_STARTED
+  SESSION_COMPLETED
+  CONCEPT_MASTERED
+  STEP_ADVANCED
+  STEP_FAILED
+  STREAK_MILESTONE
+  BADGE_EARNED
+  LEVEL_UP
+  BOSS_CHALLENGE_WON
+  BOSS_CHALLENGE_LOST
+  DIAGNOSTIC_COMPLETED
+  REVIEW_STARTED
+  FLUENCY_DRILL_COMPLETED
+  MAX_QUESTIONS_REACHED
+  PLAN_CREATED
+  GOAL_SET
+}
+
+model ActivityLog {
+  id        String            @id @default(cuid())
+  studentId String
+  eventType ActivityEventType
+  title     String            // Human-readable event title, e.g. "Mastered Fractions"
+  detail    String?           // Optional detail, e.g. "Score: 92%, 4 questions"
+  metadata  Json?             // Structured data: { sessionId, nodeCode, xp, bkt, etc. }
+  createdAt DateTime          @default(now())
+
+  student   Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId, createdAt(sort: Desc)])
+  @@index([studentId, eventType])
+  @@map("activity_logs")
 }

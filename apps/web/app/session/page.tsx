@@ -17,6 +17,10 @@ import NexusScore from "@/components/gamification/NexusScore";
 import LearnPanel from "@/components/session/LearnPanel";
 import SessionLeftColumn from "@/components/session/SessionLeftColumn";
 import CosmoFloat from "@/components/session/CosmoFloat";
+import MasteryHelpModal, {
+  useShouldShowMasteryOnboarding,
+  markMasteryOnboardingSeen,
+} from "@/components/session/MasteryHelpModal";
 
 // ─── Types ───
 
@@ -95,6 +99,12 @@ type SessionPhase =
   | "summary";
 
 // ─── Step labels ───
+// Each step maps to a BKT mastery band:
+//   Step 1 (Learn):     0-20%     — Explanation + examples (NOVICE)
+//   Step 2 (Check):     20-40%    — Easy comprehension (DEVELOPING)
+//   Step 3 (Guided):    40-60%    — Medium with hints (PROFICIENT)
+//   Step 4 (Practice):  60-80%    — Questions without hints (ADVANCED)
+//   Step 5 (Prove):     80-85%+   — Final mastery proof (→ MASTERED)
 const STEP_LABELS = ["Learn", "Check", "Guided", "Practice", "Prove"];
 const STEP_DESCRIPTIONS = [
   "Learning the concept",
@@ -258,11 +268,15 @@ function SessionPage() {
   const [conceptsMasteredThisSession, setConceptsMasteredThisSession] = useState(0);
   const [sessionXPEarned, setSessionXPEarned] = useState(0);
   const [statsExpanded, setStatsExpanded] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const gamProfileRef = useRef<{ totalMastered: number; badges: string[] } | null>(null);
   const prevMasteryRef = useRef(0);
   const avatarRef = useRef<AvatarDisplayHandle>(null);
   // ─── Response Time Tracking ───
   const questionStartTimeRef = useRef<number>(0);
+  // ─── Mastery onboarding (shown once per student) ───
+  const shouldShowOnboarding = useShouldShowMasteryOnboarding(DEMO_STUDENT_ID);
 
   // ─── Voice + Avatar Helpers ───
 
@@ -420,6 +434,11 @@ function SessionPage() {
       setStudentName(data.persona?.studentName ?? "Student");
       if (data.todaysPlan) setTodaysPlan(data.todaysPlan);
       setPhase("teaching");
+
+      // Show mastery onboarding tooltip on first ever session
+      if (shouldShowOnboarding) {
+        setShowOnboarding(true);
+      }
 
       setTeachingStreamUrl(
         `/api/session/teach-stream?sessionId=${data.sessionId}`
@@ -809,6 +828,7 @@ function SessionPage() {
             domain={currentDomain}
             questionsAnswered={questionsAnswered}
             onEnd={endSession}
+            onHelpClick={() => setShowHelpModal(true)}
           />
           <div className="lg:hidden">
             <MobileStatsRow
@@ -888,6 +908,7 @@ function SessionPage() {
             domain={currentDomain}
             questionsAnswered={questionsAnswered}
             onEnd={endSession}
+            onHelpClick={() => setShowHelpModal(true)}
           />
           <div className="lg:hidden">
             <MobileStatsRow
@@ -1061,6 +1082,7 @@ function SessionPage() {
             domain={currentDomain}
             questionsAnswered={questionsAnswered}
             onEnd={endSession}
+            onHelpClick={() => setShowHelpModal(true)}
           />
           <div className="lg:hidden">
             <MobileStatsRow
@@ -1155,6 +1177,7 @@ function SessionPage() {
             domain={currentDomain}
             questionsAnswered={questionsAnswered}
             onEnd={endSession}
+            onHelpClick={() => setShowHelpModal(true)}
           />
           <div className="lg:hidden">
             <MobileStatsRow
@@ -1624,6 +1647,23 @@ function SessionPage() {
         }
       />
     )}
+
+    {/* ─── Mastery Help Modal (triggered by "?" button in header) ─── */}
+    <MasteryHelpModal
+      isOpen={showHelpModal}
+      onClose={() => setShowHelpModal(false)}
+      variant="modal"
+    />
+
+    {/* ─── First-session onboarding tooltip (auto-shown once per student) ─── */}
+    <MasteryHelpModal
+      isOpen={showOnboarding}
+      onClose={() => {
+        setShowOnboarding(false);
+        markMasteryOnboardingSeen(DEMO_STUDENT_ID);
+      }}
+      variant="tooltip"
+    />
     </div>
   );
 }

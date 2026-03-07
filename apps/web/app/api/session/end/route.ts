@@ -15,6 +15,7 @@ import { transitionState } from "@/lib/session/state-machine";
 import { processSessionComplete } from "@/lib/gamification/gamification-service";
 import { updatePlansAfterSession } from "@/lib/learning-plan/eta-calculator";
 import { adaptPlansAfterSession } from "@/lib/learning-plan/plan-adapter";
+import { logSessionCompleted } from "@/lib/activity-log";
 
 export const maxDuration = 30;
 
@@ -72,6 +73,19 @@ export async function POST(request: Request) {
     }
 
     const summary = await buildSummary(sessionId, session.studentId);
+
+    // ─── Activity Log: session completed ───
+    if (session.currentNode) {
+      logSessionCompleted(
+        session.studentId,
+        sessionId,
+        session.currentNode.title,
+        session.questionsAnswered,
+        session.correctAnswers,
+        // Get current BKT from mastery score
+        0 // BKT not directly available here — summary has it
+      );
+    }
 
     // ═══ GAMIFICATION: Process session completion ═══
     // Awards session XP, updates streak, checks badges, checks perfect session

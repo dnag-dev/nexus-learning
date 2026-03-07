@@ -1,9 +1,22 @@
 "use client";
 
+/**
+ * SessionHeader — Shows topic title, avatar with progress ring, mastery badge.
+ *
+ * ⚠️ MASTERY CLARITY: The header now shows clear completion criteria:
+ * - Badge shows current level + percentage
+ * - Below badge: "→ 85% to complete" so students know the target
+ * - Progress ring fills from 0→100% mapped to the 85% mastery threshold
+ * - When mastered: ring is full gold, badge says "MASTERED ✓"
+ */
+
 import AvatarDisplay from "@/components/persona/AvatarDisplay";
 import type { AvatarEmotionalState } from "@/components/persona/AvatarDisplay";
 import type { PersonaId } from "@/lib/personas/persona-config";
 import { getSubjectColors } from "@/lib/session/subject-colors";
+
+// Mastery threshold — node is "complete" at this BKT probability
+const MASTERY_THRESHOLD = 85; // 85% = BKT_PARAMS.masteryThreshold * 100
 
 interface NodeInfo {
   nodeCode: string;
@@ -30,6 +43,8 @@ interface SessionHeaderProps {
   domain: string;
   questionsAnswered: number;
   onEnd: () => void;
+  /** Callback when the "?" help button is clicked */
+  onHelpClick?: () => void;
 }
 
 const MASTERY_BADGE_STYLES: Record<string, string> = {
@@ -49,17 +64,21 @@ export default function SessionHeader({
   domain,
   questionsAnswered,
   onEnd,
+  onHelpClick,
 }: SessionHeaderProps) {
   const colors = getSubjectColors(domain);
   const masteryPercent = mastery?.probability ?? 0;
+  const isMastered = masteryPercent >= MASTERY_THRESHOLD;
 
-  // SVG progress ring math
+  // Progress ring: maps mastery% to fill relative to 85% threshold
+  // At 0% → empty ring, at 85%+ → full ring
+  const ringProgress = Math.min((masteryPercent / MASTERY_THRESHOLD) * 100, 100);
   const ringRadius = 28;
   const circumference = 2 * Math.PI * ringRadius;
-  const strokeOffset = circumference - (circumference * masteryPercent) / 100;
+  const strokeOffset = circumference - (circumference * ringProgress) / 100;
 
-  // Session progress: use mastery probability as progress indicator
-  const sessionProgress = Math.min(masteryPercent, 100);
+  // Session progress bar at top: same mapping
+  const sessionProgress = Math.min(ringProgress, 100);
 
   return (
     <>
@@ -97,19 +116,19 @@ export default function SessionHeader({
                   stroke="rgba(255,255,255,0.15)"
                   strokeWidth="3.5"
                 />
-                {/* Progress arc with gold glow */}
+                {/* Progress arc — gold when mastered, subject color otherwise */}
                 <circle
                   cx="32"
                   cy="32"
                   r={ringRadius}
                   fill="none"
-                  stroke={colors.ringColor}
+                  stroke={isMastered ? "#F5C542" : colors.ringColor}
                   strokeWidth="3.5"
                   strokeDasharray={circumference}
                   strokeDashoffset={strokeOffset}
                   strokeLinecap="round"
                   className="progress-ring-circle"
-                  style={{ filter: `drop-shadow(0 0 4px ${colors.ringColor}40)` }}
+                  style={{ filter: `drop-shadow(0 0 4px ${isMastered ? "#F5C54260" : `${colors.ringColor}40`})` }}
                 />
               </svg>
               <AvatarDisplay
@@ -125,23 +144,42 @@ export default function SessionHeader({
                 {node?.title ?? "Learning Session"}
               </span>
               {mastery && (
-                <span
-                  className={`inline-block mt-0.5 px-2 py-0.5 rounded-full text-xs font-medium ${
-                    MASTERY_BADGE_STYLES[mastery.level] ?? MASTERY_BADGE_STYLES.NOVICE
-                  }`}
-                >
-                  {mastery.level} {mastery.probability}%
-                </span>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span
+                    className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
+                      MASTERY_BADGE_STYLES[mastery.level] ?? MASTERY_BADGE_STYLES.NOVICE
+                    }`}
+                  >
+                    {isMastered ? "MASTERED ✓" : `${mastery.level} ${mastery.probability}%`}
+                  </span>
+                  {!isMastered && (
+                    <span className="text-[10px] text-gray-400">
+                      → {MASTERY_THRESHOLD}% to complete
+                    </span>
+                  )}
+                </div>
               )}
             </div>
           </div>
 
-          <button
-            onClick={onEnd}
-            className="text-sm text-white/70 hover:text-white transition-colors"
-          >
-            End Session
-          </button>
+          <div className="flex items-center gap-3">
+            {/* Help button — opens mastery explainer modal */}
+            {onHelpClick && (
+              <button
+                onClick={onHelpClick}
+                className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-white/70 hover:text-white text-xs font-bold flex items-center justify-center transition-colors"
+                title="How does mastery work?"
+              >
+                ?
+              </button>
+            )}
+            <button
+              onClick={onEnd}
+              className="text-sm text-white/70 hover:text-white transition-colors"
+            >
+              End Session
+            </button>
+          </div>
         </div>
       </header>
     </>

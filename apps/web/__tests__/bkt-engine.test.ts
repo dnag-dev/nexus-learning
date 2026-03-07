@@ -1,5 +1,11 @@
 /**
  * BKT Engine Tests
+ *
+ * Tests for Bayesian Knowledge Tracing with research-validated parameters:
+ * - pLearn=0.20, pGuess=0.20, pSlip=0.10, pKnownPrior=0.10
+ * - Mastery threshold: 0.85
+ * - Floor: 0.05 (mastery never drops below this)
+ * - Mastery levels: NOVICE(<0.2), DEVELOPING(<0.4), PROFICIENT(<0.6), ADVANCED(<0.85), MASTERED(≥0.85)
  */
 
 import { describe, it, expect } from "vitest";
@@ -77,23 +83,41 @@ describe("BKT Engine", () => {
       expect(after.nextReviewAt).not.toBeNull();
     });
 
-    it("converges toward mastery with repeated correct answers", () => {
-      let mastery = makeMastery({ bktProbability: 0.3 });
-      // With maxIncreasePerAnswer=0.04, need ~15 correct from 0.3 to reach 0.9
-      for (let i = 0; i < 20; i++) {
+    it("reaches mastery with 4-6 consecutive correct answers from fresh start", () => {
+      // With pLearn=0.20, pKnownPrior=0.10, no artificial cap
+      // Standard BKT converges to mastery in ~4-6 correct answers
+      let mastery = makeMastery({ bktProbability: BKT_PARAMS.pKnownPrior });
+      let correctCount = 0;
+      while (mastery.bktProbability < BKT_PARAMS.masteryThreshold && correctCount < 10) {
         mastery = updateMastery(mastery, true);
+        correctCount++;
       }
-      expect(mastery.bktProbability).toBeGreaterThan(0.9);
+      expect(mastery.bktProbability).toBeGreaterThanOrEqual(BKT_PARAMS.masteryThreshold);
+      // Should reach mastery within 4-6 answers (allow up to 7 for safety)
+      expect(correctCount).toBeLessThanOrEqual(7);
+      expect(correctCount).toBeGreaterThanOrEqual(3);
     });
 
-    it("does not drop to 0 with repeated wrong answers", () => {
+    it("never drops below floor (0.05) with repeated wrong answers", () => {
       let mastery = makeMastery({ bktProbability: 0.5 });
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < 20; i++) {
         mastery = updateMastery(mastery, false);
       }
-      // Due to pLearn, even wrong answers slowly increase mastery
-      // But the key constraint is: never drops below 0
-      expect(mastery.bktProbability).toBeGreaterThanOrEqual(0);
+      // Floor enforced at 0.05 — student never goes to zero
+      expect(mastery.bktProbability).toBeGreaterThanOrEqual(BKT_PARAMS.floor);
+    });
+
+    it("one wrong answer drops mastery noticeably but not to zero", () => {
+      const before = makeMastery({ bktProbability: 0.7 });
+      const after = updateMastery(before, false);
+      const drop = before.bktProbability - after.bktProbability;
+      // With pLearn=0.20 and pSlip=0.10, a wrong answer at 0.7 gives:
+      //   posterior = 0.7*0.10 / (0.7*0.10 + 0.3*0.80) = 0.226
+      //   learning  = 0.226 + 0.774*0.20 = 0.381
+      //   drop ≈ 0.32 — significant but student stays well above floor
+      expect(drop).toBeGreaterThan(0.1); // Noticeable drop
+      expect(drop).toBeLessThan(0.5); // Not catastrophic
+      expect(after.bktProbability).toBeGreaterThan(BKT_PARAMS.floor); // Above floor
     });
   });
 
@@ -108,19 +132,19 @@ describe("BKT Engine", () => {
       expect(mastery.bktProbability).toBeLessThanOrEqual(1.0);
     });
 
-    it("P(Known) never drops below 0.0", () => {
+    it("P(Known) never drops below floor", () => {
       let mastery = makeMastery({ bktProbability: 0.01 });
       for (let i = 0; i < 20; i++) {
         mastery = updateMastery(mastery, false);
       }
-      expect(mastery.bktProbability).toBeGreaterThanOrEqual(0.0);
+      expect(mastery.bktProbability).toBeGreaterThanOrEqual(BKT_PARAMS.floor);
     });
 
     it("handles P(Known) = 0.0 without NaN", () => {
       const mastery = makeMastery({ bktProbability: 0.0 });
       const after = updateMastery(mastery, true);
       expect(Number.isNaN(after.bktProbability)).toBe(false);
-      expect(after.bktProbability).toBeGreaterThanOrEqual(0);
+      expect(after.bktProbability).toBeGreaterThanOrEqual(BKT_PARAMS.floor);
     });
 
     it("handles P(Known) = 1.0 without NaN", () => {
@@ -132,47 +156,49 @@ describe("BKT Engine", () => {
   });
 
   // ─── getMasteryLevel ───
+  // Thresholds: NOVICE(<0.2), DEVELOPING(<0.4), PROFICIENT(<0.6), ADVANCED(<0.85), MASTERED(≥0.85)
 
   describe("getMasteryLevel", () => {
-    it("returns NOVICE for bkt < 0.3", () => {
+    it("returns NOVICE for bkt < 0.2", () => {
       expect(getMasteryLevel(0.0)).toBe("NOVICE");
       expect(getMasteryLevel(0.1)).toBe("NOVICE");
-      expect(getMasteryLevel(0.29)).toBe("NOVICE");
+      expect(getMasteryLevel(0.19)).toBe("NOVICE");
     });
 
-    it("returns DEVELOPING for 0.3 <= bkt < 0.5", () => {
+    it("returns DEVELOPING for 0.2 <= bkt < 0.4", () => {
+      expect(getMasteryLevel(0.2)).toBe("DEVELOPING");
       expect(getMasteryLevel(0.3)).toBe("DEVELOPING");
-      expect(getMasteryLevel(0.4)).toBe("DEVELOPING");
-      expect(getMasteryLevel(0.49)).toBe("DEVELOPING");
+      expect(getMasteryLevel(0.39)).toBe("DEVELOPING");
     });
 
-    it("returns PROFICIENT for 0.5 <= bkt < 0.7", () => {
+    it("returns PROFICIENT for 0.4 <= bkt < 0.6", () => {
+      expect(getMasteryLevel(0.4)).toBe("PROFICIENT");
       expect(getMasteryLevel(0.5)).toBe("PROFICIENT");
-      expect(getMasteryLevel(0.6)).toBe("PROFICIENT");
-      expect(getMasteryLevel(0.69)).toBe("PROFICIENT");
+      expect(getMasteryLevel(0.59)).toBe("PROFICIENT");
     });
 
-    it("returns ADVANCED for 0.7 <= bkt < 0.9", () => {
+    it("returns ADVANCED for 0.6 <= bkt < 0.85", () => {
+      expect(getMasteryLevel(0.6)).toBe("ADVANCED");
       expect(getMasteryLevel(0.7)).toBe("ADVANCED");
-      expect(getMasteryLevel(0.8)).toBe("ADVANCED");
-      expect(getMasteryLevel(0.89)).toBe("ADVANCED");
+      expect(getMasteryLevel(0.84)).toBe("ADVANCED");
     });
 
-    it("returns MASTERED for bkt >= 0.9", () => {
+    it("returns MASTERED for bkt >= 0.85", () => {
+      expect(getMasteryLevel(0.85)).toBe("MASTERED");
       expect(getMasteryLevel(0.9)).toBe("MASTERED");
-      expect(getMasteryLevel(0.95)).toBe("MASTERED");
       expect(getMasteryLevel(1.0)).toBe("MASTERED");
     });
   });
 
   // ─── shouldAdvanceNode ───
+  // Threshold now 0.85 (was 0.9)
 
   describe("shouldAdvanceNode", () => {
-    it("returns true when bkt >= 0.9", () => {
-      expect(shouldAdvanceNode(makeMastery({ bktProbability: 0.9 }))).toBe(
+    it("returns true when bkt >= 0.85", () => {
+      expect(shouldAdvanceNode(makeMastery({ bktProbability: 0.85 }))).toBe(
         true
       );
-      expect(shouldAdvanceNode(makeMastery({ bktProbability: 0.95 }))).toBe(
+      expect(shouldAdvanceNode(makeMastery({ bktProbability: 0.9 }))).toBe(
         true
       );
       expect(shouldAdvanceNode(makeMastery({ bktProbability: 1.0 }))).toBe(
@@ -180,8 +206,8 @@ describe("BKT Engine", () => {
       );
     });
 
-    it("returns false when bkt < 0.9", () => {
-      expect(shouldAdvanceNode(makeMastery({ bktProbability: 0.89 }))).toBe(
+    it("returns false when bkt < 0.85", () => {
+      expect(shouldAdvanceNode(makeMastery({ bktProbability: 0.84 }))).toBe(
         false
       );
       expect(shouldAdvanceNode(makeMastery({ bktProbability: 0.5 }))).toBe(
@@ -238,6 +264,27 @@ describe("BKT Engine", () => {
           })
         )
       ).toBe(false);
+    });
+  });
+
+  // ─── BKT parameter validation ───
+
+  describe("BKT parameter sanity checks", () => {
+    it("has research-validated pLearn of 0.20", () => {
+      expect(BKT_PARAMS.pLearn).toBe(0.20);
+    });
+
+    it("has mastery threshold of 0.85", () => {
+      expect(BKT_PARAMS.masteryThreshold).toBe(0.85);
+    });
+
+    it("has floor of 0.05", () => {
+      expect(BKT_PARAMS.floor).toBe(0.05);
+    });
+
+    it("has min 3 and max 15 questions", () => {
+      expect(BKT_PARAMS.minQuestions).toBe(3);
+      expect(BKT_PARAMS.maxQuestions).toBe(15);
     });
   });
 });

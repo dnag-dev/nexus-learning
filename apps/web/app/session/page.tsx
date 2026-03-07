@@ -21,6 +21,10 @@ import MasteryHelpModal, {
   useShouldShowMasteryOnboarding,
   markMasteryOnboardingSeen,
 } from "@/components/session/MasteryHelpModal";
+import SessionReviewDrawer from "@/components/session/SessionReviewDrawer";
+import type { AnswerRecord } from "@/components/session/SessionReviewDrawer";
+import { estimateQuestionsRemaining, getAnswerFeedbackMessage } from "@/lib/session/completion-estimate";
+import type { CompletionEstimate } from "@/lib/session/completion-estimate";
 
 // ─── Types ───
 
@@ -282,6 +286,13 @@ function SessionPage() {
   const avatarRef = useRef<AvatarDisplayHandle>(null);
   // ─── Response Time Tracking ───
   const questionStartTimeRef = useRef<number>(0);
+  // ─── Phase 10: Answer history for session review drawer ───
+  const [answerHistory, setAnswerHistory] = useState<AnswerRecord[]>([]);
+  const [showReviewDrawer, setShowReviewDrawer] = useState(false);
+  // ─── Phase 11: Completion estimate ───
+  const [completionEstimate, setCompletionEstimate] = useState<CompletionEstimate | null>(null);
+  // ─── Phase 10: Wrong-answer reassurance flash message ───
+  const [reassuranceMsg, setReassuranceMsg] = useState<string | null>(null);
   // ─── Mastery onboarding (shown once per student) ───
   const shouldShowOnboarding = useShouldShowMasteryOnboarding(DEMO_STUDENT_ID);
 
@@ -567,6 +578,44 @@ function SessionPage() {
         const prevProb = prevMasteryRef.current;
         prevMasteryRef.current = data.mastery?.probability ?? prevProb;
         setMastery(data.mastery);
+
+        // ─── Phase 10: Record answer in session history ───
+        setAnswerHistory((prev) => [
+          ...prev,
+          {
+            questionText: question.questionText,
+            selectedAnswer: option.text,
+            correctAnswer: correctOption?.text ?? "",
+            isCorrect: option.isCorrect,
+            masteryBefore: prevProb,
+            masteryAfter: data.mastery?.probability ?? prevProb,
+            explanation: question.explanation || undefined,
+            step: data.learningStep ?? learningStep,
+          },
+        ]);
+
+        // ─── Phase 11: Update completion estimate ───
+        {
+          const recentAnswers = [...answerHistory, { isCorrect: option.isCorrect }];
+          const last5 = recentAnswers.slice(-5);
+          const recentAccuracy = last5.filter((a) => a.isCorrect).length / last5.length;
+          const newEstimate = estimateQuestionsRemaining(
+            data.mastery?.probability ?? prevProb,
+            recentAccuracy,
+            data.learningStep ?? learningStep,
+            data.stepProgress ?? undefined,
+          );
+          setCompletionEstimate(newEstimate);
+        }
+
+        // ─── Phase 10: Reassurance message on wrong answers ───
+        if (!option.isCorrect) {
+          const msg = getAnswerFeedbackMessage(false);
+          setReassuranceMsg(msg);
+          setTimeout(() => setReassuranceMsg(null), 2000);
+        } else {
+          setReassuranceMsg(null);
+        }
 
         // Update 5-step tracking
         if (data.learningStep !== undefined) setLearningStep(data.learningStep);
@@ -948,6 +997,44 @@ function SessionPage() {
           <div className="pt-4">
             <StepProgressBar step={learningStep} />
           </div>
+
+          {/* Phase 11: Completion estimate + Phase 10: Review button row */}
+          <div className="flex items-center justify-between max-w-2xl mx-auto px-4 mb-1">
+            {/* Phase 11: Dynamic contextual message */}
+            <p className="text-[11px] text-gray-500">
+              {completionEstimate?.message ?? ""}
+              {completionEstimate && completionEstimate.likely > 0 && (
+                <span className="text-gray-600 ml-1">
+                  · ~{completionEstimate.likely} left · ~{completionEstimate.estimatedMinutes} min
+                </span>
+              )}
+            </p>
+            {/* Phase 10: Session review button */}
+            {answerHistory.length > 0 && (
+              <button
+                onClick={() => setShowReviewDrawer(true)}
+                className="text-[11px] text-cyan-500 hover:text-cyan-400 transition-colors"
+              >
+                📋 Review ({answerHistory.length})
+              </button>
+            )}
+          </div>
+
+          {/* Phase 10: Wrong-answer reassurance flash */}
+          <AnimatePresence>
+            {reassuranceMsg && (
+              <motion.div
+                initial={{ opacity: 0, y: -5 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -5 }}
+                className="text-center mb-1"
+              >
+                <span className="text-xs text-blue-400 bg-blue-500/10 px-3 py-1 rounded-full">
+                  {reassuranceMsg}
+                </span>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Step Label + Counter */}
           <div className="text-center mb-2">
@@ -1690,6 +1777,14 @@ function SessionPage() {
         markMasteryOnboardingSeen(DEMO_STUDENT_ID);
       }}
       variant="tooltip"
+    />
+
+    {/* ─── Phase 10: Session Review Drawer ─── */}
+    <SessionReviewDrawer
+      isOpen={showReviewDrawer}
+      onClose={() => setShowReviewDrawer(false)}
+      answers={answerHistory}
+      currentMastery={mastery?.probability ?? 0}
     />
     </div>
   );

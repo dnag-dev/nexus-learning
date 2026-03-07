@@ -57,12 +57,21 @@ const EVENT_CONFIG: Record<string, { emoji: string; color: string; label: string
   MAX_QUESTIONS_REACHED: { emoji: "⏰", color: "text-gray-400", label: "Max Questions" },
   PLAN_CREATED: { emoji: "📋", color: "text-blue-400", label: "Plan Created" },
   GOAL_SET: { emoji: "🎯", color: "text-indigo-500", label: "Goal Set" },
+  // Phase 7: Expanded event types
+  QUESTION_ANSWERED: { emoji: "❓", color: "text-gray-500", label: "Question Answered" },
+  GRADE_COMPLETED: { emoji: "🎓", color: "text-amber-500", label: "Grade Complete!" },
+  GRADE_ADVANCED: { emoji: "🚀", color: "text-green-600", label: "Grade Advanced" },
+  SUBJECT_SWITCHED: { emoji: "🔄", color: "text-blue-400", label: "Subject Switched" },
+  TOPIC_SELECTED: { emoji: "🔍", color: "text-indigo-400", label: "Topic Selected" },
+  HINT_USED: { emoji: "💡", color: "text-yellow-400", label: "Hint Used" },
 };
 
 const FILTER_OPTIONS = [
   { value: "", label: "All Events" },
   { value: "SESSION_COMPLETED", label: "Sessions" },
   { value: "CONCEPT_MASTERED", label: "Mastered" },
+  { value: "GRADE_COMPLETED", label: "Grade Complete" },
+  { value: "QUESTION_ANSWERED", label: "Questions" },
   { value: "BADGE_EARNED", label: "Badges" },
   { value: "LEVEL_UP", label: "Level Ups" },
   { value: "STREAK_MILESTONE", label: "Streaks" },

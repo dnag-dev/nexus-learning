@@ -26,6 +26,18 @@ interface GamificationData {
   newTitle: string | null;
 }
 
+/**
+ * Phase 3: Grade completion data, included when mastering a node
+ * causes the entire grade to be completed for that subject.
+ */
+interface GradeCompletionData {
+  grade: string;
+  subject: string;
+  totalNodes: number;
+  nextGrade: string | null;
+  upcomingTopics: string[];
+}
+
 interface MasteryCelebrationProps {
   personaId: PersonaId;
   isSpeaking: boolean;
@@ -35,6 +47,8 @@ interface MasteryCelebrationProps {
   mastery: MasteryInfo;
   celebration: CelebrationContent;
   gamification: GamificationData | null;
+  /** Phase 3: Present when this mastery triggers a full grade completion */
+  gradeCompletion?: GradeCompletionData | null;
   onNextConcept: () => void;
   onEndSession: () => void;
 }
@@ -48,9 +62,18 @@ export default function MasteryCelebration({
   mastery,
   celebration,
   gamification,
+  gradeCompletion,
   onNextConcept,
   onEndSession,
 }: MasteryCelebrationProps) {
+  const gradeDisplay = gradeCompletion
+    ? gradeCompletion.grade === "K"
+      ? "Kindergarten"
+      : `Grade ${gradeCompletion.grade.replace("G", "")}`
+    : null;
+  const subjectDisplay = gradeCompletion
+    ? gradeCompletion.subject === "MATH" ? "Math" : "English"
+    : null;
   // ─── Confetti on Mount ───
   useEffect(() => {
     let cancelled = false;
@@ -180,6 +203,43 @@ export default function MasteryCelebration({
             {celebration.nextTeaser}
           </p>
         </div>
+
+        {/* ─── Phase 3: Grade Completion Celebration ─── */}
+        {gradeCompletion && gradeDisplay && (
+          <div
+            className="bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-yellow-300 rounded-2xl p-6 mb-6 text-left opacity-0 animate-fade-in-up"
+            style={{ animationDelay: "500ms" }}
+          >
+            <div className="text-center mb-4">
+              <span className="text-4xl">🎓</span>
+              <h2 className="text-2xl font-extrabold text-amber-700 mt-2">
+                {gradeDisplay} {subjectDisplay} — COMPLETE!
+              </h2>
+              <p className="text-amber-600 mt-1">
+                You mastered all {gradeCompletion.totalNodes} topics!
+              </p>
+            </div>
+
+            {gradeCompletion.nextGrade && gradeCompletion.upcomingTopics.length > 0 && (
+              <div className="border-t border-yellow-200 pt-4 mt-4">
+                <p className="font-semibold text-amber-700 mb-2">
+                  🚀 Ready for {gradeCompletion.nextGrade === "K" ? "Kindergarten" : `Grade ${gradeCompletion.nextGrade.replace("G", "")}`} {subjectDisplay}?
+                </p>
+                <p className="text-sm text-amber-600 mb-2">New topics unlocking:</p>
+                <ul className="text-sm text-amber-700 space-y-1">
+                  {gradeCompletion.upcomingTopics.map((topic, i) => (
+                    <li key={i} className="flex items-center gap-2">
+                      <span className="text-amber-400">•</span> {topic}
+                    </li>
+                  ))}
+                  {gradeCompletion.upcomingTopics.length >= 4 && (
+                    <li className="text-amber-500 italic">+ more topics</li>
+                  )}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ─── Action Buttons ─── */}
         <div

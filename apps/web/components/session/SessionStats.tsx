@@ -232,9 +232,20 @@ function MasteryMeter({
       </div>
 
       {isLarge && (
-        <span className="text-xs text-gray-400 mt-1.5">
-          85% to master
-        </span>
+        <div className="text-center mt-1.5 space-y-1">
+          <span className="text-xs text-gray-400">
+            85% to master
+          </span>
+          {/* Phase 8: Mastery clarity — show gain/loss per answer */}
+          <div className="text-[10px] text-gray-500 leading-tight">
+            <span className="text-green-400">✅ Correct ≈ +15%</span>
+            {" · "}
+            <span className="text-red-400">❌ Wrong ≈ -10%</span>
+          </div>
+          <p className="text-[10px] text-gray-600 italic">
+            Never resets to zero!
+          </p>
+        </div>
       )}
     </div>
   );
@@ -454,6 +465,11 @@ export function MobileStatsRow({
                   domain={domain}
                   size="sm"
                 />
+                {/* Phase 8: Mobile mastery clarity */}
+                <p className="text-[9px] text-gray-500 mt-1 text-center leading-tight">
+                  <span className="text-green-400">✅+15%</span>{" "}
+                  <span className="text-red-400">❌-10%</span>
+                </p>
               </div>
 
               {/* Level + Phase */}

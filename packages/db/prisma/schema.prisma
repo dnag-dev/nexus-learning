@@ -790,6 +790,13 @@ enum ActivityEventType {
   MAX_QUESTIONS_REACHED
   PLAN_CREATED
   GOAL_SET
+  // Phase 7: Expanded event types for detailed tracking
+  QUESTION_ANSWERED     // Every answer with mastery before/after
+  GRADE_COMPLETED       // Student finished all nodes in a grade for a subject
+  GRADE_ADVANCED        // Student moved to next grade level
+  SUBJECT_SWITCHED      // Student switched between Math and English
+  TOPIC_SELECTED        // Student searched for / selected a specific topic
+  HINT_USED             // Student used a hint during guided practice
 }
 
 model ActivityLog {

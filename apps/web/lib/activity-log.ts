@@ -35,7 +35,14 @@ export type ActivityEventType =
   | "FLUENCY_DRILL_COMPLETED"
   | "MAX_QUESTIONS_REACHED"
   | "PLAN_CREATED"
-  | "GOAL_SET";
+  | "GOAL_SET"
+  // Phase 7: Expanded event types
+  | "QUESTION_ANSWERED"
+  | "GRADE_COMPLETED"
+  | "GRADE_ADVANCED"
+  | "SUBJECT_SWITCHED"
+  | "TOPIC_SELECTED"
+  | "HINT_USED";
 
 interface LogOptions {
   /** Optional human-readable detail line */
@@ -240,4 +247,82 @@ export async function logStreakMilestone(
   return logActivity(studentId, "STREAK_MILESTONE", `${streak}-day streak!`, {
     metadata: { streak },
   });
+}
+
+// ─── Phase 7: Expanded event loggers ───
+
+export async function logQuestionAnswered(
+  studentId: string,
+  sessionId: string,
+  nodeCode: string,
+  nodeTitle: string,
+  isCorrect: boolean,
+  masteryBefore: number,
+  masteryAfter: number,
+  step: number
+) {
+  return logActivity(
+    studentId,
+    "QUESTION_ANSWERED",
+    `${isCorrect ? "✅" : "❌"} ${nodeTitle}`,
+    {
+      detail: `${Math.round(masteryBefore * 100)}% → ${Math.round(masteryAfter * 100)}%`,
+      metadata: { sessionId, nodeCode, isCorrect, masteryBefore, masteryAfter, step },
+    }
+  );
+}
+
+export async function logGradeCompleted(
+  studentId: string,
+  grade: string,
+  subject: string,
+  totalNodes: number
+) {
+  const gradeDisplay = grade === "K" ? "Kindergarten" : `Grade ${grade.replace("G", "")}`;
+  const subjectDisplay = subject === "MATH" ? "Math" : "English";
+  return logActivity(
+    studentId,
+    "GRADE_COMPLETED",
+    `🎓 ${gradeDisplay} ${subjectDisplay} — COMPLETE!`,
+    {
+      detail: `All ${totalNodes} topics mastered`,
+      metadata: { grade, subject, totalNodes },
+    }
+  );
+}
+
+export async function logGradeAdvanced(
+  studentId: string,
+  fromGrade: string,
+  toGrade: string,
+  subject: string
+) {
+  const toDisplay = toGrade === "K" ? "Kindergarten" : `Grade ${toGrade.replace("G", "")}`;
+  const subjectDisplay = subject === "MATH" ? "Math" : "English";
+  return logActivity(
+    studentId,
+    "GRADE_ADVANCED",
+    `🚀 Advanced to ${toDisplay} ${subjectDisplay}`,
+    {
+      detail: `Moving from ${fromGrade} to ${toGrade}`,
+      metadata: { fromGrade, toGrade, subject },
+    }
+  );
+}
+
+export async function logTopicSelected(
+  studentId: string,
+  topic: string,
+  nodeCode: string,
+  nodeTitle: string,
+  wasRedirected: boolean
+) {
+  return logActivity(
+    studentId,
+    "TOPIC_SELECTED",
+    `Searched: "${topic}" → ${nodeTitle}`,
+    {
+      metadata: { topic, nodeCode, wasRedirected },
+    }
+  );
 }

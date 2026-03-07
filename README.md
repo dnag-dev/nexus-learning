@@ -1,6 +1,6 @@
 # Aauti Learn (Nexus Learning)
 
-AI-powered adaptive math tutoring platform that meets every child exactly where they are. Features real-time AI content generation, emotional intelligence, gamification, and a knowledge constellation visualization.
+AI-powered adaptive Math & English tutoring platform (K-12) that meets every child exactly where they are. Features real-time AI content generation, Bayesian Knowledge Tracing, emotional intelligence, gamification, grade-level guardrails, and a knowledge constellation visualization.
 
 **Live**: [nexus-learning-dnag.vercel.app](https://nexus-learning-dnag.vercel.app)
 **Repo**: [github.com/dnag-dev/nexus-learning](https://github.com/dnag-dev/nexus-learning)
@@ -248,12 +248,15 @@ The BKT engine (`lib/session/bkt-engine.ts`) tracks per-student, per-concept mas
 
 - **P(L)** = probability of mastery (0.0 to 1.0)
 - Updates on each answer using Bayesian inference with configurable parameters:
-  - P(init) = 0.3 (initial knowledge probability)
-  - P(transit) = 0.1 (learning rate per practice)
-  - P(slip) = 0.1 (probability of wrong answer despite mastery)
-  - P(guess) = 0.25 (probability of correct guess)
-- Mastery levels: NOVICE (< 0.4) → DEVELOPING (< 0.6) → PROFICIENT (< 0.8) → ADVANCED (< 0.95) → MASTERED (>= 0.95)
-- Node advancement when P(L) >= 0.95
+  - P(known_prior) = 0.10 (initial knowledge probability)
+  - P(learn) = 0.20 (learning rate per practice — ~15% actual gain per correct)
+  - P(slip) = 0.10 (probability of wrong answer despite mastery)
+  - P(guess) = 0.20 (probability of correct guess)
+  - Mastery threshold = 0.85 (85%)
+  - Floor = 0.05 (mastery never drops below 5%)
+- Mastery levels: NOVICE (< 0.3) → DEVELOPING (< 0.5) → PROFICIENT (< 0.7) → ADVANCED (< 0.85) → MASTERED (>= 0.85)
+- Node advancement when P(L) >= 0.85
+- 5-step learning loop: Learn (0-20%) → Check (20-40%) → Guided (40-60%) → Practice (60-80%) → Prove (80-85%+)
 
 ### 2. Session State Machine
 
@@ -324,7 +327,7 @@ Dual data source for curriculum structure:
 
 - **Primary**: PostgreSQL via Prisma (KnowledgeNode model with self-referential prerequisites)
 - **Optional**: Neo4j Aura for advanced graph queries (gracefully falls back to Prisma if unavailable)
-- Covers K-5 math: Counting, Operations, Geometry, Measurement, Data
+- Covers K-12 Math & English across multiple domains (Counting, Operations, Algebra, Geometry, Reading, Writing, Grammar, etc.)
 
 ---
 
@@ -469,6 +472,36 @@ Note: Ensure all environment variables are set in Vercel project settings.
 - Neo4j is **optional** — the app gracefully falls back to Prisma queries if Neo4j is unavailable
 - The `AAUTI_ANTHROPIC_KEY` env var takes priority over `ANTHROPIC_API_KEY` to avoid conflicts with Claude Code shell environment
 - Child auth uses a separate JWT system (not Auth0) for simplicity and kid-friendly UX
+
+---
+
+## Regression Prevention — Core Features
+
+> **IMPORTANT**: The features in this table are critical to the platform. Do NOT remove, rename, or break them during refactors. Each feature has a specific code location and expected behavior.
+
+| # | Feature | Key File(s) | Expected Behavior | Notes |
+|---|---------|-------------|-------------------|-------|
+| 1 | **BKT Mastery Engine** | `lib/session/bkt-engine.ts` | pLearn=0.20, pGuess=0.20, pSlip=0.10, threshold=0.85, floor=0.05 | Changing any param alters all mastery calculations |
+| 2 | **5-Step Learning Loop** | `app/session/page.tsx` (STEP_LABELS) | Learn → Check → Guided → Practice → Prove | Steps map to BKT bands; removing a step breaks progression |
+| 3 | **Prompt-Based Learning** | `app/api/session/start/route.ts` (findConceptByTopic) | `?topic=X` URL param → fuzzy-matches KnowledgeNode | Was accidentally removed in commit 50dd928; restored |
+| 4 | **Subject Switching** | `components/kid/SubjectTabs.tsx` | Math ↔ English toggle on all 3 dashboard tiers | Must be present on Tier1, Tier2, and Tier3 homes |
+| 5 | **Interactive Topic Tree** | `components/kid/TopicSearchInput.tsx` | Students pick specific topics via tree or search | Appears on all 3 dashboard tiers |
+| 6 | **Grade-Level Guardrails** | `app/api/session/start/route.ts` (GRADE_LOOKAHEAD) | Students can access content max 2 grades above their level | Returns best within-range match with redirect message |
+| 7 | **Grade Completion Detection** | `lib/session/grade-progression.ts` | When all nodes in a grade+subject are mastered → celebration | Feeds into MasteryCelebration and ActivityLog |
+| 8 | **Activity Log** | `lib/activity-log.ts` | Fire-and-forget logging of 22+ event types | Non-blocking; errors caught silently |
+| 9 | **Mastery Help Modal** | `components/session/MasteryHelpModal.tsx` | "?" button explains mastery system; onboarding tooltip on first session | Uses localStorage to show once |
+| 10 | **Kid Dashboard Tiers** | `app/(child)/kid/page.tsx` | K-G3: Tier1, G4-G7: Tier2, G8-G12: Tier3 | Each tier has different UX complexity |
+| 11 | **Session End Summary** | `app/api/session/end/route.ts` (buildSummary) | Subject-grouped mastery, grade progress, streak, next-up nodes | Uses 0.85 threshold consistently |
+| 12 | **Child Auth** | `lib/child-auth.ts` | Username + 4-digit PIN → JWT cookie (7-day) | Rate-limited: 5 attempts → 15-min lockout |
+| 13 | **MasteryCelebration Screen** | `components/session/MasteryCelebration.tsx` | Confetti + XP counter + grade completion section | Includes fun fact, next teaser from Claude |
+| 14 | **Gamification System** | `lib/gamification/gamification-service.ts` | XP awards, streaks, badges, boss challenges on session complete | Non-critical; errors caught in session end route |
+
+### How to Use This Table
+
+1. **Before refactoring**: Check if your change touches any file listed above
+2. **Before deleting code**: Search this table — if listed, do NOT delete without replacing
+3. **After deploying**: Verify each feature still works (especially #3 prompt-based learning and #4 subject switching, which have been accidentally removed before)
+4. **When adding features**: Add a new row to this table if the feature is critical
 
 ---
 

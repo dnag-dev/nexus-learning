@@ -300,7 +300,8 @@ async function buildSummary(sessionId: string, studentId: string) {
     const subject = ms.node.subject ?? "MATH";
     const key = `${subject}:${ms.node.gradeLevel}`;
     attemptedGrades.add(key);
-    if (ms.bktProbability >= 0.8) {
+    // Phase 1: Use 0.85 threshold (matching BKT_PARAMS.masteryThreshold)
+    if (ms.bktProbability >= 0.85) {
       masteredCountMap.set(key, (masteredCountMap.get(key) ?? 0) + 1);
     }
   }

@@ -36,7 +36,8 @@ import {
 import { startPrefetch } from "@/lib/session/question-prefetch";
 import { evaluateTrueMastery } from "@/lib/session/mastery-gate";
 import { updateNexusScore } from "@/lib/session/nexus-score";
-import { logConceptMastered } from "@/lib/activity-log";
+import { logConceptMastered, logQuestionAnswered, logGradeCompleted } from "@/lib/activity-log";
+import { checkGradeCompletion } from "@/lib/session/grade-progression";
 
 export const maxDuration = 30;
 
@@ -132,6 +133,24 @@ export async function POST(request: Request) {
         session.studentId,
         node.id,
         isCorrect
+      );
+    }
+
+    // ─── Activity Log: question answered with mastery delta ───
+    // Fire-and-forget: log every answer for parent visibility
+    {
+      const masteryBefore = currentStep === 2
+        ? updatedMastery.bktProbability // Step 2 doesn't update BKT
+        : (updatedMastery.bktProbability); // For steps 3-5, we only have "after" — approximate
+      logQuestionAnswered(
+        session.studentId,
+        sessionId,
+        node.nodeCode,
+        node.title,
+        isCorrect,
+        masteryBefore,
+        updatedMastery.bktProbability,
+        currentStep
       );
     }
 
@@ -755,6 +774,29 @@ export async function POST(request: Request) {
           updatedMastery.bktProbability
         );
 
+        // ─── Grade Completion Check ───
+        // After mastering a node, check if the entire grade is now complete.
+        // Fire-and-forget: if grade IS complete, log GRADE_COMPLETED event.
+        let gradeCompletion = null;
+        try {
+          const subject = session.subject ?? "MATH";
+          gradeCompletion = await checkGradeCompletion(
+            session.studentId,
+            subject,
+            node.gradeLevel
+          );
+          if (gradeCompletion.isGradeComplete) {
+            logGradeCompleted(
+              session.studentId,
+              node.gradeLevel,
+              subject,
+              gradeCompletion.totalNodes
+            );
+          }
+        } catch (e) {
+          console.error("Grade completion check error (non-critical):", e);
+        }
+
         // Gamification: Node mastered
         let masteryGamification = null;
         try {
@@ -804,6 +846,16 @@ export async function POST(request: Request) {
           celebration,
           nextNode,
           gamification: masteryGamification ?? gamificationXP,
+          // Phase 3: Include grade completion data for celebration UI
+          ...(gradeCompletion?.isGradeComplete ? {
+            gradeCompletion: {
+              grade: gradeCompletion.grade,
+              subject: gradeCompletion.subject,
+              totalNodes: gradeCompletion.totalNodes,
+              nextGrade: gradeCompletion.nextGrade,
+              upcomingTopics: gradeCompletion.upcomingTopics,
+            },
+          } : {}),
         });
       } else {
         // FAILED mastery proof → back to Step 2

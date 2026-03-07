@@ -203,6 +203,13 @@ function SessionPage() {
   const [question, setQuestion] = useState<PracticeQuestionData | null>(null);
   const [mastery, setMastery] = useState<MasteryInfo | null>(null);
   const [celebration, setCelebration] = useState<CelebrationContent | null>(null);
+  // Phase 2: Grade guardrail redirect message (shown when topic search redirected to a lower-grade prerequisite)
+  const [gradeGuardrailMsg, setGradeGuardrailMsg] = useState<string | null>(null);
+  // Phase 3: Grade completion data (present when mastery triggers a full grade complete)
+  const [gradeCompletion, setGradeCompletion] = useState<{
+    grade: string; subject: string; totalNodes: number;
+    nextGrade: string | null; upcomingTopics: string[];
+  } | null>(null);
   const [hint, setHint] = useState<HintContent | null>(null);
   const [checkin, setCheckin] = useState<EmotionalCheckin | null>(null);
   const [checkinResponse, setCheckinResponse] = useState<string | null>(null);
@@ -433,6 +440,12 @@ function SessionPage() {
       setPersonaId(data.persona?.id ?? "cosmo");
       setStudentName(data.persona?.studentName ?? "Student");
       if (data.todaysPlan) setTodaysPlan(data.todaysPlan);
+      // Phase 2: Grade guardrail redirect message
+      if (data.gradeGuardrailMessage) {
+        setGradeGuardrailMsg(data.gradeGuardrailMessage);
+      } else {
+        setGradeGuardrailMsg(null);
+      }
       setPhase("teaching");
 
       // Show mastery onboarding tooltip on first ever session
@@ -620,6 +633,8 @@ function SessionPage() {
         if (data.state === "CELEBRATING") {
           setConceptsMasteredThisSession((prev) => prev + 1);
           setCelebration(data.celebration);
+          // Phase 3: Store grade completion data if present
+          setGradeCompletion(data.gradeCompletion ?? null);
           setFeedback(null);
           setRemediation(null);
           setPhase("celebrating");
@@ -838,6 +853,17 @@ function SessionPage() {
             />
           </div>
           <main className="max-w-2xl mx-auto px-4 py-8">
+            {/* ─── Phase 2: Grade Guardrail Redirect Banner ─── */}
+            {gradeGuardrailMsg && (
+              <div className="mb-4 bg-gradient-to-r from-amber-500/10 to-yellow-500/10 rounded-xl p-3 border border-amber-500/20 animate-fade-in-up">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">📚</span>
+                  <p className="text-xs text-amber-300 leading-relaxed">
+                    {gradeGuardrailMsg}
+                  </p>
+                </div>
+              </div>
+            )}
             {/* ─── Today's Plan Banner (GPS context) ─── */}
             {todaysPlan && (
               <div className="mb-4 bg-gradient-to-r from-teal-500/10 to-cyan-500/10 rounded-xl p-3 border border-teal-500/20 animate-fade-in-up">
@@ -1056,6 +1082,7 @@ function SessionPage() {
             mastery={mastery}
             celebration={celebration}
             gamification={gamification}
+            gradeCompletion={gradeCompletion}
             onNextConcept={startSession}
             onEndSession={endSession}
           />

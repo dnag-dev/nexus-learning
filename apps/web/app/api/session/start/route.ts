@@ -3,7 +3,7 @@ import { prisma } from "@aauti/db";
 import { transitionState } from "@/lib/session/state-machine";
 import { checkReviewsOnSessionStart } from "@/lib/spaced-repetition/scheduler-job";
 import { getNextConceptInPlan } from "@/lib/learning-plan/plan-generator";
-import { logSessionStarted } from "@/lib/activity-log";
+import { logSessionStarted, logTopicSelected } from "@/lib/activity-log";
 
 // Allow up to 30s (Pro plan); on Hobby plan this is capped at 10s
 export const maxDuration = 30;
@@ -80,7 +80,24 @@ export async function POST(request: Request) {
       });
     } else if (topic && typeof topic === "string" && topic.trim().length >= 2) {
       // ─── Topic search: find the best matching concept by title/description ───
-      targetNode = await findConceptByTopic(topic.trim(), subject);
+      // Grade guardrails: if the best match is too far above student's level,
+      // find the closest prerequisite within range instead.
+      const topicResult = await findConceptByTopic(topic.trim(), subject, student.gradeLevel);
+      if (topicResult) {
+        targetNode = topicResult.node;
+        // If there's a redirect message, attach it to the response later
+        if (topicResult.message) {
+          (body as Record<string, unknown>)._gradeGuardrailMessage = topicResult.message;
+        }
+        // Activity log: topic selected (fire-and-forget)
+        logTopicSelected(
+          studentId,
+          topic.trim(),
+          topicResult.node.nodeCode,
+          topicResult.node.title,
+          !!topicResult.message
+        );
+      }
     } else if (planId) {
       // ─── Plan-aware mode: pick next concept from specified plan ───
       const nextInPlan = await getNextConceptInPlan(planId);
@@ -290,6 +307,10 @@ export async function POST(request: Request) {
       // Plan-aware metadata
       ...(resolvedPlanId ? { planId: resolvedPlanId } : {}),
       todaysPlan,
+      // Grade guardrail: if topic search redirected to a prerequisite, explain why
+      ...((body as Record<string, unknown>)._gradeGuardrailMessage
+        ? { gradeGuardrailMessage: (body as Record<string, unknown>)._gradeGuardrailMessage }
+        : {}),
     });
   } catch (err) {
     console.error("Session start error:", err);
@@ -405,6 +426,12 @@ async function selectMostUrgentConcept(
  * Called from Mode 2 (Topic Search) when a student types a topic in the
  * dashboard's TopicSearchInput component.
  *
+ * GRADE GUARDRAIL (Phase 2):
+ * If the best-matching node is more than GRADE_LOOKAHEAD (2) grades above
+ * the student's current grade, we redirect to the highest-grade match within
+ * range instead. This prevents a Grade 3 student hitting Algebra II content
+ * and getting frustrated.
+ *
  * Scoring strategy:
  * - Exact word match in title: +10
  * - Partial match in title: +5
@@ -413,10 +440,32 @@ async function selectMostUrgentConcept(
  *
  * DO NOT REMOVE — This is actively used by the kid dashboards.
  */
+
+// Grade index map: K=0, G1=1, ... G12=12
+const GRADE_TO_INDEX: Record<string, number> = {
+  K: 0, G1: 1, G2: 2, G3: 3, G4: 4, G5: 5, G6: 6,
+  G7: 7, G8: 8, G9: 9, G10: 10, G11: 11, G12: 12,
+};
+
+// Allow students to reach up to 2 grades above their current level
+const GRADE_LOOKAHEAD = 2;
+
+type NodeRow = {
+  id: string; nodeCode: string; title: string; description: string;
+  gradeLevel: string; domain: string; difficulty: number; subject: string;
+};
+
+interface TopicSearchResult {
+  node: NodeRow;
+  /** Non-null if the result was grade-redirected to a prerequisite */
+  message: string | null;
+}
+
 async function findConceptByTopic(
   topic: string,
-  subject: string
-): Promise<{ id: string; nodeCode: string; title: string; description: string; gradeLevel: string; domain: string; difficulty: number; subject: string } | null> {
+  subject: string,
+  studentGradeLevel: string
+): Promise<TopicSearchResult | null> {
   // Fetch all nodes for this subject (typically ~100-200 nodes, fast query)
   const allNodes = await prisma.knowledgeNode.findMany({
     where: { subject: subject as any },
@@ -461,10 +510,37 @@ async function findConceptByTopic(
   // Sort by score descending, then difficulty ascending (prefer easier if tied)
   scored.sort((a, b) => b.score - a.score || a.node.difficulty - b.node.difficulty);
 
-  // Return the best match if it has any relevance
-  if (scored[0] && scored[0].score > 0) {
-    return scored[0].node;
+  // No relevant match
+  if (!scored[0] || scored[0].score <= 0) return null;
+
+  const bestMatch = scored[0].node;
+  const studentGradeIdx = GRADE_TO_INDEX[studentGradeLevel] ?? 0;
+  const nodeGradeIdx = GRADE_TO_INDEX[bestMatch.gradeLevel] ?? 0;
+  const maxAllowedGrade = studentGradeIdx + GRADE_LOOKAHEAD;
+
+  // ─── GRADE GUARDRAIL ───
+  // If the best match is within range (student's grade + 2), serve it directly
+  if (nodeGradeIdx <= maxAllowedGrade) {
+    return { node: bestMatch, message: null };
   }
 
-  return null;
+  // Best match is too advanced — find the highest-grade relevant node within range.
+  // Filter scored list to only nodes within grade range, pick the best-scoring one.
+  const withinRange = scored.filter((s) => {
+    const idx = GRADE_TO_INDEX[s.node.gradeLevel] ?? 0;
+    return s.score > 0 && idx <= maxAllowedGrade;
+  });
+
+  if (withinRange.length > 0) {
+    // Return the best within-range match with a friendly redirect message
+    const redirected = withinRange[0].node;
+    return {
+      node: redirected,
+      message: `"${bestMatch.title}" is a bit ahead (Grade ${bestMatch.gradeLevel.replace("G", "")}). ` +
+        `Let's build up to it! Starting with "${redirected.title}" first.`,
+    };
+  }
+
+  // No within-range match found — serve the best match anyway (better than nothing)
+  return { node: bestMatch, message: null };
 }

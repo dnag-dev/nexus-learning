@@ -42,7 +42,15 @@ export type ActivityEventType =
   | "GRADE_ADVANCED"
   | "SUBJECT_SWITCHED"
   | "TOPIC_SELECTED"
-  | "HINT_USED";
+  | "HINT_USED"
+  // Phase 13: Unit/Test-Out/Fluency Zone events
+  | "TEST_OUT_PASSED"
+  | "TEST_OUT_FAILED"
+  | "UNIT_TEST_PASSED"
+  | "UNIT_TEST_FAILED"
+  | "COURSE_CHALLENGE_PASSED"
+  | "COURSE_CHALLENGE_FAILED"
+  | "FLUENCY_ZONE_COMPLETED";
 
 interface LogOptions {
   /** Optional human-readable detail line */

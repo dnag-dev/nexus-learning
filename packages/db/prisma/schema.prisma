@@ -265,6 +265,11 @@ model KnowledgeNode {
   domain       KnowledgeDomain
   subject      Subject         @default(MATH)
   difficulty   Int             @default(1)
+  // Phase 13: Unit/Cluster linkage (optional — nodes can exist without unit/cluster)
+  unitId       String?
+  clusterId    String?
+  unit         Unit?           @relation(fields: [unitId], references: [id])
+  cluster      Cluster?        @relation(fields: [clusterId], references: [id])
   prerequisites KnowledgeNode[] @relation("NodePrerequisites")
   successors    KnowledgeNode[] @relation("NodePrerequisites")
   masteryScores      MasteryScore[]
@@ -273,6 +278,8 @@ model KnowledgeNode {
 
   @@index([gradeLevel, domain])
   @@index([subject])
+  @@index([unitId])
+  @@index([clusterId])
   @@map("knowledge_nodes")
 }
 
@@ -769,6 +776,93 @@ model StandardsMapping {
   @@map("standards_mappings")
 }
 
+// ─── Phase 13: Unit/Cluster Structure ───
+// Khan Academy-inspired unit grouping above individual topics.
+// Units contain clusters, clusters contain knowledge nodes.
+
+model Unit {
+  id          String          @id @default(cuid())
+  name        String          // "Plane Figures", "Fractions & Decimals"
+  description String          @default("")
+  gradeLevel  GradeLevel
+  subject     Subject
+  orderIndex  Int             @default(0)
+  clusters    Cluster[]
+  nodes       KnowledgeNode[]
+  createdAt   DateTime        @default(now())
+
+  @@index([gradeLevel, subject])
+  @@index([orderIndex])
+  @@map("units")
+}
+
+model Cluster {
+  id          String          @id @default(cuid())
+  name        String          // "Types of Plane Figures", "Adding Fractions"
+  unitId      String
+  unit        Unit            @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  orderIndex  Int             @default(0)
+  nodes       KnowledgeNode[]
+
+  @@index([unitId])
+  @@map("clusters")
+}
+
+// ─── Phase 13: Test Out / Unit Test Attempts ───
+// Tracks test-out and unit test attempts for analytics and progress.
+
+model TestAttempt {
+  id            String    @id @default(cuid())
+  studentId     String
+  // What was tested: "topic", "unit", or "course"
+  testType      String    // "topic_test_out" | "unit_test" | "course_challenge"
+  // Reference to what was tested (nodeId, unitId, or gradeLevel string)
+  targetId      String
+  targetName    String    @default("")
+  subject       Subject
+  gradeLevel    GradeLevel
+  // Results
+  totalQuestions Int
+  correctCount   Int
+  accuracy       Float
+  passed         Boolean
+  timeSpentMs    Int       @default(0)
+  // On pass: BKT scores updated for each node tested
+  nodeScores     Json?     // { nodeId: { before: float, after: float } }
+  createdAt      DateTime  @default(now())
+
+  @@index([studentId, testType])
+  @@index([studentId, targetId])
+  @@map("test_attempts")
+}
+
+// ─── Phase 13: Fluency Zone Sessions ───
+// Student-initiated speed practice sessions (separate from auto-triggered fluency drill).
+
+model FluencyZoneSession {
+  id              String    @id @default(cuid())
+  studentId       String
+  nodeId          String
+  nodeName        String    @default("")
+  subject         Subject
+  // Session config
+  timeLimitSeconds Int      // 60, 120, or 300
+  // Results
+  totalQuestions  Int       @default(0)
+  correctCount    Int       @default(0)
+  accuracy        Float     @default(0)
+  questionsPerMin Float     @default(0)
+  averageTimeMs   Int       @default(0)
+  personalBest    Boolean   @default(false) // was this a new PB?
+  // Answers stored as JSON array for replay/review
+  answers         Json?     // [{ questionText, answer, correct, timeMs }]
+  createdAt       DateTime  @default(now())
+
+  @@index([studentId, nodeId])
+  @@index([studentId, createdAt(sort: Desc)])
+  @@map("fluency_zone_sessions")
+}
+
 // ─── Activity Log ───
 // Tracks all student learning events for parent visibility.
 // Events are logged by the activity-log utility and displayed in the parent dashboard.
@@ -797,6 +891,14 @@ enum ActivityEventType {
   SUBJECT_SWITCHED      // Student switched between Math and English
   TOPIC_SELECTED        // Student searched for / selected a specific topic
   HINT_USED             // Student used a hint during guided practice
+  // Phase 13: Unit/Test-Out/Fluency Zone events
+  TEST_OUT_PASSED       // Student tested out of a topic (skipped ahead)
+  TEST_OUT_FAILED       // Student attempted test-out but didn't pass
+  UNIT_TEST_PASSED      // Student passed unit test (all clusters)
+  UNIT_TEST_FAILED      // Student attempted unit test but didn't pass
+  COURSE_CHALLENGE_PASSED   // Student passed course-level challenge
+  COURSE_CHALLENGE_FAILED   // Student attempted course challenge but didn't pass
+  FLUENCY_ZONE_COMPLETED    // Student completed a Fluency Zone speed drill
 }
 
 model ActivityLog {

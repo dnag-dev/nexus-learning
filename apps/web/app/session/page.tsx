@@ -946,6 +946,15 @@ function SessionPage() {
               isLoading={teachingLoading}
               lessonStep={1}
               totalSteps={5}
+              onTestOut={node ? () => {
+                // Phase 13: Navigate to test-out flow for current topic
+                const params = new URLSearchParams({
+                  studentId: DEMO_STUDENT_ID,
+                  nodeCode: node.nodeCode,
+                  returnTo: `/session?studentId=${DEMO_STUDENT_ID}&subject=${subjectParam}`,
+                });
+                router.push(`/session/test-out?${params.toString()}`);
+              } : undefined}
             />
 
             {teachingReady ? (

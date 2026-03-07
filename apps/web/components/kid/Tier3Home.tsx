@@ -188,23 +188,29 @@ export default function Tier3Home() {
         </div>
       )}
 
-      {/* Bottom Links */}
-      <div className="flex gap-3">
+      {/* Bottom Links — Phase 13: Added Fluency Zone */}
+      <div className="grid grid-cols-2 gap-3">
         <Link
           href="/kid/constellation"
-          className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 text-sm rounded-lg text-center transition-colors border border-white/5"
+          className="py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 text-sm rounded-lg text-center transition-colors border border-white/5"
         >
-          🌌 Constellation Map
+          🌌 Constellation
+        </Link>
+        <Link
+          href={`/kid/fluency-zone?studentId=${studentId}`}
+          className="py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 text-sm rounded-lg text-center transition-colors border border-cyan-500/10 hover:border-cyan-500/30"
+        >
+          ⚡ Fluency Zone
         </Link>
         <Link
           href="/goals"
-          className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 text-sm rounded-lg text-center transition-colors border border-white/5"
+          className="py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 text-sm rounded-lg text-center transition-colors border border-white/5"
         >
           🎯 Goals
         </Link>
         <Link
           href="/kid/review"
-          className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 text-sm rounded-lg text-center transition-colors border border-white/5"
+          className="py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 text-sm rounded-lg text-center transition-colors border border-white/5"
         >
           📊 Review
         </Link>

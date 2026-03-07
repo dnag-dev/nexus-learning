@@ -240,13 +240,19 @@ export default function Tier2Home() {
         </div>
       )}
 
-      {/* Secondary Nav */}
-      <div className="grid grid-cols-2 gap-3">
+      {/* Secondary Nav — Phase 13: Added Fluency Zone */}
+      <div className="grid grid-cols-3 gap-3">
         <Link
           href="/kid/constellation"
           className="flex items-center justify-center gap-2 py-4 bg-[#141d30] rounded-xl border border-white/5 text-white font-medium hover:border-purple-500/30 transition-colors text-sm"
         >
           🌌 Constellation
+        </Link>
+        <Link
+          href={`/kid/fluency-zone?studentId=${studentId}`}
+          className="flex items-center justify-center gap-2 py-4 bg-[#141d30] rounded-xl border border-white/5 text-white font-medium hover:border-cyan-500/30 transition-colors text-sm"
+        >
+          ⚡ Fluency Zone
         </Link>
         <Link
           href="/kid/review"

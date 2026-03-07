@@ -64,6 +64,14 @@ const EVENT_CONFIG: Record<string, { emoji: string; color: string; label: string
   SUBJECT_SWITCHED: { emoji: "🔄", color: "text-blue-400", label: "Subject Switched" },
   TOPIC_SELECTED: { emoji: "🔍", color: "text-indigo-400", label: "Topic Selected" },
   HINT_USED: { emoji: "💡", color: "text-yellow-400", label: "Hint Used" },
+  // Phase 13: Unit/Test-Out/Fluency Zone events
+  TEST_OUT_PASSED: { emoji: "⚡", color: "text-cyan-500", label: "Test Out Passed!" },
+  TEST_OUT_FAILED: { emoji: "📝", color: "text-gray-500", label: "Test Out Attempted" },
+  UNIT_TEST_PASSED: { emoji: "🏆", color: "text-yellow-500", label: "Unit Test Passed!" },
+  UNIT_TEST_FAILED: { emoji: "📝", color: "text-gray-500", label: "Unit Test Attempted" },
+  COURSE_CHALLENGE_PASSED: { emoji: "🎓", color: "text-green-500", label: "Course Challenge Passed!" },
+  COURSE_CHALLENGE_FAILED: { emoji: "📝", color: "text-gray-500", label: "Course Challenge Attempted" },
+  FLUENCY_ZONE_COMPLETED: { emoji: "⚡", color: "text-cyan-500", label: "Fluency Zone" },
 };
 
 const FILTER_OPTIONS = [
@@ -76,6 +84,9 @@ const FILTER_OPTIONS = [
   { value: "LEVEL_UP", label: "Level Ups" },
   { value: "STREAK_MILESTONE", label: "Streaks" },
   { value: "FLUENCY_DRILL_COMPLETED", label: "Fluency" },
+  { value: "TEST_OUT_PASSED", label: "Test Outs" },
+  { value: "UNIT_TEST_PASSED", label: "Unit Tests" },
+  { value: "FLUENCY_ZONE_COMPLETED", label: "Fluency Zone" },
 ];
 
 // ─── Helpers ───

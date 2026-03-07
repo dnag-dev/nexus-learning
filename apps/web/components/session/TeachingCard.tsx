@@ -21,6 +21,8 @@ interface TeachingCardProps {
   totalSteps?: number;
   /** Called when all staggered animations have completed */
   onAnimationsComplete?: () => void;
+  /** Phase 13: "Test Out" button callback. If provided, shows a "I know this" button. */
+  onTestOut?: () => void;
 }
 
 export default function TeachingCard({
@@ -29,6 +31,7 @@ export default function TeachingCard({
   lessonStep = 1,
   totalSteps = 5,
   onAnimationsComplete,
+  onTestOut,
 }: TeachingCardProps) {
   // Fire onAnimationsComplete after all sections have animated in
   useEffect(() => {
@@ -149,6 +152,20 @@ export default function TeachingCard({
                   )}
                 </div>
               </div>
+            </div>
+          )}
+          {/* Phase 13: Test Out button — "I know this" */}
+          {onTestOut && (
+            <div
+              className="text-center pt-2 opacity-0 animate-fade-in-up"
+              style={{ animationDelay: "1100ms" }}
+            >
+              <button
+                onClick={onTestOut}
+                className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors"
+              >
+                ⚡ I already know this — Test Out
+              </button>
             </div>
           )}
         </div>

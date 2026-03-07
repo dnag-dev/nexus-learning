@@ -66,10 +66,18 @@ export default function Tier1Home() {
         />
       </div>
 
+      {/* Phase 13: Fluency Zone button */}
+      <Link
+        href={`/kid/fluency-zone?studentId=${studentId}`}
+        className="mt-6 w-full max-w-sm py-3 bg-[#141d30] border border-white/10 text-white text-lg font-medium rounded-xl hover:border-cyan-500/30 transition-colors text-center block"
+      >
+        ⚡ Speed Practice!
+      </Link>
+
       {/* Tiny parent link */}
       <Link
         href="/dashboard"
-        className="mt-8 text-xs text-gray-600 hover:text-gray-400 transition-colors"
+        className="mt-4 text-xs text-gray-600 hover:text-gray-400 transition-colors"
       >
         Parent view →
       </Link>

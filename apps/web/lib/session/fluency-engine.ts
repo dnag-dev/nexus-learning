@@ -16,6 +16,7 @@
  */
 
 import { prisma } from "@aauti/db";
+import { logActivity } from "@/lib/activity-log";
 
 // ─── Thresholds ───
 
@@ -168,6 +169,52 @@ export async function evaluateFluencyAnswer(
       await createFluencyNotification(studentId, nodeId);
     } catch (e) {
       console.error("[fluency-engine] Notification error (non-critical):", e);
+    }
+
+    // ─── Phase 12: Activity log + spaced repetition scheduling ───
+    // Fire-and-forget: log FLUENCY_DRILL_COMPLETED event for parent dashboard
+    try {
+      const nodeInfo = await prisma.knowledgeNode.findUnique({
+        where: { id: nodeId },
+        select: { nodeCode: true, title: true, domain: true, gradeLevel: true },
+      });
+      if (nodeInfo) {
+        logActivity(
+          studentId,
+          "FLUENCY_DRILL_COMPLETED",
+          `Fluency achieved: ${nodeInfo.title}`,
+          {
+            detail: `Speed: ${personalBestMs ? Math.round(personalBestMs) + "ms" : "N/A"}, Accuracy: ${Math.round(recentAccuracy * 100)}%`,
+            metadata: {
+              nodeId,
+              nodeCode: nodeInfo.nodeCode,
+              personalBestMs: personalBestMs ? Math.round(personalBestMs) : null,
+              recentAccuracy: Math.round(recentAccuracy * 100),
+              flatlineDetected: isFlatline,
+              consecutiveCorrect: newConsecutive,
+              domain: nodeInfo.domain,
+              gradeLevel: nodeInfo.gradeLevel,
+            },
+          }
+        );
+      }
+    } catch (e) {
+      console.error("[fluency-engine] Activity log error (non-critical):", e);
+    }
+
+    // Schedule spaced repetition review in 7 days for fluent topics
+    try {
+      const sevenDays = new Date();
+      sevenDays.setDate(sevenDays.getDate() + 7);
+      await prisma.masteryScore.update({
+        where: { studentId_nodeId: { studentId, nodeId } },
+        data: {
+          nextReviewAt: sevenDays,
+          reviewCount: { increment: 1 },
+        },
+      });
+    } catch (e) {
+      console.error("[fluency-engine] Spaced repetition scheduling error (non-critical):", e);
     }
   }
 

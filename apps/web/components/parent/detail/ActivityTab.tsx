@@ -75,6 +75,7 @@ const FILTER_OPTIONS = [
   { value: "BADGE_EARNED", label: "Badges" },
   { value: "LEVEL_UP", label: "Level Ups" },
   { value: "STREAK_MILESTONE", label: "Streaks" },
+  { value: "FLUENCY_DRILL_COMPLETED", label: "Fluency" },
 ];
 
 // ─── Helpers ───

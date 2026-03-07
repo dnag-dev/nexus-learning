@@ -4,18 +4,25 @@
  * Tier3Home — Grades 8 through 12
  *
  * Clean, minimal, data-driven:
- * - Welcome + Continue button (with next concept name)
+ * - Subject tabs + Welcome + Continue button (with next concept name)
+ * - Topic search (prompt-based learning)
  * - Stats row: level, streak, mastered, badges
  * - Learning Progress from mastery data
  * - Your Progress (goal + bar + ETA)
  * - Bottom links
  *
- * Uses /api/student/:id/gamification AND /api/gps/dashboard
+ * ⚠️  CRITICAL FEATURES (DO NOT REMOVE):
+ * 1. SubjectTabs — subject switching (Math ↔ English)
+ * 2. TopicSearchInput — prompt-based learning
+ *
+ * Uses /api/student/:id/gamification AND /api/student/:id/next-concept
  */
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useChild } from "@/lib/child-context";
+import TopicSearchInput from "@/components/kid/TopicSearchInput";
+import SubjectTabs, { type Subject } from "@/components/kid/SubjectTabs";
 
 interface GamData {
   xp: number;
@@ -44,6 +51,7 @@ export default function Tier3Home() {
   const [gam, setGam] = useState<GamData | null>(null);
   const [nextConceptData, setNextConceptData] = useState<NextConceptData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [subject, setSubject] = useState<Subject>("MATH");
 
   useEffect(() => {
     async function fetchData() {
@@ -83,6 +91,13 @@ export default function Tier3Home() {
 
   return (
     <div className="space-y-5">
+      {/* ⚠️ Subject switching — Math / English */}
+      <SubjectTabs
+        subject={subject}
+        onSubjectChange={setSubject}
+        variant="teen"
+      />
+
       {/* Welcome + Continue */}
       <div className="flex items-center justify-between">
         <div>
@@ -94,12 +109,19 @@ export default function Tier3Home() {
           </p>
         </div>
         <Link
-          href={`/session?studentId=${studentId}`}
+          href={`/session?studentId=${studentId}&subject=${subject}&returnTo=/kid`}
           className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors"
         >
           Continue →
         </Link>
       </div>
+
+      {/* ⚠️ Prompt-based learning — topic search input */}
+      <TopicSearchInput
+        studentId={studentId}
+        subject={subject}
+        variant="teen"
+      />
 
       {/* Stats Row */}
       <div className="grid grid-cols-4 gap-3">

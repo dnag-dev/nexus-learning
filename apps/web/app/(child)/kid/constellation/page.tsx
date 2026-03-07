@@ -113,6 +113,8 @@ export default function KidConstellationPage() {
   const [constellationData, setConstellationData] = useState<ReturnType<
     typeof generateConstellationLayout
   > | null>(null);
+  // Map from node.id (cuid) to nodeCode for session start navigation
+  const [nodeIdToCodeMap, setNodeIdToCodeMap] = useState<Map<string, string>>(new Map());
 
   const [reviewDueNow, setReviewDueNow] = useState(0);
   const [reviewOverdue, setReviewOverdue] = useState(0);
@@ -140,6 +142,12 @@ export default function KidConstellationPage() {
             masteryData.edges
           );
           setConstellationData(constellation);
+          // Build id → nodeCode map so star clicks can navigate to sessions
+          const idMap = new Map<string, string>();
+          for (const n of masteryData.nodes) {
+            idMap.set(n.id, n.nodeCode);
+          }
+          setNodeIdToCodeMap(idMap);
         }
       }
 
@@ -191,11 +199,14 @@ export default function KidConstellationPage() {
 
   const handleStartSession = useCallback(
     (conceptId: string) => {
+      // conceptId is the star's id (= node.id cuid from mastery-map).
+      // Session start API expects nodeCode, not cuid — look up via map.
+      const nodeCode = nodeIdToCodeMap.get(conceptId) ?? conceptId;
       router.push(
-        `/session?studentId=${studentId}&nodeId=${conceptId}&returnTo=/kid`
+        `/session?studentId=${studentId}&nodeCode=${nodeCode}&returnTo=/kid/constellation`
       );
     },
-    [router, studentId]
+    [router, studentId, nodeIdToCodeMap]
   );
 
   if (loading) {

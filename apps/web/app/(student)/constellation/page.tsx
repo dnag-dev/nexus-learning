@@ -136,6 +136,8 @@ function ConstellationPage() {
 
   // Star map data
   const [constellationData, setConstellationData] = useState<ReturnType<typeof generateConstellationLayout> | null>(null);
+  // Map from node.id (cuid) to nodeCode for session navigation
+  const [nodeIdToCodeMap, setNodeIdToCodeMap] = useState<Map<string, string>>(new Map());
 
   // Review data
   const [reviewDueNow, setReviewDueNow] = useState(0);
@@ -165,6 +167,12 @@ function ConstellationPage() {
             masteryData.edges
           );
           setConstellationData(constellation);
+          // Build id → nodeCode map for session navigation
+          const idMap = new Map<string, string>();
+          for (const n of masteryData.nodes) {
+            idMap.set(n.id, n.nodeCode);
+          }
+          setNodeIdToCodeMap(idMap);
         }
       }
 
@@ -225,14 +233,12 @@ function ConstellationPage() {
 
   const handleStartSession = useCallback(
     (conceptId: string) => {
-      // Find the node code for this star ID
-      const star = constellationData?.stars.find((s) => s.id === conceptId);
-      if (star) {
-        // Navigate to session page — the session page will use the node code
-        router.push(`/session?studentId=${STUDENT_ID}&nodeId=${conceptId}`);
-      }
+      // conceptId is the star's id (= node.id cuid from mastery-map).
+      // Session start API expects nodeCode, not cuid — look up via map.
+      const nodeCode = nodeIdToCodeMap.get(conceptId) ?? conceptId;
+      router.push(`/session?studentId=${STUDENT_ID}&nodeCode=${nodeCode}`);
     },
-    [constellationData, router]
+    [nodeIdToCodeMap, router]
   );
 
   // ─── Loading state ───

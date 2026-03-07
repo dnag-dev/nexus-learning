@@ -14,6 +14,26 @@ export const maxDuration = 30;
 const MATH_GRADES = ["K", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9", "G10", "G11", "G12"];
 const ELA_GRADES = ["G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9", "G10", "G11", "G12"];
 
+/**
+ * POST /api/session/start
+ *
+ * ⚠️  CRITICAL API — 4 session start modes. DO NOT remove any mode.
+ *
+ * Body params:
+ *   - studentId (required): Student ID
+ *   - subject (optional, default "MATH"): "MATH" | "ENGLISH"
+ *   - nodeCode (optional): Explicit node to teach → Mode 1: Explicit Node
+ *   - topic (optional): Free-text topic search → Mode 2: Topic Search (prompt-based learning)
+ *   - planId (optional): Learning plan to follow → Mode 3: Plan-Aware
+ *   - (none of above): Smart sequencer picks most urgent concept → Mode 4: Auto
+ *
+ * Priority: nodeCode > topic > planId > auto
+ *
+ * Mode 2 (Topic Search) is used by the kid dashboards' TopicSearchInput component.
+ * It calls findConceptByTopic() which fuzzy-matches against KnowledgeNode titles/descriptions.
+ * This was accidentally disconnected in the Phase 5 UX overhaul (commit 50dd928) when the
+ * session page stopped passing the `topic` URL parameter. Restored in this commit.
+ */
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -373,14 +393,21 @@ async function selectMostUrgentConcept(
 // ─── Topic Search: Find Concept by Free-Text ───
 
 /**
+ * ⚠️  CRITICAL FUNCTION — Prompt-based learning depends on this.
+ *
  * Searches knowledge nodes by title and description to find the best match
  * for a user's free-text topic request (e.g., "exponents", "fractions").
+ *
+ * Called from Mode 2 (Topic Search) when a student types a topic in the
+ * dashboard's TopicSearchInput component.
  *
  * Scoring strategy:
  * - Exact word match in title: +10
  * - Partial match in title: +5
  * - Match in description: +3
  * - Prefer lower difficulty (more introductory) concepts: +1 for difficulty ≤ 3
+ *
+ * DO NOT REMOVE — This is actively used by the kid dashboards.
  */
 async function findConceptByTopic(
   topic: string,

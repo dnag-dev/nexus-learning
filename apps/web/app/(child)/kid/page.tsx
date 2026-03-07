@@ -8,6 +8,12 @@
  *   Tier 1 (K-G3):   Simple, centered, one big button
  *   Tier 2 (G4-G7):  Mission briefing, stats, badges
  *   Tier 3 (G8-G12): Data-driven, minimal, respectful
+ *
+ * ⚠️  CRITICAL FEATURES in each tier (DO NOT REMOVE during refactors):
+ * 1. SubjectTabs — Math / English switcher
+ * 2. TopicSearchInput — Prompt-based learning (type a topic → start session)
+ * 3. Session start links must include subject param
+ * See FEATURE_INVENTORY.md for the full checklist.
  */
 
 import { useEffect } from "react";

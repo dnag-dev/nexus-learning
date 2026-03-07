@@ -4,18 +4,25 @@
  * Tier2Home — Grades 4 through 7
  *
  * Dark background, four sections:
- * - Mission briefing card (with real next concept & persona avatar)
+ * - Subject tabs + Mission briefing card (with real next concept & persona avatar)
+ * - Topic search input (prompt-based learning)
  * - 3 stat cards (level, streak, mastered)
  * - Recent badges
  * - Your Progress (goal name + progress bar + ETA)
  *
- * Uses /api/student/:id/gamification AND /api/gps/dashboard
+ * ⚠️  CRITICAL FEATURES (DO NOT REMOVE):
+ * 1. SubjectTabs — subject switching (Math ↔ English)
+ * 2. TopicSearchInput — prompt-based learning
+ *
+ * Uses /api/student/:id/gamification AND /api/student/:id/next-concept
  */
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useChild } from "@/lib/child-context";
 import { getPersonaById } from "@/lib/personas/persona-config";
+import TopicSearchInput from "@/components/kid/TopicSearchInput";
+import SubjectTabs, { type Subject } from "@/components/kid/SubjectTabs";
 
 // Map badgeType to display info
 const BADGE_DISPLAY: Record<string, { name: string; emoji: string }> = {
@@ -61,6 +68,7 @@ export default function Tier2Home() {
   const [gam, setGam] = useState<GamData | null>(null);
   const [nextConcept, setNextConcept] = useState<NextConceptData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [subject, setSubject] = useState<Subject>("MATH");
 
   // Get persona info for the avatar
   const persona = getPersonaById(avatarPersonaId);
@@ -111,6 +119,13 @@ export default function Tier2Home() {
 
   return (
     <div className="space-y-5">
+      {/* ⚠️ Subject switching — Math / English */}
+      <SubjectTabs
+        subject={subject}
+        onSubjectChange={setSubject}
+        variant="mid"
+      />
+
       {/* Mission Briefing */}
       <div className="bg-gradient-to-r from-[#1a1f3a] to-[#1e2a4a] rounded-2xl p-6 border-l-4 border-purple-500 relative overflow-hidden">
         {/* Persona avatar — circular with gold ring */}
@@ -150,12 +165,19 @@ export default function Tier2Home() {
         )}
 
         <Link
-          href={`/session?studentId=${studentId}`}
+          href={`/session?studentId=${studentId}&subject=${subject}&returnTo=/kid`}
           className="inline-block px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-sm font-bold transition-colors shadow-lg"
         >
           Start Mission →
         </Link>
       </div>
+
+      {/* ⚠️ Prompt-based learning — topic search input */}
+      <TopicSearchInput
+        studentId={studentId}
+        subject={subject}
+        variant="mid"
+      />
 
       {/* 3 Stat Cards */}
       <div className="grid grid-cols-3 gap-3">

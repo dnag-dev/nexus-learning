@@ -179,7 +179,10 @@ function SessionPage() {
   const subjectParam = searchParams.get("subject") || "MATH";
   const planIdParam = searchParams.get("planId") || undefined;
   const nodeCodeParam = searchParams.get("nodeCode") || undefined;
-  // topic param no longer used — session auto-picks next concept
+  // ⚠️ CRITICAL: topic param enables prompt-based learning from kid dashboards.
+  // The API's findConceptByTopic() fuzzy-matches the topic string to KnowledgeNodes.
+  // DO NOT REMOVE — this was accidentally removed in commit 50dd928 and restored here.
+  const topicParam = searchParams.get("topic") || undefined;
 
   // ─── Core State ───
   const [phase, setPhase] = useState<SessionPhase>("idle");
@@ -403,6 +406,7 @@ function SessionPage() {
           subject: subjectParam,
           ...(planIdParam ? { planId: planIdParam } : {}),
           ...(nodeCodeParam ? { nodeCode: nodeCodeParam } : {}),
+          ...(topicParam ? { topic: topicParam } : {}),
         }),
         signal: controller.signal,
       });

@@ -1,25 +1,24 @@
 import "../global.css";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useColorScheme } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { ThemeProvider, useTheme } from "../lib/theme";
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+function AppNavigator() {
+  const { colors, isDark } = useTheme();
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <>
       <StatusBar style={isDark ? "light" : "dark"} />
       <Stack
         screenOptions={{
           headerStyle: {
-            backgroundColor: isDark ? "#060d1f" : "#F8F9FA",
+            backgroundColor: colors.background,
           },
-          headerTintColor: isDark ? "#a78bfa" : "#6C5CE7",
+          headerTintColor: colors.primary,
           headerTitleStyle: { fontWeight: "bold" },
           contentStyle: {
-            backgroundColor: isDark ? "#060d1f" : "#F8F9FA",
+            backgroundColor: colors.background,
           },
           headerShadowVisible: false,
         }}
@@ -31,6 +30,16 @@ export default function RootLayout() {
         <Stack.Screen name="(parent)" options={{ headerShown: false }} />
         <Stack.Screen name="diagnostic" options={{ title: "Placement Test" }} />
       </Stack>
+    </>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider>
+        <AppNavigator />
+      </ThemeProvider>
     </GestureHandlerRootView>
   );
 }

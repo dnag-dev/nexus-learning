@@ -52,7 +52,7 @@ interface GamData {
     longest: number;
   } | null;
   badges: Array<{ badgeType: string; category: string; earnedAt: string }>;
-  masteryMap: Array<{ level: string }>;
+  masteryMap: Array<{ level: string; domain: string }>;
 }
 
 interface NextConceptData {
@@ -74,31 +74,35 @@ export default function Tier2Home() {
   const persona = getPersonaById(avatarPersonaId);
   const personaEmoji = persona?.avatarPlaceholder || "🤖";
 
+  // Re-fetch gamification once; re-fetch next-concept whenever subject changes
   useEffect(() => {
-    async function fetchData() {
+    async function fetchGam() {
       try {
-        const [gamRes, conceptRes] = await Promise.allSettled([
-          fetch(`/api/student/${studentId}/gamification`),
-          fetch(`/api/student/${studentId}/next-concept`),
-        ]);
+        const res = await fetch(`/api/student/${studentId}/gamification`);
+        if (res.ok) setGam(await res.json());
+      } catch { /* non-critical */ }
+    }
+    fetchGam();
+  }, [studentId]);
 
-        if (gamRes.status === "fulfilled" && gamRes.value.ok) {
-          setGam(await gamRes.value.json());
-        }
-        if (conceptRes.status === "fulfilled" && conceptRes.value.ok) {
-          setNextConcept(await conceptRes.value.json());
-        }
-      } catch {
-        // Non-critical
-      } finally {
+  useEffect(() => {
+    async function fetchConcept() {
+      try {
+        setNextConcept(null); // clear stale data while loading
+        const res = await fetch(`/api/student/${studentId}/next-concept?subject=${subject}`);
+        if (res.ok) setNextConcept(await res.json());
+      } catch { /* non-critical */ } finally {
         setLoading(false);
       }
     }
-    fetchData();
-  }, [studentId]);
+    fetchConcept();
+  }, [studentId, subject]);
 
   const streakDays = gam?.streak?.current ?? 0;
-  const totalMastered = gam?.masteryMap?.filter((n) => n.level === "MASTERED").length ?? 0;
+  // Filter mastery count by active subject tab so stats reflect the selected subject
+  const totalMastered = gam?.masteryMap?.filter(
+    (n) => n.level === "MASTERED" && n.domain === subject
+  ).length ?? 0;
   const xpForLevel = 100;
   const xpProgress = Math.min(((xp % xpForLevel) / xpForLevel) * 100, 100);
 

@@ -53,37 +53,44 @@ export default function Tier3Home() {
   const [loading, setLoading] = useState(true);
   const [subject, setSubject] = useState<Subject>("MATH");
 
+  // Re-fetch gamification once; re-fetch next-concept whenever subject changes
   useEffect(() => {
-    async function fetchData() {
+    async function fetchGam() {
       try {
-        const [gamRes, conceptRes] = await Promise.allSettled([
-          fetch(`/api/student/${studentId}/gamification`),
-          fetch(`/api/student/${studentId}/next-concept`),
-        ]);
+        const res = await fetch(`/api/student/${studentId}/gamification`);
+        if (res.ok) setGam(await res.json());
+      } catch { /* non-critical */ }
+    }
+    fetchGam();
+  }, [studentId]);
 
-        if (gamRes.status === "fulfilled" && gamRes.value.ok) {
-          setGam(await gamRes.value.json());
-        }
-        if (conceptRes.status === "fulfilled" && conceptRes.value.ok) {
-          setNextConceptData(await conceptRes.value.json());
-        }
-      } catch {
-        // Non-critical
-      } finally {
+  useEffect(() => {
+    async function fetchConcept() {
+      try {
+        setNextConceptData(null); // clear stale data while loading
+        const res = await fetch(`/api/student/${studentId}/next-concept?subject=${subject}`);
+        if (res.ok) setNextConceptData(await res.json());
+      } catch { /* non-critical */ } finally {
         setLoading(false);
       }
     }
-    fetchData();
-  }, [studentId]);
+    fetchConcept();
+  }, [studentId, subject]);
 
   const streakDays = gam?.streak?.current ?? 0;
-  const totalMastered = gam?.masteryMap?.filter((n) => n.level === "MASTERED").length ?? 0;
+  // Filter mastery count by active subject tab so stats reflect the selected subject
+  const totalMastered = gam?.masteryMap?.filter(
+    (n) => n.level === "MASTERED" && n.domain === subject
+  ).length ?? 0;
   const totalBadges = gam?.badges?.length ?? 0;
   const currentLevel = gam?.level ?? 1;
 
-  // Show nodes with progress (proficient or above)
+  // Show nodes with progress (proficient or above), filtered by selected subject
   const recentMastery = (gam?.masteryMap ?? [])
-    .filter((n) => n.level === "PROFICIENT" || n.level === "ADVANCED" || n.level === "MASTERED")
+    .filter((n) =>
+      (n.level === "PROFICIENT" || n.level === "ADVANCED" || n.level === "MASTERED") &&
+      n.domain === subject
+    )
     .slice(0, 4);
 
   const nextConcept = nextConceptData?.title;

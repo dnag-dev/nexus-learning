@@ -1,19 +1,22 @@
 /**
- * GET /api/student/[id]/next-concept
+ * GET /api/student/[id]/next-concept?subject=MATH|ENGLISH
  *
- * Returns the next concept for a student to learn.
+ * Returns the next concept for a student to learn, filtered by subject.
  * 1. Tries active learning plan first
- * 2. Falls back to the next unmastered node at their grade level
+ * 2. Falls back to the next unmastered node at their grade level + subject
  */
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@aauti/db";
 
 export async function GET(
-  _request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   const studentId = params.id;
+  // Subject filter — defaults to MATH for backward compatibility
+  const subjectParam = request.nextUrl.searchParams.get("subject");
+  const subject = subjectParam === "ENGLISH" ? "ENGLISH" : "MATH";
 
   try {
     const student = await prisma.student.findUnique({
@@ -73,7 +76,7 @@ export async function GET(
     const masteredIds = new Set(masteredNodeIds.map((m) => m.nodeId));
 
     const candidates = await prisma.knowledgeNode.findMany({
-      where: { gradeLevel: student.gradeLevel },
+      where: { gradeLevel: student.gradeLevel, subject: subject as any },
       orderBy: { difficulty: "asc" },
       take: 20,
       select: {

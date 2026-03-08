@@ -1,50 +1,203 @@
-import { View, Text, Pressable, useColorScheme } from "react-native";
+/**
+ * Parent Settings — account info, notifications, and logout.
+ */
+
+import { View, Text, Pressable, SafeAreaView, ScrollView } from "react-native";
 import { router } from "expo-router";
 
-/**
- * Parent Settings — stub for Phase 9.
- * Will handle account info, child management, notifications, subscription.
- */
+import { useTheme } from "../../lib/theme";
+
 export default function SettingsScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { colors } = useTheme();
+
+  const handleLogout = () => {
+    router.replace("/");
+  };
 
   return (
-    <View
-      className="flex-1 items-center justify-center px-6"
-      style={{ backgroundColor: isDark ? "#060d1f" : "#F8F9FA" }}
-    >
-      <Text className="text-5xl mb-4">⚙️</Text>
-      <Text
-        className="text-2xl font-bold mb-2"
-        style={{ color: isDark ? "#ffffff" : "#2D3436" }}
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <ScrollView
+        contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+        showsVerticalScrollIndicator={false}
       >
-        Settings
-      </Text>
-      <Text
-        className="text-base text-center mb-8"
-        style={{ color: isDark ? "#94a3b8" : "#636E72" }}
-      >
-        Account settings, child management, and notification preferences will
-        appear here in Phase 9.
-      </Text>
-
-      <Pressable
-        onPress={() => router.replace("/")}
-        className="px-6 py-3 rounded-xl active:opacity-80"
-        style={{
-          backgroundColor: isDark
-            ? "rgba(248,113,113,0.15)"
-            : "rgba(214,48,49,0.1)",
-        }}
-      >
+        {/* Account section */}
         <Text
-          className="font-semibold"
-          style={{ color: isDark ? "#f87171" : "#D63031" }}
+          style={{
+            fontSize: 13,
+            fontWeight: "600",
+            color: colors.textMuted,
+            textTransform: "uppercase",
+            letterSpacing: 1,
+            marginBottom: 10,
+          }}
         >
-          Log Out
+          Account
         </Text>
-      </Pressable>
-    </View>
+        <View
+          style={{
+            backgroundColor: colors.surface,
+            borderRadius: 16,
+            borderWidth: 1,
+            borderColor: colors.border,
+            overflow: "hidden",
+            marginBottom: 24,
+          }}
+        >
+          <SettingsRow
+            label="Profile"
+            detail="Manage your account"
+            colors={colors}
+          />
+          <Divider color={colors.border} />
+          <SettingsRow
+            label="Children"
+            detail="Add or manage children"
+            colors={colors}
+          />
+          <Divider color={colors.border} />
+          <SettingsRow
+            label="Subscription"
+            detail="Free plan"
+            colors={colors}
+          />
+        </View>
+
+        {/* Notifications */}
+        <Text
+          style={{
+            fontSize: 13,
+            fontWeight: "600",
+            color: colors.textMuted,
+            textTransform: "uppercase",
+            letterSpacing: 1,
+            marginBottom: 10,
+          }}
+        >
+          Notifications
+        </Text>
+        <View
+          style={{
+            backgroundColor: colors.surface,
+            borderRadius: 16,
+            borderWidth: 1,
+            borderColor: colors.border,
+            overflow: "hidden",
+            marginBottom: 24,
+          }}
+        >
+          <SettingsRow
+            label="Daily Reminders"
+            detail="Enabled"
+            colors={colors}
+          />
+          <Divider color={colors.border} />
+          <SettingsRow
+            label="Progress Alerts"
+            detail="Enabled"
+            colors={colors}
+          />
+          <Divider color={colors.border} />
+          <SettingsRow
+            label="Streak Warnings"
+            detail="Enabled"
+            colors={colors}
+          />
+        </View>
+
+        {/* About */}
+        <Text
+          style={{
+            fontSize: 13,
+            fontWeight: "600",
+            color: colors.textMuted,
+            textTransform: "uppercase",
+            letterSpacing: 1,
+            marginBottom: 10,
+          }}
+        >
+          About
+        </Text>
+        <View
+          style={{
+            backgroundColor: colors.surface,
+            borderRadius: 16,
+            borderWidth: 1,
+            borderColor: colors.border,
+            overflow: "hidden",
+            marginBottom: 32,
+          }}
+        >
+          <SettingsRow label="Version" detail="1.0.0" colors={colors} />
+          <Divider color={colors.border} />
+          <SettingsRow label="Privacy Policy" detail="" colors={colors} />
+          <Divider color={colors.border} />
+          <SettingsRow label="Terms of Service" detail="" colors={colors} />
+        </View>
+
+        {/* Logout */}
+        <Pressable
+          onPress={handleLogout}
+          style={({ pressed }) => ({
+            backgroundColor: colors.errorLight,
+            borderRadius: 14,
+            paddingVertical: 14,
+            alignItems: "center",
+            opacity: pressed ? 0.8 : 1,
+          })}
+        >
+          <Text
+            style={{
+              fontSize: 15,
+              fontWeight: "600",
+              color: colors.error,
+            }}
+          >
+            Log Out
+          </Text>
+        </Pressable>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+// ─── Settings Row ───
+
+function SettingsRow({
+  label,
+  detail,
+  colors,
+}: {
+  label: string;
+  detail: string;
+  colors: { text: string; textMuted: string };
+}) {
+  return (
+    <Pressable
+      style={({ pressed }) => ({
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        opacity: pressed ? 0.7 : 1,
+      })}
+    >
+      <Text style={{ fontSize: 15, color: colors.text }}>{label}</Text>
+      <Text style={{ fontSize: 13, color: colors.textMuted }}>{detail}</Text>
+    </Pressable>
+  );
+}
+
+// ─── Divider ───
+
+function Divider({ color }: { color: string }) {
+  return (
+    <View
+      style={{
+        height: 1,
+        backgroundColor: color,
+        marginHorizontal: 16,
+      }}
+    />
   );
 }

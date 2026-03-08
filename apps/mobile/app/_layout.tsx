@@ -1,11 +1,36 @@
 import "../global.css";
+import { useEffect } from "react";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { View, ActivityIndicator } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { ThemeProvider, useTheme } from "../lib/theme";
+import { useAuthStore } from "../store/auth";
 
 function AppNavigator() {
   const { colors, isDark } = useTheme();
+  const { isRestoring, restoreSession } = useAuthStore();
+
+  // Restore session on app launch
+  useEffect(() => {
+    restoreSession();
+  }, []);
+
+  // Show splash while restoring session
+  if (isRestoring) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: colors.background,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <>

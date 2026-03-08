@@ -13,7 +13,11 @@ import {
  */
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get(CHILD_SESSION_COOKIE)?.value;
+    // Check Authorization header first (mobile), fall back to cookie (web)
+    const authHeader = request.headers.get("Authorization");
+    const token = authHeader?.startsWith("Bearer ")
+      ? authHeader.slice(7)
+      : request.cookies.get(CHILD_SESSION_COOKIE)?.value;
 
     if (!token) {
       return NextResponse.json(

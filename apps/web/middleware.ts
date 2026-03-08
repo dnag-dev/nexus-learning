@@ -7,7 +7,15 @@ const CHILD_SESSION_COOKIE = "aauti-child-session";
 export default async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // ─── Child routes: /kid/* ───
+  // ─── Child API routes: check both header and cookie ───
+  // Mobile sends Authorization header; web sends cookie
+  if (pathname.startsWith("/api/")) {
+    // API routes pass through — auth is checked in route handlers
+    // This allows mobile to use Bearer token while web uses cookie
+    return NextResponse.next();
+  }
+
+  // ─── Child page routes: /kid/* (browser navigation — cookie only) ───
   if (pathname.startsWith("/kid")) {
     const token = request.cookies.get(CHILD_SESSION_COOKIE)?.value;
 

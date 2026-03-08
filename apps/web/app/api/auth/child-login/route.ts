@@ -88,10 +88,13 @@ export async function POST(request: Request) {
     const token = await createChildSession(student.id);
 
     // Set cookie and return response
+    // token is included in body for mobile app (which can't use HTTP-only cookies)
+    // Web app ignores this field and uses the cookie instead
     const response = NextResponse.json({
       studentId: student.id,
       displayName: student.displayName,
       avatarPersonaId: student.avatarPersonaId,
+      token,
     });
 
     response.cookies.set(CHILD_SESSION_COOKIE, token, {

@@ -1,195 +1,94 @@
-import { View, Text, Pressable, ScrollView, useColorScheme } from "react-native";
-import { Link } from "expo-router";
+import { View, Text, ScrollView, Pressable, RefreshControl } from "react-native";
+import { router } from "expo-router";
+import { getAgeTier } from "@aauti/utils";
+import { useTheme } from "../../lib/theme";
+import { useAuthStore } from "../../store/auth";
+import { useDashboard } from "../../hooks/useDashboard";
+import { LoadingSpinner, ErrorBanner } from "../../components/ui";
+import { Tier1Dashboard } from "../../components/kid/Tier1Dashboard";
+import { Tier2Dashboard } from "../../components/kid/Tier2Dashboard";
+import { Tier3Dashboard } from "../../components/kid/Tier3Dashboard";
 
-/**
- * Kid Dashboard — stub for Phase 5 (age-tiered dashboard).
- * Will show gamification stats, next concept, and age-appropriate layout.
- */
 export default function KidDashboardScreen() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { colors } = useTheme();
+  const { profile } = useAuthStore();
+  const dashboard = useDashboard(profile?.studentId ?? null);
 
-  return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: isDark ? "#060d1f" : "#F8F9FA" }}
-    >
-      <View className="px-5 pt-4 pb-8">
-        {/* Welcome header */}
-        <View className="mb-6">
-          <Text
-            className="text-2xl font-bold"
-            style={{ color: isDark ? "#ffffff" : "#2D3436" }}
-          >
-            Welcome back! ⭐
-          </Text>
-          <Text
-            className="mt-1"
-            style={{ color: isDark ? "#94a3b8" : "#636E72" }}
-          >
-            Your learning adventure continues here.
-          </Text>
-        </View>
+  // Determine age tier from grade level
+  const gradeLevel = profile?.gradeLevel ?? "4";
+  const tier = getAgeTier(gradeLevel);
 
-        {/* Quick stats row */}
-        <View className="flex-row gap-3 mb-6">
-          <View
-            className="flex-1 rounded-2xl p-4 items-center"
-            style={{
-              backgroundColor: isDark ? "#0c1628" : "#FFFFFF",
-              borderWidth: 1,
-              borderColor: isDark
-                ? "rgba(255,255,255,0.06)"
-                : "rgba(0,0,0,0.05)",
-            }}
-          >
-            <Text className="text-2xl">🔥</Text>
-            <Text
-              className="text-xl font-bold mt-1"
-              style={{ color: isDark ? "#f97316" : "#E17055" }}
-            >
-              0
-            </Text>
-            <Text
-              className="text-xs"
-              style={{ color: isDark ? "#64748b" : "#B2BEC3" }}
-            >
-              Streak
-            </Text>
-          </View>
-          <View
-            className="flex-1 rounded-2xl p-4 items-center"
-            style={{
-              backgroundColor: isDark ? "#0c1628" : "#FFFFFF",
-              borderWidth: 1,
-              borderColor: isDark
-                ? "rgba(255,255,255,0.06)"
-                : "rgba(0,0,0,0.05)",
-            }}
-          >
-            <Text className="text-2xl">⭐</Text>
-            <Text
-              className="text-xl font-bold mt-1"
-              style={{ color: isDark ? "#f97316" : "#FDCB6E" }}
-            >
-              0 XP
-            </Text>
-            <Text
-              className="text-xs"
-              style={{ color: isDark ? "#64748b" : "#B2BEC3" }}
-            >
-              Total
-            </Text>
-          </View>
-          <View
-            className="flex-1 rounded-2xl p-4 items-center"
-            style={{
-              backgroundColor: isDark ? "#0c1628" : "#FFFFFF",
-              borderWidth: 1,
-              borderColor: isDark
-                ? "rgba(255,255,255,0.06)"
-                : "rgba(0,0,0,0.05)",
-            }}
-          >
-            <Text className="text-2xl">🎯</Text>
-            <Text
-              className="text-xl font-bold mt-1"
-              style={{ color: isDark ? "#34d399" : "#00B894" }}
-            >
-              0
-            </Text>
-            <Text
-              className="text-xs"
-              style={{ color: isDark ? "#64748b" : "#B2BEC3" }}
-            >
-              Mastered
-            </Text>
-          </View>
-        </View>
+  if (dashboard.loading && !dashboard.xp) {
+    return <LoadingSpinner message="Loading your dashboard..." />;
+  }
 
-        {/* Action cards */}
-        <View className="gap-4">
-          <Link href="/(kid)/session/next" asChild>
-            <Pressable
-              className="rounded-2xl p-5 active:opacity-80"
-              style={{
-                backgroundColor: isDark ? "#0c1628" : "#FFFFFF",
-                borderWidth: 1,
-                borderColor: isDark
-                  ? "rgba(255,255,255,0.06)"
-                  : "rgba(0,0,0,0.05)",
-              }}
-            >
-              <Text className="text-3xl mb-2">🚀</Text>
-              <Text
-                className="font-semibold text-base mb-1"
-                style={{ color: isDark ? "#ffffff" : "#2D3436" }}
-              >
-                Start Learning
-              </Text>
-              <Text
-                className="text-sm"
-                style={{ color: isDark ? "#94a3b8" : "#636E72" }}
-              >
-                Jump into your next adaptive learning session.
-              </Text>
-            </Pressable>
-          </Link>
-
-          <Link href="/(kid)/topic-tree" asChild>
-            <Pressable
-              className="rounded-2xl p-5 active:opacity-80"
-              style={{
-                backgroundColor: isDark ? "#0c1628" : "#FFFFFF",
-                borderWidth: 1,
-                borderColor: isDark
-                  ? "rgba(255,255,255,0.06)"
-                  : "rgba(0,0,0,0.05)",
-              }}
-            >
-              <Text className="text-3xl mb-2">🗺️</Text>
-              <Text
-                className="font-semibold text-base mb-1"
-                style={{ color: isDark ? "#ffffff" : "#2D3436" }}
-              >
-                Topic Tree
-              </Text>
-              <Text
-                className="text-sm"
-                style={{ color: isDark ? "#94a3b8" : "#636E72" }}
-              >
-                Explore all topics and see your mastery progress.
-              </Text>
-            </Pressable>
-          </Link>
-
-          <Link href="/(kid)/fluency-zone" asChild>
-            <Pressable
-              className="rounded-2xl p-5 active:opacity-80"
-              style={{
-                backgroundColor: isDark ? "#0c1628" : "#FFFFFF",
-                borderWidth: 1,
-                borderColor: isDark
-                  ? "rgba(255,255,255,0.06)"
-                  : "rgba(0,0,0,0.05)",
-              }}
-            >
-              <Text className="text-3xl mb-2">⚡</Text>
-              <Text
-                className="font-semibold text-base mb-1"
-                style={{ color: isDark ? "#ffffff" : "#2D3436" }}
-              >
-                Fluency Zone
-              </Text>
-              <Text
-                className="text-sm"
-                style={{ color: isDark ? "#94a3b8" : "#636E72" }}
-              >
-                Speed practice to build automaticity.
-              </Text>
-            </Pressable>
-          </Link>
-        </View>
+  if (dashboard.error && !dashboard.xp) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background, padding: 20 }}>
+        <ErrorBanner message={dashboard.error} />
+        <Pressable
+          onPress={dashboard.refresh}
+          style={{
+            marginTop: 16,
+            paddingVertical: 12,
+            backgroundColor: colors.primary,
+            borderRadius: 12,
+            alignItems: "center",
+          }}
+        >
+          <Text style={{ color: "#ffffff", fontWeight: "600" }}>Retry</Text>
+        </Pressable>
       </View>
-    </ScrollView>
+    );
+  }
+
+  const displayName = profile?.displayName ?? "Learner";
+
+  // Tier 1: K-G3 — big, simple, friendly
+  if (tier === "TIER_1") {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <Tier1Dashboard
+          displayName={displayName}
+          xp={dashboard.xp}
+          streak={dashboard.streak}
+          nextNodeId={dashboard.nextConcept?.nodeId}
+        />
+      </View>
+    );
+  }
+
+  // Tier 3: G8-G12 — clean, minimal, stats-focused
+  if (tier === "TIER_3") {
+    return (
+      <Tier3Dashboard
+        displayName={displayName}
+        xp={dashboard.xp}
+        level={dashboard.level}
+        streak={dashboard.streak}
+        levelTitle={dashboard.levelTitle}
+        subject={dashboard.subject}
+        onSubjectChange={dashboard.setSubject}
+        nextConcept={dashboard.nextConcept}
+        masteryCount={dashboard.masteryCount}
+        totalCount={dashboard.totalCount}
+      />
+    );
+  }
+
+  // Tier 2: G4-G7 — default (most students)
+  return (
+    <Tier2Dashboard
+      displayName={displayName}
+      xp={dashboard.xp}
+      level={dashboard.level}
+      streak={dashboard.streak}
+      levelTitle={dashboard.levelTitle}
+      subject={dashboard.subject}
+      onSubjectChange={dashboard.setSubject}
+      nextConcept={dashboard.nextConcept}
+      masteryCount={dashboard.masteryCount}
+      totalCount={dashboard.totalCount}
+    />
   );
 }

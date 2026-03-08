@@ -9,11 +9,12 @@
  * Entry: /kid/fluency-zone?studentId=...
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import FluencyZonePicker from "@/components/kid/fluency-zone/FluencyZonePicker";
 import FluencyZoneGame from "@/components/kid/fluency-zone/FluencyZoneGame";
 import FluencyZoneResults from "@/components/kid/fluency-zone/FluencyZoneResults";
+import { useChild } from "@/lib/child-context";
 
 type Screen = "picker" | "game" | "results";
 
@@ -38,18 +39,24 @@ interface GameResults {
   timeLimitSeconds: number;
 }
 
-export default function FluencyZonePage() {
+function FluencyZoneContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const studentId = searchParams.get("studentId") || "";
+  const child = useChild();
+  // Prefer URL param, fall back to child context (covers navigation from dashboards)
+  const studentId = searchParams.get("studentId") || child.studentId || "";
 
   const [screen, setScreen] = useState<Screen>("picker");
   const [session, setSession] = useState<GameSession | null>(null);
   const [results, setResults] = useState<GameResults | null>(null);
+  const [starting, setStarting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Start a fluency zone session
   const handleStart = useCallback(
     async (nodeId: string, timeLimitSeconds: number) => {
+      setStarting(true);
+      setError(null);
       try {
         const res = await fetch("/api/session/fluency-zone", {
           method: "POST",
@@ -62,7 +69,7 @@ export default function FluencyZonePage() {
           }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error);
+        if (!res.ok) throw new Error(data.error || `API error ${res.status}`);
 
         setSession({
           sessionId: data.sessionId,
@@ -74,7 +81,11 @@ export default function FluencyZonePage() {
         });
         setScreen("game");
       } catch (err) {
-        console.error("Failed to start fluency zone:", err);
+        const msg = err instanceof Error ? err.message : "Failed to start";
+        console.error("Failed to start fluency zone:", msg);
+        setError(msg);
+      } finally {
+        setStarting(false);
       }
     },
     [studentId]
@@ -116,6 +127,8 @@ export default function FluencyZonePage() {
         setScreen("results");
       } catch (err) {
         console.error("Failed to submit results:", err);
+        // Still go to results with local data
+        setScreen("results");
       }
     },
     [session, studentId]
@@ -143,6 +156,8 @@ export default function FluencyZonePage() {
           studentId={studentId}
           onStart={handleStart}
           onBack={() => router.push("/kid")}
+          starting={starting}
+          error={error}
         />
       );
 
@@ -170,4 +185,18 @@ export default function FluencyZonePage() {
         />
       ) : null;
   }
+}
+
+export default function FluencyZonePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#0a0f1c] flex items-center justify-center">
+          <div className="text-4xl animate-bounce">⚡</div>
+        </div>
+      }
+    >
+      <FluencyZoneContent />
+    </Suspense>
+  );
 }

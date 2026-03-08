@@ -24,6 +24,8 @@ interface FluencyZonePickerProps {
   studentId: string;
   onStart: (nodeId: string, timeLimitSeconds: number) => void;
   onBack: () => void;
+  starting?: boolean;
+  error?: string | null;
 }
 
 const TIME_OPTIONS = [
@@ -36,6 +38,8 @@ export default function FluencyZonePicker({
   studentId,
   onStart,
   onBack,
+  starting = false,
+  error = null,
 }: FluencyZonePickerProps) {
   const [topics, setTopics] = useState<FluencyTopic[]>([]);
   const [loading, setLoading] = useState(true);
@@ -176,17 +180,30 @@ export default function FluencyZonePicker({
           </div>
         </div>
 
+        {/* Error Message */}
+        {error && (
+          <div className="mb-4 p-3 rounded-lg bg-red-500/20 border border-red-500/40 text-red-300 text-sm">
+            {error}
+          </div>
+        )}
+
         {/* Start Button */}
         <button
-          onClick={() => selectedNode && onStart(selectedNode, selectedTime)}
-          disabled={!selectedNode}
+          onClick={() => selectedNode && !starting && onStart(selectedNode, selectedTime)}
+          disabled={!selectedNode || starting}
           className={`w-full py-4 rounded-xl text-lg font-bold transition-all ${
-            selectedNode
-              ? "bg-gradient-to-r from-cyan-500 to-purple-600 text-white hover:from-cyan-400 hover:to-purple-500 shadow-lg shadow-cyan-500/25"
-              : "bg-white/10 text-gray-600 cursor-not-allowed"
+            starting
+              ? "bg-gradient-to-r from-cyan-500/60 to-purple-600/60 text-white/80 cursor-wait"
+              : selectedNode
+                ? "bg-gradient-to-r from-cyan-500 to-purple-600 text-white hover:from-cyan-400 hover:to-purple-500 shadow-lg shadow-cyan-500/25"
+                : "bg-white/10 text-gray-600 cursor-not-allowed"
           }`}
         >
-          {selectedNode ? "Start! ⚡" : "Select a topic first"}
+          {starting
+            ? "Starting... ⏳"
+            : selectedNode
+              ? "Start! ⚡"
+              : "Select a topic first"}
         </button>
       </div>
     </div>

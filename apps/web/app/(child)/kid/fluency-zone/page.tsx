@@ -68,7 +68,9 @@ function FluencyZoneContent() {
             timeLimitSeconds,
           }),
         });
-        const data = await res.json();
+        const text = await res.text();
+        let data: any;
+        try { data = JSON.parse(text); } catch { throw new Error(`Server error (${res.status})`); }
         if (!res.ok) throw new Error(data.error || `API error ${res.status}`);
 
         setSession({

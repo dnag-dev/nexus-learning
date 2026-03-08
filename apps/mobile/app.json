@@ -25,7 +25,19 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#060d1f"
       },
-      "package": "com.aautilearn.app"
+      "package": "com.aautilearn.app",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "aautilearn"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "bundler": "metro",

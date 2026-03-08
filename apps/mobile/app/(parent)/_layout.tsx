@@ -1,28 +1,34 @@
+/**
+ * Parent tab layout — bottom navigation for the parent experience.
+ *
+ * Tabs: Overview, Activity, Reports, Settings
+ */
+
 import { Tabs } from "expo-router";
-import { useColorScheme, Text } from "react-native";
+import { Text } from "react-native";
+import { useTheme } from "../../lib/theme";
 
 export default function ParentTabLayout() {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const { colors } = useTheme();
 
   return (
     <Tabs
       screenOptions={{
         headerStyle: {
-          backgroundColor: isDark ? "#060d1f" : "#F8F9FA",
+          backgroundColor: colors.background,
         },
-        headerTintColor: isDark ? "#06b6d4" : "#00CEC9",
+        headerTintColor: colors.accent,
         headerTitleStyle: { fontWeight: "bold" },
         headerShadowVisible: false,
         tabBarStyle: {
-          backgroundColor: isDark ? "#0c1628" : "#FFFFFF",
-          borderTopColor: isDark ? "rgba(255,255,255,0.06)" : "#E2E8F0",
+          backgroundColor: colors.tabBar,
+          borderTopColor: colors.tabBarBorder,
           borderTopWidth: 1,
           paddingTop: 4,
           height: 85,
         },
-        tabBarActiveTintColor: isDark ? "#06b6d4" : "#00CEC9",
-        tabBarInactiveTintColor: isDark ? "#64748b" : "#B2BEC3",
+        tabBarActiveTintColor: colors.accent,
+        tabBarInactiveTintColor: colors.textMuted,
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: "600",
@@ -36,7 +42,9 @@ export default function ParentTabLayout() {
           title: "Overview",
           headerTitle: "Parent Dashboard",
           tabBarIcon: ({ focused }) => (
-            <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.5 }}>📊</Text>
+            <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.5 }}>
+              {"\uD83D\uDCCA"}
+            </Text>
           ),
         }}
       />
@@ -45,7 +53,9 @@ export default function ParentTabLayout() {
         options={{
           title: "Activity",
           tabBarIcon: ({ focused }) => (
-            <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.5 }}>📋</Text>
+            <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.5 }}>
+              {"\uD83D\uDCCB"}
+            </Text>
           ),
         }}
       />
@@ -54,7 +64,9 @@ export default function ParentTabLayout() {
         options={{
           title: "Reports",
           tabBarIcon: ({ focused }) => (
-            <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.5 }}>📈</Text>
+            <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.5 }}>
+              {"\uD83D\uDCC8"}
+            </Text>
           ),
         }}
       />
@@ -63,7 +75,9 @@ export default function ParentTabLayout() {
         options={{
           title: "Settings",
           tabBarIcon: ({ focused }) => (
-            <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.5 }}>⚙️</Text>
+            <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.5 }}>
+              {"\u2699\uFE0F"}
+            </Text>
           ),
         }}
       />

@@ -64,8 +64,10 @@ interface NextConceptData {
 }
 
 export default function Tier2Home() {
-  const { studentId, displayName, avatarPersonaId, level, xp } = useChild();
+  const { studentId, displayName, avatarPersonaId, level, xp: contextXp } = useChild();
   const [gam, setGam] = useState<GamData | null>(null);
+  // Single source of truth: prefer fresh gamification XP over stale context value
+  const xp = gam?.xp ?? contextXp;
   const [nextConcept, setNextConcept] = useState<NextConceptData | null>(null);
   const [loading, setLoading] = useState(true);
   const [subject, setSubject] = useState<Subject>("MATH");

@@ -7,8 +7,8 @@
  * and renders a child-friendly dark top bar.
  */
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { ChildContext } from "@/lib/child-context";
 
 interface ChildProfile {
@@ -45,6 +45,7 @@ export default function ChildLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [profile, setProfile] = useState<ChildProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -64,6 +65,25 @@ export default function ChildLayout({
         setLoading(false);
       });
   }, [router]);
+
+  // Refresh profile from server — call after XP-changing actions to keep header in sync
+  const refreshProfile = useCallback(() => {
+    fetch("/api/auth/child-session")
+      .then((res) => {
+        if (!res.ok) return;
+        return res.json();
+      })
+      .then((data) => {
+        if (data) setProfile(data);
+      })
+      .catch(() => { /* non-critical */ });
+  }, []);
+
+  // Auto-refresh XP/level when navigating back to kid pages (e.g. after completing a session)
+  useEffect(() => {
+    if (profile) refreshProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
   const handleLogout = async () => {
     await fetch("/api/auth/child-logout", { method: "POST" });
@@ -88,7 +108,7 @@ export default function ChildLayout({
   const emoji = PERSONA_EMOJI[profile.avatarPersonaId] ?? "⭐";
 
   return (
-    <ChildContext.Provider value={profile}>
+    <ChildContext.Provider value={{ ...profile, refreshProfile }}>
       <div className="min-h-screen bg-[#0D1B2A]">
         {/* Top Bar */}
         <header className="bg-[#0F1B2D]/90 backdrop-blur-sm border-b border-white/5 px-4 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-50">

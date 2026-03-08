@@ -6,11 +6,14 @@ interface ChildContextValue {
   studentId: string;
   displayName: string;
   avatarPersonaId: string;
+  // Single source of truth for XP — always read from here, not from session sums
   xp: number;
   level: number;
   gradeLevel: string;
   ageGroup: string;
   firstLoginComplete: boolean;
+  /** Call after XP-changing actions (session complete, etc.) to refresh header values */
+  refreshProfile: () => void;
 }
 
 export const ChildContext = createContext<ChildContextValue>({
@@ -22,6 +25,7 @@ export const ChildContext = createContext<ChildContextValue>({
   gradeLevel: "G3",
   ageGroup: "MID_8_10",
   firstLoginComplete: true,
+  refreshProfile: () => {},
 });
 
 export function useChild() {

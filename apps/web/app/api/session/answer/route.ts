@@ -34,7 +34,7 @@ import {
   processNodeMastered,
 } from "@/lib/gamification/gamification-service";
 import { startPrefetch } from "@/lib/session/question-prefetch";
-import { evaluateTrueMastery } from "@/lib/session/mastery-gate";
+import { evaluateTrueMastery, hasEnoughResponsesForGate } from "@/lib/session/mastery-gate";
 import { updateNexusScore } from "@/lib/session/nexus-score";
 import { logConceptMastered, logQuestionAnswered, logGradeCompleted } from "@/lib/activity-log";
 import { checkGradeCompletion } from "@/lib/session/grade-progression";
@@ -617,7 +617,84 @@ export async function POST(request: Request) {
     // ═══════════════════════════════════════════════════════════
     if (currentStep === 5) {
       if (isCorrect) {
-        // ═══ Run True Mastery Gate ═══
+        // ═══ Over-drilling guard ═══
+        // If BKT >= threshold AND student has answered minQuestions, check if we
+        // have enough data for the mastery gate. If not, trust BKT and advance.
+        // This prevents the infinite Step 5→Step 2 loop that happens when the
+        // mastery gate requires 10 responses but the student only has 5-7.
+        const totalQsForGuard = session.questionsAnswered + 1;
+        if (
+          updatedMastery.bktProbability >= BKT_PARAMS.masteryThreshold &&
+          totalQsForGuard >= BKT_PARAMS.minQuestions
+        ) {
+          const hasEnoughData = await hasEnoughResponsesForGate(session.studentId, node.id);
+          if (!hasEnoughData) {
+            // BKT says mastered + not enough data for gate → trust BKT, celebrate
+            const result = await transitionState(
+              sessionId, "CELEBRATING", "MASTERY_ACHIEVED",
+              { nodeCode: node.nodeCode, bktProbability: updatedMastery.bktProbability }
+            );
+
+            try {
+              await prisma.masteryScore.update({
+                where: { studentId_nodeId: { studentId: session.studentId, nodeId: node.id } },
+                data: { trulyMastered: true, fluencyDrillMode: false },
+              });
+            } catch { /* non-critical */ }
+
+            logConceptMastered(session.studentId, node.nodeCode, node.title, updatedMastery.bktProbability);
+
+            let gradeCompletion = null;
+            try {
+              const subj = session.subject ?? "MATH";
+              gradeCompletion = await checkGradeCompletion(session.studentId, subj, node.gradeLevel);
+              if (gradeCompletion.isGradeComplete) {
+                logGradeCompleted(session.studentId, node.gradeLevel, subj, gradeCompletion.totalNodes);
+              }
+            } catch { /* non-critical */ }
+
+            let masteryGamification = null;
+            try { masteryGamification = await processNodeMastered(session.studentId, node.nodeCode, node.title); }
+            catch { /* non-critical */ }
+
+            let nextNode = null;
+            try { nextNode = await recommendNextNode(session.studentId, node.nodeCode); }
+            catch { /* non-critical */ }
+
+            const prompt = celebratingPrompt.buildPrompt({ ...promptParams, nextNodeTitle: nextNode?.title });
+            const claudeResponse = await callClaude(prompt);
+            const celebration = claudeResponse
+              ? celebratingPrompt.parseResponse(claudeResponse)
+              : {
+                  celebration: `Amazing! You've mastered ${node.title}!`,
+                  funFact: "Learning is an adventure!",
+                  nextTeaser: nextNode ? `Up next: ${nextNode.title}!` : "You've completed this learning path!",
+                };
+
+            return NextResponse.json({
+              state: result.newState,
+              recommendedAction: result.recommendedAction,
+              learningStep: 5,
+              isCorrect: true,
+              mastery: formatMastery(updatedMastery),
+              nexusScore: nexusBreakdown,
+              celebration,
+              nextNode,
+              gamification: masteryGamification ?? gamificationXP,
+              ...(gradeCompletion?.isGradeComplete ? {
+                gradeCompletion: {
+                  grade: gradeCompletion.grade,
+                  subject: gradeCompletion.subject,
+                  totalNodes: gradeCompletion.totalNodes,
+                  nextGrade: gradeCompletion.nextGrade,
+                  upcomingTopics: gradeCompletion.upcomingTopics,
+                },
+              } : {}),
+            });
+          }
+        }
+
+        // ═══ Run True Mastery Gate (enough data exists) ═══
         let masteryGate = null;
         try {
           masteryGate = await evaluateTrueMastery(session.studentId, node.id);

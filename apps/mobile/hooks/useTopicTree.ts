@@ -6,6 +6,32 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { getMasteryMap } from "@aauti/api-client";
 import type { MasteryMapNode } from "@aauti/api-client";
 
+// ─── Subject classification ───
+// The API returns domain-level subjects (COUNTING, ALGEBRA, GRAMMAR, etc.)
+// We map them to the two top-level categories: math vs english.
+
+const ENGLISH_SUBJECTS = new Set([
+  "GRAMMAR",
+  "READING",
+  "WRITING",
+  "VOCABULARY",
+  "LITERATURE",
+  "PHONICS",
+  "SPELLING",
+  "COMPREHENSION",
+  "LANGUAGE_ARTS",
+  "ELA",
+  "ENGLISH",
+]);
+
+function isMathSubject(subject: string): boolean {
+  return !ENGLISH_SUBJECTS.has(subject.toUpperCase());
+}
+
+function isEnglishSubject(subject: string): boolean {
+  return ENGLISH_SUBJECTS.has(subject.toUpperCase());
+}
+
 // ─── Grade ordering ───
 
 const GRADE_ORDER = [
@@ -71,8 +97,8 @@ export interface TopicTreeData {
 // ─── Mastery level → state mapping ───
 
 function toNodeState(node: MasteryMapNode): NodeState {
-  if (node.isLocked) return "locked";
-  const p = node.bktProbability;
+  // API doesn't return isLocked — infer from prerequisites & mastery
+  const p = node.bktProbability ?? 0;
   if (p >= 0.85) return "mastered";
   if (p > 0) return "in_progress";
   return "available";
@@ -110,9 +136,10 @@ export function useTopicTree(studentId: string | null): TopicTreeData {
 
   // Filter by subject and group by grade
   const { grades, totalNodes, totalMastered } = useMemo(() => {
-    const subjectFilter = subject.toUpperCase();
+    const filterFn =
+      subject === "math" ? isMathSubject : isEnglishSubject;
     const filtered = rawNodes.filter(
-      (n) => !n.subject || n.subject.toUpperCase() === subjectFilter
+      (n) => !n.subject || filterFn(n.subject)
     );
 
     // Group by grade
@@ -123,13 +150,13 @@ export function useTopicTree(studentId: string | null): TopicTreeData {
       const topicNode: TopicNode = {
         id: node.id,
         nodeCode: node.nodeCode,
-        title: node.title,
+        title: (node as any).name || node.title || node.nodeCode,
         gradeLevel: grade,
-        domain: node.domain,
+        domain: node.domain || node.subject,
         subject: node.subject,
         state: toNodeState(node),
-        masteryPercent: Math.round(node.bktProbability * 100),
-        prerequisiteNames: node.prerequisiteNames ?? [],
+        masteryPercent: Math.round((node.bktProbability ?? 0) * 100),
+        prerequisiteNames: (node as any).prerequisites ?? node.prerequisiteNames ?? [],
       };
 
       const existing = gradeMap.get(grade);

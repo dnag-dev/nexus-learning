@@ -79,7 +79,7 @@ export function Tier2Dashboard({
       {/* Today's Mission */}
       {nextConcept && (
         <Pressable
-          onPress={() => router.push(`/(kid)/session/${nextConcept.nodeId}`)}
+          onPress={() => router.push(`/(kid)/session/${nextConcept.nodeCode || nextConcept.nodeId}`)}
           style={{ marginTop: 16 }}
         >
           <Card padding="lg">

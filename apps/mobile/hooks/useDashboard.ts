@@ -6,8 +6,23 @@ import { useState, useEffect, useCallback } from "react";
 import {
   getGamification,
   getNextConcept,
-  getTopicTree,
+  getMasteryMap,
 } from "@aauti/api-client";
+
+// English subjects for categorization
+const ENGLISH_SUBJECTS = new Set([
+  "GRAMMAR",
+  "READING",
+  "WRITING",
+  "VOCABULARY",
+  "LITERATURE",
+  "PHONICS",
+  "SPELLING",
+  "COMPREHENSION",
+  "LANGUAGE_ARTS",
+  "ELA",
+  "ENGLISH",
+]);
 
 interface DashboardData {
   // Gamification
@@ -60,40 +75,64 @@ export function useDashboard(studentId: string | null): DashboardData {
     try {
       const apiSubject = subject === "math" ? "MATH" : "ENGLISH";
 
-      // Fetch gamification, next concept, and topic tree in parallel
-      const [gamResult, conceptResult, treeResult] = await Promise.allSettled([
+      // Fetch gamification, next concept, and mastery map in parallel
+      const [gamResult, conceptResult, mapResult] = await Promise.allSettled([
         getGamification(studentId),
         getNextConcept(studentId, apiSubject as "MATH" | "ENGLISH"),
-        getTopicTree(studentId),
+        getMasteryMap(studentId),
       ]);
 
       if (gamResult.status === "fulfilled") {
         const g = gamResult.value;
-        setXp(g.xp);
-        setLevel(g.level);
-        setStreak(g.streak?.current ?? 0);
-        setLevelTitle(g.title || "Star Seeker");
+        setXp(g.xp ?? 0);
+        setLevel(g.level ?? 1);
+        // Streak can be an object or a number
+        const s = g.streak as any;
+        setStreak(typeof s === "object" ? s?.current ?? 0 : s ?? 0);
+        setLevelTitle((g as any).title || "Star Seeker");
       }
+
+      const mapNodes =
+        mapResult.status === "fulfilled"
+          ? ((mapResult.value as any).nodes ?? [])
+          : [];
 
       if (conceptResult.status === "fulfilled") {
-        const c = conceptResult.value;
-        setNextConcept(
-          c.nodeId
-            ? {
-                nodeId: c.nodeId,
-                nodeCode: c.nodeCode,
-                title: c.title,
-                gradeLevel: c.gradeLevel,
-                domain: c.domain,
-              }
-            : null
-        );
+        const c = conceptResult.value as any;
+        if (c.title) {
+          // next-concept API doesn't return nodeId/nodeCode — look it up from mastery map
+          const match = mapNodes.find(
+            (n: any) => n.name === c.title || n.nodeCode === c.nodeCode
+          );
+          setNextConcept({
+            nodeId: match?.id || c.nodeId || "",
+            nodeCode: match?.nodeCode || c.nodeCode || "",
+            title: c.title,
+            gradeLevel: match?.gradeLevel || c.gradeLevel || "",
+            domain: match?.subject || c.domain || c.goalName || "",
+          });
+        } else {
+          setNextConcept(null);
+        }
       }
 
-      if (treeResult.status === "fulfilled") {
-        const t = treeResult.value;
-        setMasteryCount(t.masteredCount ?? 0);
-        setTotalCount(t.totalNodes ?? 0);
+      if (mapResult.status === "fulfilled") {
+        const nodes = mapNodes;
+        // Filter by selected subject
+        const isTargetSubject =
+          subject === "english"
+            ? (s: string) => ENGLISH_SUBJECTS.has((s || "").toUpperCase())
+            : (s: string) => !ENGLISH_SUBJECTS.has((s || "").toUpperCase());
+
+        const subjectNodes = nodes.filter((n: any) =>
+          isTargetSubject(n.subject)
+        );
+        const mastered = subjectNodes.filter(
+          (n: any) => (n.bktProbability ?? 0) >= 0.85
+        ).length;
+
+        setMasteryCount(mastered);
+        setTotalCount(subjectNodes.length);
       }
     } catch (err) {
       setError(

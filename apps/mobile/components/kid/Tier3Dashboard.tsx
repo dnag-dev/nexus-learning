@@ -155,7 +155,7 @@ export function Tier3Dashboard({
       {/* Continue learning */}
       {nextConcept && (
         <Pressable
-          onPress={() => router.push(`/(kid)/session/${nextConcept.nodeId}`)}
+          onPress={() => router.push(`/(kid)/session/${nextConcept.nodeCode || nextConcept.nodeId}`)}
           style={{ marginTop: 16 }}
         >
           <Card>

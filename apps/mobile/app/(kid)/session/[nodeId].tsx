@@ -85,6 +85,7 @@ export default function SessionScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodeId, profile?.studentId]);
 
+
   // ─── Animate confirm button when option selected ───
   useEffect(() => {
     if (selectedOptionId && !isConfirmed) {
@@ -373,102 +374,96 @@ export default function SessionScreen() {
             </View>
 
             {/* Answer Options */}
-            <View style={{ gap: 10, marginBottom: 16 }}>
-              {currentQuestion.options.map((option, index) => {
-                const isSelected = selectedOptionId === option.id;
-                const isCorrectOption =
-                  option.id === currentQuestion.correctAnswer;
+            {currentQuestion.options.map((option, index) => {
+              const isSelected = selectedOptionId === option.id;
+              const isCorrectOption =
+                option.id === currentQuestion.correctAnswer;
 
-                // Determine style based on state
-                let bgColor = colors.surface;
-                let borderColor = colors.border;
-                let labelBg = colors.surfaceAlt;
-                let labelColor = colors.textSecondary;
+              // Determine style based on state
+              let bgColor = colors.surface;
+              let borderColor = colors.border;
+              let labelBg = colors.surfaceAlt;
+              let labelColor = colors.textSecondary;
 
-                if (isConfirmed && isCorrect !== null) {
-                  if (isCorrectOption) {
-                    bgColor = colors.successLight;
-                    borderColor = colors.success;
-                    labelBg = colors.success;
-                    labelColor = "#ffffff";
-                  } else if (isSelected && !isCorrectOption) {
-                    bgColor = colors.errorLight;
-                    borderColor = colors.error;
-                    labelBg = colors.error;
-                    labelColor = "#ffffff";
-                  }
-                } else if (isSelected) {
-                  bgColor = colors.primaryLight;
-                  borderColor = colors.primary;
-                  labelBg = colors.primary;
+              if (isConfirmed && isCorrect !== null) {
+                if (isCorrectOption) {
+                  bgColor = colors.successLight;
+                  borderColor = colors.success;
+                  labelBg = colors.success;
+                  labelColor = "#ffffff";
+                } else if (isSelected && !isCorrectOption) {
+                  bgColor = colors.errorLight;
+                  borderColor = colors.error;
+                  labelBg = colors.error;
                   labelColor = "#ffffff";
                 }
+              } else if (isSelected) {
+                bgColor = colors.primaryLight;
+                borderColor = colors.primary;
+                labelBg = colors.primary;
+                labelColor = "#ffffff";
+              }
 
-                return (
-                  <Pressable
-                    key={option.id}
-                    onPress={() => handleSelectOption(option.id)}
-                    disabled={isConfirmed}
-                    style={({ pressed }) => ({
-                      flexDirection: "row",
+              return (
+                <Pressable
+                  key={option.id}
+                  onPress={() => handleSelectOption(option.id)}
+                  disabled={isConfirmed}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    backgroundColor: bgColor,
+                    borderRadius: 14,
+                    minHeight: 56,
+                    paddingVertical: 14,
+                    paddingHorizontal: 14,
+                    borderWidth: 1.5,
+                    borderColor: borderColor,
+                    marginBottom: 10,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 34,
+                      height: 34,
+                      borderRadius: 17,
+                      backgroundColor: labelBg,
                       alignItems: "center",
-                      backgroundColor: bgColor,
-                      borderRadius: 14,
-                      paddingVertical: 14,
-                      paddingHorizontal: 14,
-                      borderWidth: 1.5,
-                      borderColor: borderColor,
-                      opacity: pressed && !isConfirmed ? 0.85 : 1,
-                    })}
+                      justifyContent: "center",
+                      marginRight: 14,
+                      flexShrink: 0,
+                    }}
                   >
-                    {/* Option label (A, B, C...) */}
-                    <View
-                      style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: 8,
-                        backgroundColor: labelBg,
-                        alignItems: "center",
-                        justifyContent: "center",
-                        marginRight: 12,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontSize: 14,
-                          fontWeight: "700",
-                          color: labelColor,
-                        }}
-                      >
-                        {OPTION_LABELS[index] || String(index + 1)}
-                      </Text>
-                    </View>
-                    {/* Option text */}
                     <Text
                       style={{
-                        flex: 1,
-                        fontSize: 15,
-                        lineHeight: 22,
-                        color: colors.text,
+                        fontSize: 14,
+                        fontWeight: "700",
+                        color: labelColor,
                       }}
                     >
-                      {option.text}
+                      {OPTION_LABELS[index] || String(index + 1)}
                     </Text>
-                    {/* Correctness indicator after confirm */}
-                    {isConfirmed && isCorrectOption && (
-                      <Text style={{ fontSize: 18, marginLeft: 8 }}>
-                        {"\u2705"}
-                      </Text>
-                    )}
-                    {isConfirmed && isSelected && !isCorrectOption && (
-                      <Text style={{ fontSize: 18, marginLeft: 8 }}>
-                        {"\u274C"}
-                      </Text>
-                    )}
-                  </Pressable>
-                );
-              })}
-            </View>
+                  </View>
+                  <Text
+                    style={{
+                      flex: 1,
+                      fontSize: 16,
+                      lineHeight: 22,
+                      color: colors.text,
+                      fontWeight: "500",
+                    }}
+                  >
+                    {option.text}
+                  </Text>
+                  {isConfirmed && isCorrectOption && (
+                    <Text style={{ fontSize: 20, marginLeft: 8 }}>✅</Text>
+                  )}
+                  {isConfirmed && isSelected && !isCorrectOption && (
+                    <Text style={{ fontSize: 20, marginLeft: 8 }}>❌</Text>
+                  )}
+                </Pressable>
+              );
+            })}
 
             {/* Explanation Sheet (inline, shown after confirm) */}
             {isConfirmed && isCorrect !== null && (

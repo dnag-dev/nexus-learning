@@ -151,7 +151,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     set({ isSubmitting: true, isConfirmed: true });
 
     try {
-      const res = await apiSubmit({
+      const res = (await apiSubmit({
         sessionId,
         selectedOptionId,
         isCorrect: isCorrectLocal,
@@ -162,26 +162,29 @@ export const useSessionStore = create<SessionState>((set, get) => ({
           (o) => o.id === currentQuestion.correctAnswer
         )?.text,
         explanation: currentQuestion.explanation,
-      });
+      })) as any;
 
-      const correct = res.correct;
-      const masteryPct = Math.round(
-        (res.mastery?.bktProbability ?? 0) * 100
-      );
+      // API returns isCorrect (not correct), mastery.probability (not bktProbability)
+      const correct = res.isCorrect ?? res.correct ?? isCorrectLocal;
+      const rawMastery = res.mastery?.probability ?? res.mastery?.bktProbability ?? 0;
+      // API may return 0-1 (probability) or 0-100 (percentage) — normalize to 0-100
+      const masteryPct = Math.min(100, Math.round(rawMastery > 1 ? rawMastery : rawMastery * 100));
       const mastered =
-        res.nextAction === "mastered" || res.celebration != null;
+        res.state === "MASTERED" || res.nextAction === "mastered" || res.celebration != null;
+      const feedbackMsg = res.feedback?.message ?? res.message ?? null;
+      const xp = res.gamification?.xpAwarded ?? res.gamification?.newXP ?? res.sessionXP ?? 0;
 
       set((state) => ({
         isCorrect: correct,
-        explanation: currentQuestion.explanation || res.message || null,
+        explanation: currentQuestion.explanation || feedbackMsg,
         masteryPercent: masteryPct,
-        learningStep: Math.min(
+        learningStep: res.learningStep ?? Math.min(
           4,
           correct ? state.learningStep + 1 : state.learningStep
         ),
         questionsAnswered: state.questionsAnswered + 1,
         correctStreak: correct ? state.correctStreak + 1 : 0,
-        xpEarned: res.sessionXP ?? state.xpEarned,
+        xpEarned: xp > state.xpEarned ? xp : state.xpEarned,
         isMastered: mastered,
         showCelebration: mastered,
         isSubmitting: false,

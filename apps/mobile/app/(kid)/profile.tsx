@@ -1,5 +1,6 @@
 import { View, Text, Pressable, useColorScheme } from "react-native";
 import { router } from "expo-router";
+import { useAuthStore } from "../../store/auth";
 
 /**
  * Kid Profile — shows XP, level, badges, streak.
@@ -8,6 +9,7 @@ import { router } from "expo-router";
 export default function ProfileScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
+  const logout = useAuthStore((s) => s.logout);
 
   return (
     <View
@@ -38,7 +40,10 @@ export default function ProfileScreen() {
       </Text>
 
       <Pressable
-        onPress={() => router.replace("/")}
+        onPress={() => {
+          logout();
+          router.replace("/");
+        }}
         className="px-6 py-3 rounded-xl active:opacity-80"
         style={{
           backgroundColor: isDark

@@ -158,6 +158,7 @@ export default function SessionScreen() {
   }, [advanceToNext]);
 
   const handleClose = useCallback(() => {
+    if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
     if (profile?.studentId && sessionId) {
       endSessionAction(profile.studentId);
     }

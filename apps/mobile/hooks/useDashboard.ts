@@ -9,19 +9,10 @@ import {
   getMasteryMap,
 } from "@aauti/api-client";
 
-// English subjects for categorization
-const ENGLISH_SUBJECTS = new Set([
-  "GRAMMAR",
-  "READING",
-  "WRITING",
-  "VOCABULARY",
-  "LITERATURE",
-  "PHONICS",
-  "SPELLING",
-  "COMPREHENSION",
-  "LANGUAGE_ARTS",
-  "ELA",
-  "ENGLISH",
+// English domain names — used only as fallback when node.subject isn't the enum
+const ENGLISH_DOMAINS = new Set([
+  "GRAMMAR", "READING", "WRITING", "VOCABULARY", "LITERATURE",
+  "PHONICS", "SPELLING", "COMPREHENSION", "LANGUAGE_ARTS", "ELA", "ENGLISH",
 ]);
 
 interface DashboardData {
@@ -118,17 +109,19 @@ export function useDashboard(studentId: string | null): DashboardData {
 
       if (mapResult.status === "fulfilled") {
         const nodes = mapNodes;
-        // Filter by selected subject
-        const isTargetSubject =
-          subject === "english"
-            ? (s: string) => ENGLISH_SUBJECTS.has((s || "").toUpperCase())
-            : (s: string) => !ENGLISH_SUBJECTS.has((s || "").toUpperCase());
-
-        const subjectNodes = nodes.filter((n: any) =>
-          isTargetSubject(n.subject)
-        );
+        // Filter by selected subject — API returns subject as enum (MATH/ENGLISH)
+        // or as domain name (COUNTING, GRAMMAR, etc.) depending on endpoint
+        const targetSubject = subject === "english" ? "ENGLISH" : "MATH";
+        const subjectNodes = nodes.filter((n: any) => {
+          const subj = (n.subject || "").toUpperCase();
+          // Direct enum match first
+          if (subj === "MATH" || subj === "ENGLISH") return subj === targetSubject;
+          // Fallback: classify domain names
+          const isEnglish = ENGLISH_DOMAINS.has(subj);
+          return subject === "english" ? isEnglish : !isEnglish;
+        });
         const mastered = subjectNodes.filter(
-          (n: any) => (n.bktProbability ?? 0) >= 0.85
+          (n: any) => (n.probability ?? n.bktProbability ?? 0) >= 0.85
         ).length;
 
         setMasteryCount(mastered);

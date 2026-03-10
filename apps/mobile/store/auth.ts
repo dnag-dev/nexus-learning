@@ -142,14 +142,16 @@ export const useAuthStore = create<AuthState>((set, get) => {
     },
 
     logout: () => {
-      SecureStore.deleteItemAsync(TOKEN_KEY);
-      SecureStore.deleteItemAsync(PROFILE_KEY);
+      // Clear state immediately so UI updates
       set({
         token: null,
         profile: null,
         isParent: false,
         error: null,
       });
+      // Clean up stored credentials (fire-and-forget is fine here since state is already cleared)
+      SecureStore.deleteItemAsync(TOKEN_KEY).catch(() => {});
+      SecureStore.deleteItemAsync(PROFILE_KEY).catch(() => {});
     },
 
     clearError: () => set({ error: null }),

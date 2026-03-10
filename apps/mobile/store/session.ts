@@ -208,23 +208,33 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       isConfirmed: false,
       isCorrect: null,
       explanation: null,
+      showCelebration: false,
     });
 
     try {
       const q = await apiNextQ(sessionId);
 
+      // If no question returned, session is over — show celebration
+      if (!q.question) {
+        set({
+          currentQuestion: null,
+          isLoading: false,
+          isMastered: true,
+          showCelebration: true,
+        });
+        return;
+      }
+
       set({
-        currentQuestion: q.question
-          ? {
-              questionText: q.question.questionText,
-              options: q.question.options.map((o) => ({
-                id: o.id,
-                text: o.text,
-              })),
-              correctAnswer: q.question.correctAnswer,
-              explanation: q.question.explanation,
-            }
-          : null,
+        currentQuestion: {
+          questionText: q.question.questionText,
+          options: q.question.options.map((o) => ({
+            id: o.id,
+            text: o.text,
+          })),
+          correctAnswer: q.question.correctAnswer,
+          explanation: q.question.explanation,
+        },
         learningStep: q.learningStep ?? get().learningStep,
         isLoading: false,
       });

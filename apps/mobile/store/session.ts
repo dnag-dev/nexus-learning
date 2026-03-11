@@ -106,7 +106,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
         nodeTitle: res.node?.title || nodeCode,
         nodeCode: res.node?.nodeCode || nodeCode,
         subject: res.subject || "",
-        isLoading: false,
+        // Keep isLoading: true until the first question is fetched
       });
 
       // Immediately fetch first question
@@ -124,6 +124,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
             }
           : null,
         learningStep: q.learningStep ?? 0,
+        isLoading: false,
       });
     } catch (err) {
       set({

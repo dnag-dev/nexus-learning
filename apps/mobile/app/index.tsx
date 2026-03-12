@@ -1,10 +1,21 @@
 import { View, Text, Pressable, useColorScheme } from "react-native";
-import { Link } from "expo-router";
+import { Link, Redirect } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useAuthStore } from "../store/auth";
 
 export default function LandingScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
+  const profile = useAuthStore((s) => s.profile);
+  const isParent = useAuthStore((s) => s.isParent);
+
+  // Auto-redirect authenticated users to their dashboard
+  if (profile) {
+    const href = isParent
+      ? "/(parent)/dashboard"
+      : "/(kid)/dashboard";
+    return <Redirect href={href} />;
+  }
 
   return (
     <SafeAreaView

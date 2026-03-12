@@ -441,7 +441,7 @@ export default function FluencyZoneScreen() {
                         {Math.round(topic.personalBestQPM)}
                       </Text>
                       <Text style={{ fontSize: 9, color: colors.textMuted }}>
-                        Q/min PB
+                        Best speed
                       </Text>
                     </View>
                   )}

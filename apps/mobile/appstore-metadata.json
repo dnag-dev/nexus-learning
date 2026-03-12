@@ -1,0 +1,121 @@
+{
+  "appStoreConnect": {
+    "appInformation": {
+      "name": "Aauti Learn",
+      "subtitle": "AI Tutor for K-12 Math & ELA",
+      "bundleId": "com.aautilearn.app",
+      "sku": "com.aautilearn.app",
+      "primaryLocale": "en-US",
+      "primaryCategory": "Education",
+      "secondaryCategory": "Kids",
+      "contentRightsDeclaration": "doesNotContainThirdPartyContent"
+    },
+    "versionInformation": {
+      "version": "1.0.0",
+      "copyright": "2026 Aauti Learn",
+      "buildNumber": "1"
+    },
+    "localizations": {
+      "en-US": {
+        "name": "Aauti Learn",
+        "subtitle": "AI Tutor for K-12 Math & ELA",
+        "description": "Aauti Learn is the AI-powered tutoring app that meets every student exactly where they are. Designed for learners in Kindergarten through Grade 12, Aauti Learn delivers personalized math and English language arts instruction that adapts in real time to your child's unique strengths and growth areas.\n\nSMART ADAPTIVE LEARNING\nAt the heart of Aauti Learn is a Bayesian Knowledge Tracing mastery model that continuously evaluates each student's understanding. Every question is selected at precisely the right difficulty level -- challenging enough to promote growth, yet achievable enough to build confidence. As your child answers, the AI recalibrates instantly, ensuring they never feel stuck or bored.\n\nCOMPLETE K-12 CURRICULUM\nBrowse a comprehensive topic tree organized by grade level from Kindergarten through Grade 12. Math topics span counting and number sense through algebra, geometry, calculus, and beyond. English language arts covers phonics, reading comprehension, grammar, vocabulary, and writing skills. Every concept is mapped to a clear learning progression so students always know what comes next.\n\nINTERACTIVE LEARNING SESSIONS\nEach session guides students through a focused set of questions with step-by-step progress tracking. Students see exactly how far they have come and how much remains, keeping motivation high and sessions manageable.\n\nFLUENCY ZONE\nBuild speed and automaticity with timed fluency drills. A countdown timer challenges students to answer quickly while maintaining accuracy. Perfect for mastering math facts, sight words, and other foundational skills that benefit from rapid recall.\n\nGAMIFICATION THAT MOTIVATES\nLearning feels like play with a full gamification system. Students earn XP for every correct answer, level up as they progress, unlock badge achievements for milestones, and maintain daily streaks that reward consistent practice. The reward system is designed to celebrate effort and persistence, not just perfection.\n\nMASTERY TRACKING\nDetailed mastery tracking shows exactly where each student stands on every concept. Parents and students can see at a glance which topics are mastered, which are in progress, and which are ready to explore. Progress is always visible and always encouraging.\n\nDESIGNED FOR KIDS AND FAMILIES\nSafety and simplicity come first. Children log in with an easy-to-remember PIN created by a parent. There are no ads, no social features, and no distractions. The interface is clean, colorful, and intuitive with beautiful animations and satisfying haptic feedback that makes every interaction feel polished.\n\nDARK MODE\nStudy comfortably any time of day with full dark mode support that is easy on young eyes during evening study sessions.\n\nWHY PARENTS CHOOSE AAUTI LEARN\n- Truly adaptive: every session is personalized, not one-size-fits-all\n- Covers both math and English language arts in one app\n- Safe, ad-free environment designed specifically for children\n- Tracks mastery so you can see real academic progress\n- Motivating gamification keeps kids coming back to learn\n- Works for every grade from Kindergarten through Grade 12\n\nDownload Aauti Learn today and give your child a personal AI tutor that grows with them.",
+        "keywords": "kids learning,math tutor,AI tutor,K-12,adaptive learning,education,ELA,reading,gamified,mastery",
+        "promotionalText": "Give your child a personal AI tutor! Adaptive K-12 math and English lessons that adjust to their level in real time. Earn XP, badges, and streaks.",
+        "whatsNew": "Welcome to Aauti Learn v1.0.0! This initial release includes:\n- AI-powered adaptive learning for K-12 math and English\n- Personalized question difficulty with mastery tracking\n- Full topic tree from Kindergarten through Grade 12\n- Fluency Zone speed drills with countdown timer\n- XP, leveling, badges, and streak tracking\n- Kid-friendly PIN login\n- Dark mode support\n- Beautiful animations and haptic feedback"
+      }
+    },
+    "urls": {
+      "supportUrl": "https://nexus-learning-dnag.vercel.app",
+      "marketingUrl": "https://nexus-learning-dnag.vercel.app",
+      "privacyPolicyUrl": "https://nexus-learning-dnag.vercel.app/privacy"
+    },
+    "pricing": {
+      "priceSchedule": "free",
+      "availableInAllTerritories": true
+    },
+    "ageRating": {
+      "rating": "4+",
+      "kidsAgeBand": "ages-6-8",
+      "declarations": {
+        "madeForKids": true,
+        "cartoonOrFantasyViolence": false,
+        "realisticViolence": false,
+        "prolongedGraphicOrSadisticRealisticViolence": false,
+        "profanityOrCrudeHumor": false,
+        "matureOrSuggestiveThemes": false,
+        "horrorOrFearThemes": false,
+        "medicalOrTreatmentInformation": false,
+        "alcoholTobaccoOrDrugUseOrReferences": false,
+        "simulatedGambling": false,
+        "sexualContentOrNudity": false,
+        "explicitSexualContentOrNudity": false,
+        "frequentOrIntenseCartoonOrFantasyViolence": false,
+        "frequentOrIntenseRealisticViolence": false,
+        "frequentOrIntenseSexualContentOrNudity": false,
+        "frequentOrIntenseMatureOrSuggestiveThemes": false,
+        "frequentOrIntenseHorrorOrFearThemes": false,
+        "frequentOrIntenseProfanityOrCrudeHumor": false,
+        "frequentOrIntenseAlcoholTobaccoOrDrugUseOrReferences": false,
+        "frequentOrIntenseSimulatedGambling": false,
+        "contestsOrGambling": false,
+        "unrestrictedWebAccess": false
+      }
+    },
+    "appReviewInformation": {
+      "contactFirstName": "",
+      "contactLastName": "",
+      "contactPhone": "",
+      "contactEmail": "",
+      "demoAccountName": "",
+      "demoAccountPassword": "",
+      "notes": "This is an educational app for K-12 students. A parent account is required to create child profiles. Children log in using a simple PIN code. No account creation is needed within the app review process -- a demo account will be provided."
+    },
+    "appPrivacy": {
+      "dataCollectionPractices": {
+        "collectsData": true,
+        "dataTypes": [
+          {
+            "type": "name",
+            "purpose": "appFunctionality",
+            "linkedToUser": true,
+            "tracking": false
+          },
+          {
+            "type": "emailAddress",
+            "purpose": "appFunctionality",
+            "linkedToUser": true,
+            "tracking": false
+          },
+          {
+            "type": "userId",
+            "purpose": "appFunctionality",
+            "linkedToUser": true,
+            "tracking": false
+          },
+          {
+            "type": "performanceData",
+            "purpose": "appFunctionality",
+            "linkedToUser": true,
+            "tracking": false
+          },
+          {
+            "type": "otherUsageData",
+            "purpose": "appFunctionality",
+            "linkedToUser": true,
+            "tracking": false
+          }
+        ]
+      }
+    },
+    "screenshots": {
+      "note": "Required screenshots must be provided for each device size. Minimum 1, maximum 10 per device.",
+      "requiredDeviceSizes": [
+        "iPhone6.7inch",
+        "iPhone6.5inch",
+        "iPad12.9inchGen2",
+        "iPad12.9inchGen6"
+      ]
+    }
+  }
+}

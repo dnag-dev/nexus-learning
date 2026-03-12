@@ -6,6 +6,7 @@ import { View, ActivityIndicator } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { ThemeProvider, useTheme } from "../lib/theme";
 import { useAuthStore } from "../store/auth";
+import { ErrorBoundary } from "../components/ErrorBoundary";
 
 function AppNavigator() {
   const { colors, isDark } = useTheme();
@@ -62,9 +63,11 @@ function AppNavigator() {
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider>
+      <ErrorBoundary>
+        <ThemeProvider>
         <AppNavigator />
-      </ThemeProvider>
+        </ThemeProvider>
+      </ErrorBoundary>
     </GestureHandlerRootView>
   );
 }

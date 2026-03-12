@@ -18,6 +18,7 @@ import {
   Animated,
   ActivityIndicator,
   Platform,
+  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, router } from "expo-router";
@@ -149,10 +150,20 @@ export default function SessionScreen() {
     [isConfirmed, isSubmitting, selectOption]
   );
 
-  const handleConfirm = useCallback(() => {
-    if (!profile?.studentId) return;
+  const handleConfirm = useCallback(async () => {
+    if (!profile?.studentId) {
+      Alert.alert("Error", "No student profile found. Please log in again.");
+      return;
+    }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    confirmAnswer(profile.studentId);
+    try {
+      await confirmAnswer(profile.studentId);
+    } catch (err) {
+      Alert.alert(
+        "Connection Error",
+        "Could not submit your answer. Please check your internet and try again."
+      );
+    }
   }, [profile?.studentId, confirmAnswer]);
 
   const handleNext = useCallback(() => {
@@ -342,7 +353,7 @@ export default function SessionScreen() {
       {/* ─── Scrollable Content ─── */}
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ padding: 16, paddingBottom: 24 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Loading next question */}
@@ -520,8 +531,8 @@ export default function SessionScreen() {
         <View
           style={{
             paddingHorizontal: 16,
-            paddingTop: 12,
-            paddingBottom: safeBottom + 16,
+            paddingTop: 14,
+            paddingBottom: safeBottom + 24,
             backgroundColor: colors.background,
             borderTopWidth: 1,
             borderTopColor: colors.border,
@@ -532,13 +543,18 @@ export default function SessionScreen() {
             disabled={isSubmitting}
             style={({ pressed }) => ({
               backgroundColor: colors.primary,
-              borderRadius: 14,
-              paddingVertical: 16,
+              borderRadius: 16,
+              paddingVertical: 18,
               alignItems: "center",
               justifyContent: "center",
               flexDirection: "row",
               gap: 8,
               opacity: pressed ? 0.85 : isSubmitting ? 0.6 : 1,
+              shadowColor: colors.primary,
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 6,
             })}
           >
             {isSubmitting ? (
@@ -546,11 +562,11 @@ export default function SessionScreen() {
             ) : (
               <>
                 <Text
-                  style={{ fontSize: 16, fontWeight: "700", color: "#ffffff" }}
+                  style={{ fontSize: 18, fontWeight: "700", color: "#ffffff" }}
                 >
                   Check Answer
                 </Text>
-                <Text style={{ fontSize: 16, color: "#ffffff" }}>
+                <Text style={{ fontSize: 18, color: "#ffffff" }}>
                   {"\u2713"}
                 </Text>
               </>

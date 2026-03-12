@@ -2,22 +2,43 @@
   "expo": {
     "name": "Aauti Learn",
     "slug": "aauti-learn",
-    "version": "0.0.1",
+    "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "aautilearn",
     "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#060d1f"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.aautilearn.app",
+      "buildNumber": "1",
       "infoPlist": {
-        "UIBackgroundModes": []
+        "UIBackgroundModes": [
+          "remote-notification"
+        ],
+        "NSUserTrackingUsageDescription": "This identifier will be used to deliver personalized learning recommendations.",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "privacyManifests": {
+        "NSPrivacyAccessedAPITypes": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": [
+              "CA92.1"
+            ]
+          }
+        ]
+      },
+      "config": {
+        "usesNonExemptEncryption": false
       }
     },
     "android": {
@@ -26,6 +47,7 @@
         "backgroundColor": "#060d1f"
       },
       "package": "com.aautilearn.app",
+      "versionCode": 1,
       "intentFilters": [
         {
           "action": "VIEW",
@@ -35,7 +57,10 @@
               "scheme": "aautilearn"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -58,11 +83,12 @@
     ],
     "extra": {
       "eas": {
-        "projectId": ""
+        "projectId": "09b86f6d-e54e-40a4-86cb-0e246422f6a4"
       },
       "router": {
         "origin": false
       }
-    }
+    },
+    "owner": "dlnagalla"
   }
 }

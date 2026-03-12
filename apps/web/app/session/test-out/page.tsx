@@ -55,7 +55,7 @@ function TestOutContent() {
   const [info, setInfo] = useState<TestOutInfo | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<
-    Array<{ questionIndex: number; selectedAnswer: string; timeMs: number; correct: boolean }>
+    Array<{ questionIndex: number; selectedAnswer: string; timeMs: number; isCorrect: boolean }>
   >([]);
   const [questionStartTime, setQuestionStartTime] = useState(Date.now());
   const [result, setResult] = useState<TestOutResult | null>(null);
@@ -105,7 +105,7 @@ function TestOutContent() {
 
       const newAnswers = [
         ...answers,
-        { questionIndex: currentQuestion, selectedAnswer, timeMs, correct },
+        { questionIndex: currentQuestion, selectedAnswer, timeMs, isCorrect: correct },
       ];
       setAnswers(newAnswers);
 
@@ -125,7 +125,7 @@ function TestOutContent() {
 
   // ─── Submit ───
   const submitResults = async (
-    finalAnswers: Array<{ questionIndex: number; selectedAnswer: string; timeMs: number; correct: boolean }>
+    finalAnswers: Array<{ questionIndex: number; selectedAnswer: string; timeMs: number; isCorrect: boolean }>
   ) => {
     if (!info) return;
     try {
@@ -261,7 +261,7 @@ function TestOutContent() {
             <h2 className="text-white font-medium">{info?.nodeName}</h2>
           </div>
           <div className="text-lg font-bold text-purple-400">
-            {answers.filter((a) => a.correct).length}/{answers.length}
+            {answers.filter((a) => a.isCorrect).length}/{answers.length}
           </div>
         </div>
 
@@ -338,7 +338,7 @@ function TestOutContent() {
             <div className="flex justify-between text-sm">
               <span className="text-gray-400">Accuracy</span>
               <span className="text-white font-medium">
-                {Math.round(result.accuracy * 100)}%
+                {result.accuracy}%
               </span>
             </div>
             {result.passed && (

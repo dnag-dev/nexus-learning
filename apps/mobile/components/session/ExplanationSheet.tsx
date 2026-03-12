@@ -1,5 +1,6 @@
 /**
- * Explanation bottom sheet — shown after answering incorrectly.
+ * Explanation sheet — shown after answering a question.
+ * Shows correct/incorrect feedback with explanation and a prominent Next button.
  */
 
 import { View, Text, Pressable } from "react-native";
@@ -28,7 +29,6 @@ export function ExplanationSheet({
         backgroundColor: isCorrect ? colors.successLight : colors.errorLight,
         borderRadius: 16,
         padding: 20,
-        marginHorizontal: 16,
         marginBottom: 16,
       }}
     >
@@ -53,25 +53,31 @@ export function ExplanationSheet({
             fontSize: 14,
             color: colors.text,
             lineHeight: 22,
-            marginBottom: 16,
+            marginBottom: 20,
           }}
         >
           {explanation}
         </Text>
       )}
 
-      {/* Next button */}
+      {/* Next button — BIG and prominent */}
       <Pressable
         onPress={onNext}
         style={({ pressed }) => ({
           backgroundColor: isCorrect ? colors.success : colors.primary,
-          borderRadius: 12,
-          paddingVertical: 14,
+          borderRadius: 14,
+          paddingVertical: 16,
           alignItems: "center",
+          justifyContent: "center",
           opacity: pressed ? 0.8 : 1,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 3 },
+          shadowOpacity: 0.2,
+          shadowRadius: 6,
+          elevation: 4,
         })}
       >
-        <Text style={{ fontSize: 15, fontWeight: "600", color: "#ffffff" }}>
+        <Text style={{ fontSize: 17, fontWeight: "700", color: "#ffffff" }}>
           Next Question →
         </Text>
       </Pressable>

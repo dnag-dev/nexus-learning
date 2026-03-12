@@ -126,11 +126,11 @@ export default function SessionScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       }
 
-      // Auto-advance for correct answers
-      if (isCorrect && !isMastered) {
+      // Auto-advance: 2.5s for correct, 5s for incorrect
+      if (!isMastered) {
         autoAdvanceTimer.current = setTimeout(() => {
           advanceToNext();
-        }, 2500);
+        }, isCorrect ? 2500 : 5000);
       }
     }
 

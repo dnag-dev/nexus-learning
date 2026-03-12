@@ -25,8 +25,9 @@ import type { ParentOverviewResponse } from "@aauti/api-client";
 export default function ParentDashboardScreen() {
   const { colors } = useTheme();
 
-  // For now we use a mock parent ID — real auth in future
-  const parentId = "demo-parent";
+  // Parent auth not yet implemented — using demo data
+  // When parent auth is added, parentId will come from auth store
+  const parentId = "demo-parent-1";
 
   const [data, setData] = useState<ParentOverviewResponse | null>(null);
   const [loading, setLoading] = useState(true);

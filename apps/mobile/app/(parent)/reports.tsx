@@ -24,9 +24,9 @@ import { MasteryBar } from "../../components/ui/MasteryBar";
 export default function ReportsScreen() {
   const { colors } = useTheme();
 
-  // Mock IDs for now
-  const parentId = "demo-parent";
-  const childId = "demo-child";
+  // Parent auth not yet implemented — using demo data
+  const parentId = "demo-parent-1";
+  const childId = "demo-student-1";
 
   const [data, setData] = useState<ChildProgressResponse | null>(null);
   const [loading, setLoading] = useState(true);

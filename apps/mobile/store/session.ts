@@ -19,6 +19,21 @@ import type {
   QuestionOption,
 } from "@aauti/api-client";
 
+// API response shape for submitAnswer — loosely typed since format varies
+interface SubmitAnswerResult {
+  isCorrect?: boolean;
+  correct?: boolean;
+  mastery?: { probability?: number; bktProbability?: number };
+  state?: string;
+  nextAction?: string;
+  celebration?: unknown;
+  feedback?: { message?: string };
+  message?: string;
+  gamification?: { xpAwarded?: number; newXP?: number };
+  sessionXP?: number;
+  learningStep?: number;
+}
+
 interface MobileQuestion {
   questionText: string;
   options: Array<{ id: string; text: string }>;
@@ -60,6 +75,9 @@ interface SessionState {
   // XP earned
   xpEarned: number;
 
+  // Timing
+  questionStartTime: number;
+
   // Actions
   start: (studentId: string, nodeCode: string) => Promise<void>;
   selectOption: (optionId: string) => void;
@@ -90,6 +108,7 @@ const initialState = {
   error: null,
   showCelebration: false,
   xpEarned: 0,
+  questionStartTime: Date.now(),
 };
 
 export const useSessionStore = create<SessionState>((set, get) => ({
@@ -124,6 +143,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
             }
           : null,
         learningStep: q.learningStep ?? 0,
+        questionStartTime: Date.now(),
         isLoading: false,
       });
     } catch (err) {
@@ -140,7 +160,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   },
 
   confirmAnswer: async (studentId: string) => {
-    const { sessionId, selectedOptionId, currentQuestion } = get();
+    const { sessionId, selectedOptionId, currentQuestion, questionStartTime } = get();
     if (!sessionId || !selectedOptionId || !currentQuestion) return;
 
     // Determine if correct from local data
@@ -148,22 +168,23 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       (o) => o.id === selectedOptionId
     );
     const isCorrectLocal = selectedOptionId === currentQuestion.correctAnswer;
+    const responseTimeMs = Date.now() - questionStartTime;
 
     set({ isSubmitting: true, isConfirmed: true });
 
     try {
-      const res = (await apiSubmit({
+      const res = await apiSubmit({
         sessionId,
         selectedOptionId,
         isCorrect: isCorrectLocal,
-        responseTimeMs: 0, // TODO: track actual time
+        responseTimeMs,
         questionText: currentQuestion.questionText,
         selectedAnswerText: selectedOption?.text,
         correctAnswerText: currentQuestion.options.find(
           (o) => o.id === currentQuestion.correctAnswer
         )?.text,
         explanation: currentQuestion.explanation,
-      })) as any;
+      }) as SubmitAnswerResult;
 
       // API returns isCorrect (not correct), mastery.probability (not bktProbability)
       const correct = res.isCorrect ?? res.correct ?? isCorrectLocal;
@@ -237,6 +258,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
           explanation: q.question.explanation,
         },
         learningStep: q.learningStep ?? get().learningStep,
+        questionStartTime: Date.now(),
         isLoading: false,
       });
     } catch (err) {

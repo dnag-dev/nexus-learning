@@ -7,8 +7,10 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
+import { useAuthStore } from "../store/auth";
+import { API_URL } from "../lib/api";
 
-// ─── Types (duplicated from web — shared package in future) ───
+// ─── Types ───
 
 interface DiagnosticOption {
   id: string;
@@ -54,9 +56,10 @@ interface PlacementResult {
 
 type Phase = "intro" | "active" | "feedback" | "result";
 
-const API_BASE = "http://localhost:3000";
-
 export default function DiagnosticScreen() {
+  const { profile } = useAuthStore();
+  const studentId = profile?.studentId ?? "";
+
   const [phase, setPhase] = useState<Phase>("intro");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [question, setQuestion] = useState<DiagnosticQuestion | null>(null);
@@ -73,16 +76,14 @@ export default function DiagnosticScreen() {
   const [error, setError] = useState<string | null>(null);
   const questionStartTime = useRef<number>(Date.now());
 
-  const DEMO_STUDENT_ID = "demo-student-1";
-
   const startDiagnostic = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/diagnostic/start`, {
+      const res = await fetch(`${API_URL}/api/diagnostic/start`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ studentId: DEMO_STUDENT_ID }),
+        body: JSON.stringify({ studentId }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -108,7 +109,7 @@ export default function DiagnosticScreen() {
       const responseTimeMs = Date.now() - questionStartTime.current;
       setIsLoading(true);
       try {
-        const res = await fetch(`${API_BASE}/api/diagnostic/answer`, {
+        const res = await fetch(`${API_URL}/api/diagnostic/answer`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

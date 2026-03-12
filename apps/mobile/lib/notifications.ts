@@ -33,7 +33,7 @@ Notifications.setNotificationHandler({
 export async function requestPushToken(): Promise<string | null> {
   // Only works on physical device
   if (!Device.isDevice) {
-    console.log("Push notifications require a physical device");
+    // Push notifications require a physical device — silently skip on simulator
     return null;
   }
 
@@ -48,7 +48,7 @@ export async function requestPushToken(): Promise<string | null> {
   }
 
   if (finalStatus !== "granted") {
-    console.log("Push notification permission denied");
+    // Permission denied — silently return null
     return null;
   }
 

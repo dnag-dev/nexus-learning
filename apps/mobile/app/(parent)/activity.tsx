@@ -47,9 +47,9 @@ function formatTimeAgo(dateStr: string): string {
 export default function ActivityScreen() {
   const { colors } = useTheme();
 
-  // Mock parent/child IDs for now
-  const parentId = "demo-parent";
-  const childId = "demo-child";
+  // Parent auth not yet implemented — using demo data
+  const parentId = "demo-parent-1";
+  const childId = "demo-student-1";
 
   const [activities, setActivities] = useState<ActivityLogEntry[]>([]);
   const [loading, setLoading] = useState(true);

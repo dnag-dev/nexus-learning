@@ -15,6 +15,37 @@ const ENGLISH_DOMAINS = new Set([
   "PHONICS", "SPELLING", "COMPREHENSION", "LANGUAGE_ARTS", "ELA", "ENGLISH",
 ]);
 
+// API response shapes (loosely typed since API formats vary)
+interface GamificationResponse {
+  xp?: number;
+  level?: number;
+  streak?: { current?: number } | number;
+  title?: string;
+}
+
+interface MasteryNode {
+  id?: string;
+  name?: string;
+  nodeCode?: string;
+  subject?: string;
+  gradeLevel?: string;
+  probability?: number;
+  bktProbability?: number;
+}
+
+interface MasteryMapResponse {
+  nodes?: MasteryNode[];
+}
+
+interface NextConceptResponse {
+  title?: string;
+  nodeId?: string;
+  nodeCode?: string;
+  gradeLevel?: string;
+  domain?: string;
+  goalName?: string;
+}
+
 interface DashboardData {
   // Gamification
   xp: number;
@@ -74,26 +105,26 @@ export function useDashboard(studentId: string | null): DashboardData {
       ]);
 
       if (gamResult.status === "fulfilled") {
-        const g = gamResult.value;
+        const g = gamResult.value as GamificationResponse;
         setXp(g.xp ?? 0);
         setLevel(g.level ?? 1);
-        // Streak can be an object or a number
-        const s = g.streak as any;
-        setStreak(typeof s === "object" ? s?.current ?? 0 : s ?? 0);
-        setLevelTitle((g as any).title || "Star Seeker");
+        // Streak can be an object { current, longest } or a plain number
+        const s = g.streak;
+        setStreak(typeof s === "object" ? s?.current ?? 0 : (s as number) ?? 0);
+        setLevelTitle(g.title || "Star Seeker");
       }
 
-      const mapNodes =
+      const mapNodes: MasteryNode[] =
         mapResult.status === "fulfilled"
-          ? ((mapResult.value as any).nodes ?? [])
+          ? ((mapResult.value as MasteryMapResponse).nodes ?? [])
           : [];
 
       if (conceptResult.status === "fulfilled") {
-        const c = conceptResult.value as any;
+        const c = conceptResult.value as NextConceptResponse;
         if (c.title) {
           // next-concept API doesn't return nodeId/nodeCode — look it up from mastery map
           const match = mapNodes.find(
-            (n: any) => n.name === c.title || n.nodeCode === c.nodeCode
+            (n) => n.name === c.title || n.nodeCode === c.nodeCode
           );
           setNextConcept({
             nodeId: match?.id || c.nodeId || "",
@@ -112,7 +143,7 @@ export function useDashboard(studentId: string | null): DashboardData {
         // Filter by selected subject — API returns subject as enum (MATH/ENGLISH)
         // or as domain name (COUNTING, GRAMMAR, etc.) depending on endpoint
         const targetSubject = subject === "english" ? "ENGLISH" : "MATH";
-        const subjectNodes = nodes.filter((n: any) => {
+        const subjectNodes = nodes.filter((n) => {
           const subj = (n.subject || "").toUpperCase();
           // Direct enum match first
           if (subj === "MATH" || subj === "ENGLISH") return subj === targetSubject;
@@ -121,7 +152,7 @@ export function useDashboard(studentId: string | null): DashboardData {
           return subject === "english" ? isEnglish : !isEnglish;
         });
         const mastered = subjectNodes.filter(
-          (n: any) => (n.probability ?? n.bktProbability ?? 0) >= 0.85
+          (n) => (n.probability ?? n.bktProbability ?? 0) >= 0.85
         ).length;
 
         setMasteryCount(mastered);

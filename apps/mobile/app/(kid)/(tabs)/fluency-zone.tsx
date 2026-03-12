@@ -20,8 +20,8 @@ import {
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
 
-import { useTheme } from "../../lib/theme";
-import { useAuthStore } from "../../store/auth";
+import { useTheme } from "../../../lib/theme";
+import { useAuthStore } from "../../../store/auth";
 import {
   getTopics,
   startFluencyZone,
@@ -33,10 +33,10 @@ import type {
   FluencySubmitResponse,
 } from "@aauti/api-client";
 
-import { SubjectTabs } from "../../components/ui/SubjectTabs";
-import { ErrorBanner } from "../../components/ui/ErrorBanner";
-import { FluencyGame } from "../../components/kid/FluencyGame";
-import { FluencyResults } from "../../components/kid/FluencyResults";
+import { SubjectTabs } from "../../../components/ui/SubjectTabs";
+import { ErrorBanner } from "../../../components/ui/ErrorBanner";
+import { FluencyGame } from "../../../components/kid/FluencyGame";
+import { FluencyResults } from "../../../components/kid/FluencyResults";
 
 // ─── Time options ───
 

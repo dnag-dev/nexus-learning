@@ -20,14 +20,14 @@ import {
 import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
 
-import { useTheme } from "../../lib/theme";
-import { useAuthStore } from "../../store/auth";
-import { useTopicTree, type GradeGroup, type TopicNode } from "../../hooks/useTopicTree";
-import { SubjectTabs } from "../../components/ui/SubjectTabs";
-import { TopicCard } from "../../components/ui/TopicCard";
-import { MasteryBar } from "../../components/ui/MasteryBar";
-import { LoadingSpinner } from "../../components/ui/LoadingSpinner";
-import { ErrorBanner } from "../../components/ui/ErrorBanner";
+import { useTheme } from "../../../lib/theme";
+import { useAuthStore } from "../../../store/auth";
+import { useTopicTree, type GradeGroup, type TopicNode } from "../../../hooks/useTopicTree";
+import { SubjectTabs } from "../../../components/ui/SubjectTabs";
+import { TopicCard } from "../../../components/ui/TopicCard";
+import { MasteryBar } from "../../../components/ui/MasteryBar";
+import { LoadingSpinner } from "../../../components/ui/LoadingSpinner";
+import { ErrorBanner } from "../../../components/ui/ErrorBanner";
 
 export default function TopicTreeScreen() {
   const { colors } = useTheme();

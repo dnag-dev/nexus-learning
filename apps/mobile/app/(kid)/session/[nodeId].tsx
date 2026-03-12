@@ -16,9 +16,10 @@ import {
   Pressable,
   ScrollView,
   Animated,
-  SafeAreaView,
   ActivityIndicator,
+  Platform,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, router } from "expo-router";
 import * as Haptics from "expo-haptics";
 
@@ -39,6 +40,9 @@ const OPTION_LABELS = ["A", "B", "C", "D", "E", "F"];
 export default function SessionScreen() {
   const { nodeId } = useLocalSearchParams<{ nodeId: string }>();
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+  // Ensure we always have safe bottom padding (34pt on iPhone X+, 0 on Android)
+  const safeBottom = Math.max(insets.bottom, Platform.OS === "ios" ? 34 : 0);
   const profile = useAuthStore((s) => s.profile);
 
   // Session state
@@ -84,7 +88,6 @@ export default function SessionScreen() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodeId, profile?.studentId]);
-
 
   // ─── Animate confirm button when option selected ───
   useEffect(() => {
@@ -188,7 +191,7 @@ export default function SessionScreen() {
 
   if (isLoading && !currentQuestion) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
         <View
           style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
         >
@@ -203,7 +206,7 @@ export default function SessionScreen() {
             Loading session...
           </Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -211,7 +214,7 @@ export default function SessionScreen() {
 
   if (error) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
         <View
           style={{
             flex: 1,
@@ -250,7 +253,7 @@ export default function SessionScreen() {
             </Text>
           </Pressable>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -273,7 +276,7 @@ export default function SessionScreen() {
       : "transparent";
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+    <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
       {/* Result flash overlay */}
       <Animated.View
         pointerEvents="none"
@@ -339,7 +342,7 @@ export default function SessionScreen() {
       {/* ─── Scrollable Content ─── */}
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 24 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Loading next question */}
@@ -512,21 +515,16 @@ export default function SessionScreen() {
         )}
       </ScrollView>
 
-      {/* ─── Confirm Button (animated slide-up) ─── */}
+      {/* ─── Confirm Button (sticky bottom) ─── */}
       {selectedOptionId && !isConfirmed && (
-        <Animated.View
+        <View
           style={{
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            padding: 16,
-            paddingBottom: 32,
+            paddingHorizontal: 16,
+            paddingTop: 12,
+            paddingBottom: safeBottom + 16,
             backgroundColor: colors.background,
             borderTopWidth: 1,
             borderTopColor: colors.border,
-            transform: [{ translateY: confirmTranslateY }],
-            opacity: confirmOpacity,
           }}
         >
           <Pressable
@@ -558,8 +556,8 @@ export default function SessionScreen() {
               </>
             )}
           </Pressable>
-        </Animated.View>
+        </View>
       )}
-    </SafeAreaView>
+    </View>
   );
 }

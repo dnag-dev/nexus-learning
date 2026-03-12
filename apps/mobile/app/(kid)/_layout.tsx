@@ -1,98 +1,22 @@
 /**
- * Kid tab layout — bottom navigation for the student experience.
+ * Kid layout — Stack navigator wrapping tabs + session screen.
  *
- * Tabs: Home, Topics, Fluency, Profile
- * Session screen hidden from tab bar (accessed via navigation)
+ * The session screen is a full-screen Stack push (outside the tab bar),
+ * so it gets proper safe area handling without tab bar interference.
  */
 
-import { Tabs } from "expo-router";
-import { Text } from "react-native";
-import { useTheme } from "../../lib/theme";
+import { Stack } from "expo-router";
 
-export default function KidTabLayout() {
-  const { colors } = useTheme();
-
+export default function KidLayout() {
   return (
-    <Tabs
-      screenOptions={{
-        headerStyle: {
-          backgroundColor: colors.background,
-        },
-        headerTintColor: colors.primary,
-        headerTitleStyle: { fontWeight: "bold" },
-        headerShadowVisible: false,
-        tabBarStyle: {
-          backgroundColor: colors.tabBar,
-          borderTopColor: colors.tabBarBorder,
-          borderTopWidth: 1,
-          paddingTop: 4,
-          height: 85,
-        },
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textMuted,
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: "600",
-          marginTop: 2,
-        },
-      }}
-    >
-      <Tabs.Screen
-        name="dashboard"
-        options={{
-          title: "Home",
-          headerTitle: "Aauti Learn",
-          tabBarIcon: ({ focused }) => (
-            <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.5 }}>
-              {"\uD83C\uDFE0"}
-            </Text>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="topic-tree"
-        options={{
-          title: "Topics",
-          headerShown: false,
-          tabBarIcon: ({ focused }) => (
-            <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.5 }}>
-              {"\uD83D\uDDFA\uFE0F"}
-            </Text>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="fluency-zone"
-        options={{
-          title: "Fluency",
-          headerShown: false,
-          tabBarIcon: ({ focused }) => (
-            <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.5 }}>
-              {"\u26A1"}
-            </Text>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: "Profile",
-          tabBarIcon: ({ focused }) => (
-            <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.5 }}>
-              {"\uD83D\uDC64"}
-            </Text>
-          ),
-        }}
-      />
-      {/* Hide session from tab bar — accessed via deep link or navigation */}
-      <Tabs.Screen
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen
         name="session/[nodeId]"
         options={{
-          href: null,
-          headerShown: false,
-          tabBarStyle: { display: "none" },
+          animation: "slide_from_right",
         }}
       />
-    </Tabs>
+    </Stack>
   );
 }

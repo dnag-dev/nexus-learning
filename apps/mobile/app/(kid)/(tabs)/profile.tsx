@@ -1,6 +1,6 @@
 import { View, Text, Pressable, useColorScheme } from "react-native";
 import { router } from "expo-router";
-import { useAuthStore } from "../../store/auth";
+import { useAuthStore } from "../../../store/auth";
 
 /**
  * Kid Profile — shows XP, level, badges, streak.

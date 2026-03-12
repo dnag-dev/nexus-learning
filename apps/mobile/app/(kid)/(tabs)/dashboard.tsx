@@ -1,13 +1,13 @@
 import { View, Text, ScrollView, Pressable, RefreshControl } from "react-native";
 import { router } from "expo-router";
 import { getAgeTier } from "@aauti/utils";
-import { useTheme } from "../../lib/theme";
-import { useAuthStore } from "../../store/auth";
-import { useDashboard } from "../../hooks/useDashboard";
-import { LoadingSpinner, ErrorBanner } from "../../components/ui";
-import { Tier1Dashboard } from "../../components/kid/Tier1Dashboard";
-import { Tier2Dashboard } from "../../components/kid/Tier2Dashboard";
-import { Tier3Dashboard } from "../../components/kid/Tier3Dashboard";
+import { useTheme } from "../../../lib/theme";
+import { useAuthStore } from "../../../store/auth";
+import { useDashboard } from "../../../hooks/useDashboard";
+import { LoadingSpinner, ErrorBanner } from "../../../components/ui";
+import { Tier1Dashboard } from "../../../components/kid/Tier1Dashboard";
+import { Tier2Dashboard } from "../../../components/kid/Tier2Dashboard";
+import { Tier3Dashboard } from "../../../components/kid/Tier3Dashboard";
 
 export default function KidDashboardScreen() {
   const { colors } = useTheme();

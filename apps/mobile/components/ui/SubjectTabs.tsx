@@ -50,9 +50,9 @@ export function SubjectTabs({ selected, onSelect }: SubjectTabsProps) {
           borderRadius: 10,
           alignItems: "center",
           backgroundColor:
-            selected === "english" ? colors.englishLight : "transparent",
-          borderWidth: selected === "english" ? 1 : 0,
-          borderColor: selected === "english" ? colors.englishBorder : "transparent",
+            selected === "english" ? "#F5F3FF" : "transparent",
+          borderWidth: selected === "english" ? 1.5 : 0,
+          borderColor: selected === "english" ? "#DDD6FE" : "transparent",
         }}
       >
         <Text

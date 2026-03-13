@@ -233,8 +233,11 @@ export default function TopicTreeScreen() {
               ? Math.round((group.mastered / group.total) * 100)
               : 0;
 
+          // Visually de-emphasise unstarted grades (0 mastered)
+          const isUnstarted = group.total > 0 && group.mastered === 0;
+
           return (
-            <View key={group.grade}>
+            <View key={group.grade} style={{ opacity: isUnstarted ? 0.6 : 1 }}>
               {/* ─── Section header ─── */}
               <Pressable
                 onPress={() => toggleGrade(group.grade)}
@@ -309,8 +312,8 @@ export default function TopicTreeScreen() {
                   {/* Chevron */}
                   <Text
                     style={{
-                      fontSize: 12,
-                      color: colors.textMuted,
+                      fontSize: 16,
+                      color: "#94A3B8",
                     }}
                   >
                     {isExpanded ? "\u25B2" : "\u25BC"}

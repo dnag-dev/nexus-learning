@@ -34,14 +34,14 @@ export function TopicCard({
     }
   > = {
     locked: {
-      icon: "\uD83D\uDD12",
+      icon: "\uD83D\uDD12",       // 🔒
       borderColor: colors.border,
       opacity: 0.4,
       bgColor: colors.surfaceAlt,
       barColor: colors.border,
     },
     available: {
-      icon: "\u25B6\uFE0F",
+      icon: "\u25B6\uFE0F",       // ▶️
       borderColor: colors.accent,
       opacity: 1,
       bgColor: colors.surface,
@@ -49,14 +49,14 @@ export function TopicCard({
       statusText: "Tap to start",
     },
     in_progress: {
-      icon: "\uD83D\uDCDD",
+      icon: "\uD83D\uDD04",       // 🔄
       borderColor: colors.primary,
       opacity: 1,
       bgColor: colors.surface,
       barColor: colors.primary,
     },
     mastered: {
-      icon: "\u2705",
+      icon: "\u2705",             // ✅
       borderColor: colors.success,
       opacity: 1,
       bgColor: colors.surface,

@@ -34,14 +34,14 @@ export function TopicCard({
     }
   > = {
     locked: {
-      icon: "\uD83D\uDD12",       // 🔒
+      icon: "\uD83D\uDD12",       // lock
       borderColor: colors.border,
       opacity: 0.4,
       bgColor: colors.surfaceAlt,
       barColor: colors.border,
     },
     available: {
-      icon: "\u25B6\uFE0F",       // ▶️
+      icon: "\u25B6\uFE0F",       // play
       borderColor: colors.accent,
       opacity: 1,
       bgColor: colors.surface,
@@ -49,14 +49,14 @@ export function TopicCard({
       statusText: "Tap to start",
     },
     in_progress: {
-      icon: "\uD83D\uDD04",       // 🔄
+      icon: "\uD83D\uDD04",       // refresh
       borderColor: colors.primary,
       opacity: 1,
       bgColor: colors.surface,
       barColor: colors.primary,
     },
     mastered: {
-      icon: "\u2705",             // ✅
+      icon: "\u2705",             // checkmark
       borderColor: colors.success,
       opacity: 1,
       bgColor: colors.surface,
@@ -85,7 +85,7 @@ export function TopicCard({
         opacity: pressed ? 0.8 : config.opacity,
         flexDirection: "row",
         alignItems: "center",
-        gap: 10,
+        gap: 12,
       })}
     >
       {/* Icon — fixed 32px width for consistent alignment */}
@@ -93,11 +93,11 @@ export function TopicCard({
         <Text style={{ fontSize: 18 }}>{config.icon}</Text>
       </View>
 
-      {/* Name + domain */}
+      {/* Name + domain + "Tap to start" — all in one column */}
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text
           style={{
-            fontSize: 13,
+            fontSize: 14,
             fontWeight: "600",
             color: colors.text,
           }}
@@ -107,7 +107,7 @@ export function TopicCard({
         </Text>
         {domain && (
           <Text
-            style={{ fontSize: 10, color: colors.textMuted, marginTop: 1 }}
+            style={{ fontSize: 11, color: colors.textMuted, marginTop: 1 }}
             numberOfLines={1}
           >
             {bare === "K" ? "Kindergarten" : `G${bare}`}
@@ -115,21 +115,18 @@ export function TopicCard({
             {domain}
           </Text>
         )}
-      </View>
-
-      {/* Right side: % + mini bar OR status text */}
-      <View style={{ alignItems: "flex-end", width: 52 }}>
-        {state === "available" && masteryPercent === 0 ? (
+        {state === "available" && masteryPercent === 0 && (
           <Text
-            style={{
-              fontSize: 9,
-              fontWeight: "600",
-              color: colors.accent,
-            }}
+            style={{ fontSize: 11, fontWeight: "600", color: colors.primary, marginTop: 2 }}
           >
             {config.statusText}
           </Text>
-        ) : state !== "locked" ? (
+        )}
+      </View>
+
+      {/* Right side: % + mini bar */}
+      <View style={{ alignItems: "flex-end", width: 52 }}>
+        {state !== "locked" && !(state === "available" && masteryPercent === 0) ? (
           <>
             <Text
               style={{
@@ -140,10 +137,10 @@ export function TopicCard({
             >
               {Math.round(masteryPercent)}%
             </Text>
-            {/* Mini progress bar: 36px wide, 3px tall */}
+            {/* Mini progress bar: 40px wide, 3px tall */}
             <View
               style={{
-                width: 36,
+                width: 40,
                 height: 3,
                 backgroundColor: colors.surfaceAlt,
                 borderRadius: 1.5,

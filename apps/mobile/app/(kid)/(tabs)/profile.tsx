@@ -333,7 +333,7 @@ export default function ProfileScreen() {
                   }}
                 >
                   <Text style={{ fontSize: 24 }}>
-                    {BADGE_ICONS[badge.category] ?? BADGE_ICONS.default}
+                    {badge.icon ?? BADGE_ICONS[badge.category] ?? BADGE_ICONS.default}
                   </Text>
                 </View>
                 <View style={{ flex: 1 }}>

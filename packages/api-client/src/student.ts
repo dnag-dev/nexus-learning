@@ -22,6 +22,7 @@ export interface GamificationResponse {
     name: string;
     description: string;
     category: string;
+    icon: string;
     earnedAt: string;
   }>;
   masteryMap: Array<{

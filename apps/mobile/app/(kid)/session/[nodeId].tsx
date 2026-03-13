@@ -9,7 +9,7 @@
  *   - Celebration screen when concept mastered
  */
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -77,6 +77,8 @@ export default function SessionScreen() {
   // Animations
   const resultFlashAnim = useRef(new Animated.Value(0)).current;
   const autoAdvanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const countdownInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [autoAdvanceSeconds, setAutoAdvanceSeconds] = useState<number | null>(null);
 
   // ─── Start session on mount ───
   useEffect(() => {
@@ -86,11 +88,12 @@ export default function SessionScreen() {
     return () => {
       reset();
       if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
+      if (countdownInterval.current) clearInterval(countdownInterval.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodeId, profile?.studentId]);
 
-  // ─── Flash result and auto-advance ───
+  // ─── Flash result and auto-advance with visible countdown ───
   useEffect(() => {
     if (isConfirmed && isCorrect !== null) {
       // Flash
@@ -108,16 +111,31 @@ export default function SessionScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       }
 
-      // Auto-advance: 2.5s for correct, 5s for incorrect
+      // Auto-advance with visible countdown: 3s for correct, 5s for incorrect
       if (!isMastered) {
+        const totalSeconds = isCorrect ? 3 : 5;
+        setAutoAdvanceSeconds(totalSeconds);
+
+        // Tick countdown every second
+        countdownInterval.current = setInterval(() => {
+          setAutoAdvanceSeconds((prev) => {
+            if (prev === null || prev <= 1) return null;
+            return prev - 1;
+          });
+        }, 1000);
+
+        // Auto-advance after timer
         autoAdvanceTimer.current = setTimeout(() => {
+          setAutoAdvanceSeconds(null);
+          if (countdownInterval.current) clearInterval(countdownInterval.current);
           advanceToNext();
-        }, isCorrect ? 2500 : 5000);
+        }, totalSeconds * 1000);
       }
     }
 
     return () => {
       if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
+      if (countdownInterval.current) clearInterval(countdownInterval.current);
     };
   }, [isConfirmed, isCorrect, isMastered, resultFlashAnim, advanceToNext]);
 
@@ -150,6 +168,8 @@ export default function SessionScreen() {
 
   const handleNext = useCallback(() => {
     if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
+    if (countdownInterval.current) clearInterval(countdownInterval.current);
+    setAutoAdvanceSeconds(null);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     advanceToNext();
   }, [advanceToNext]);
@@ -617,7 +637,7 @@ export default function SessionScreen() {
             <Text
               style={{ fontSize: 18, fontWeight: "700", color: "#ffffff" }}
             >
-              Next Question
+              Next Question{autoAdvanceSeconds !== null ? ` (${autoAdvanceSeconds}s)` : ""}
             </Text>
             <Text style={{ fontSize: 18, color: "#ffffff" }}>→</Text>
           </Pressable>

@@ -158,6 +158,63 @@ export function Tier2Dashboard({
         </Card>
       </View>
 
+      {/* Grade completion banner */}
+      {(() => {
+        const completedGrades = gradeProgress.filter(
+          (gp) => gp.total > 0 && gp.mastered >= gp.total
+        );
+        if (completedGrades.length === 0) return null;
+        const latest = completedGrades[completedGrades.length - 1];
+        const gradeLabel =
+          latest.grade === "K"
+            ? "Kindergarten"
+            : `Grade ${latest.grade.replace("G", "")}`;
+        const subjectLabel = subject === "math" ? "Math" : "English";
+        return (
+          <Pressable
+            onPress={() => router.push("/(kid)/topic-tree")}
+            style={{ marginTop: 16 }}
+          >
+            <Card padding="lg">
+              <View
+                style={{
+                  backgroundColor: "#FEF3C7",
+                  borderRadius: 12,
+                  padding: 14,
+                  alignItems: "center",
+                }}
+              >
+                <Text style={{ fontSize: 32 }}>{"\uD83C\uDF93"}</Text>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "800",
+                    color: "#92400E",
+                    marginTop: 6,
+                    textAlign: "center",
+                  }}
+                >
+                  {gradeLabel} {subjectLabel} — Complete!
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 13,
+                    color: "#B45309",
+                    marginTop: 4,
+                    textAlign: "center",
+                  }}
+                >
+                  All {latest.total} topics mastered
+                  {completedGrades.length > 1
+                    ? ` (+${completedGrades.length - 1} more grade${completedGrades.length > 2 ? "s" : ""})`
+                    : ""}
+                </Text>
+              </View>
+            </Card>
+          </Pressable>
+        );
+      })()}
+
       {/* Grade progress breakdown */}
       {gradeProgress.length > 0 && (
         <View style={{ marginTop: 16 }}>
@@ -175,6 +232,7 @@ export function Tier2Dashboard({
             {gradeProgress.map((gp) => {
               const pct = gp.total > 0 ? Math.round((gp.mastered / gp.total) * 100) : 0;
               const gradeLabel = gp.grade === "K" ? "K" : gp.grade;
+              const isComplete = gp.total > 0 && gp.mastered >= gp.total;
               return (
                 <View key={gp.grade} style={{ marginBottom: 8 }}>
                   <View
@@ -185,10 +243,15 @@ export function Tier2Dashboard({
                       marginBottom: 3,
                     }}
                   >
-                    <Text style={{ fontSize: 13, fontWeight: "600", color: colors.text }}>
-                      {gradeLabel}
-                    </Text>
-                    <Text style={{ fontSize: 11, color: colors.textMuted }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                      <Text style={{ fontSize: 13, fontWeight: "600", color: colors.text }}>
+                        {gradeLabel}
+                      </Text>
+                      {isComplete && (
+                        <Text style={{ fontSize: 11 }}>{"\uD83C\uDF93"}</Text>
+                      )}
+                    </View>
+                    <Text style={{ fontSize: 11, color: isComplete ? colors.success : colors.textMuted }}>
                       {gp.mastered}/{gp.total}
                     </Text>
                   </View>

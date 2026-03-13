@@ -65,6 +65,7 @@ interface SessionState {
 
   // Correct streak within session
   correctStreak: number;
+  totalCorrect: number;
 
   // UI state
   isLoading: boolean;
@@ -107,6 +108,7 @@ const initialState = {
   masteryPercent: 0,
   isMastered: false,
   correctStreak: 0,
+  totalCorrect: 0,
   isLoading: false,
   isSubmitting: false,
   error: null,
@@ -183,6 +185,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       isCorrect: isCorrectLocal,
       explanation: currentQuestion.explanation || null,
       questionsAnswered: state.questionsAnswered + 1,
+      totalCorrect: isCorrectLocal ? state.totalCorrect + 1 : state.totalCorrect,
       correctStreak: isCorrectLocal ? state.correctStreak + 1 : 0,
       // Estimate mastery locally (each correct ~12%, incorrect stays same)
       masteryPercent: isCorrectLocal

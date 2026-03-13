@@ -30,6 +30,7 @@ import { useAuthStore } from "../../../store/auth";
 import { StepProgress } from "../../../components/ui/StepProgress";
 import { MasteryBar } from "../../../components/ui/MasteryBar";
 import { CelebrationScreen } from "../../../components/session/CelebrationScreen";
+import { estimateQuestionsRemaining } from "../../../lib/completion-estimate";
 
 // ─── Option label helpers ───
 
@@ -59,6 +60,7 @@ export default function SessionScreen() {
     masteryPercent,
     isMastered,
     correctStreak,
+    totalCorrect,
     isLoading,
     isSubmitting,
     error,
@@ -494,29 +496,43 @@ export default function SessionScreen() {
           </>
         )}
 
-        {/* Mastery Bar */}
-        {currentQuestion && !isLoading && (
-          <View
-            style={{
-              backgroundColor: colors.surface,
-              borderRadius: 14,
-              padding: 16,
-              borderWidth: 1,
-              borderColor: colors.border,
-              marginTop: 8,
-            }}
-          >
-            <MasteryBar
-              progress={masteryPercent}
-              goal={85}
-              estimate={
-                masteryPercent < 85
-                  ? `~${Math.max(1, Math.ceil((85 - masteryPercent) / 12))} more questions`
-                  : "Almost there!"
-              }
-            />
-          </View>
-        )}
+        {/* Mastery Bar + Completion Estimate */}
+        {currentQuestion && !isLoading && (() => {
+          const accuracy = questionsAnswered > 0 ? totalCorrect / questionsAnswered : 0.6;
+          const estimate = estimateQuestionsRemaining(masteryPercent, accuracy);
+          return (
+            <View
+              style={{
+                backgroundColor: colors.surface,
+                borderRadius: 14,
+                padding: 16,
+                borderWidth: 1,
+                borderColor: colors.border,
+                marginTop: 8,
+              }}
+            >
+              <MasteryBar
+                progress={masteryPercent}
+                goal={85}
+                estimate={
+                  estimate.likely > 0
+                    ? `~${estimate.likely} more question${estimate.likely === 1 ? "" : "s"} · ${estimate.estimatedMinutes} min`
+                    : "Almost there!"
+                }
+              />
+              <Text
+                style={{
+                  fontSize: 12,
+                  color: colors.textMuted,
+                  textAlign: "center",
+                  marginTop: 6,
+                }}
+              >
+                {estimate.message}
+              </Text>
+            </View>
+          );
+        })()}
       </ScrollView>
 
       {/* ─── STICKY BOTTOM: Check Answer Button ─── */}

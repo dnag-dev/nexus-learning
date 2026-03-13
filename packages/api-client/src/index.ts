@@ -10,8 +10,14 @@ export { configureApiClient, apiCall, apiPost, apiGet, ApiError } from "./client
 export type { ApiClientConfig } from "./client";
 
 // Auth
-export { login, getSession } from "./auth";
-export type { LoginRequest, LoginResponse, SessionResponse } from "./auth";
+export { login, getSession, parentLogin, getParentSession } from "./auth";
+export type {
+  LoginRequest,
+  LoginResponse,
+  SessionResponse,
+  ParentLoginResponse,
+  ParentSessionResponse,
+} from "./auth";
 
 // Session
 export {

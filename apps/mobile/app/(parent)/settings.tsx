@@ -6,11 +6,14 @@ import { View, Text, Pressable, SafeAreaView, ScrollView } from "react-native";
 import { router } from "expo-router";
 
 import { useTheme } from "../../lib/theme";
+import { useAuthStore } from "../../store/auth";
 
 export default function SettingsScreen() {
   const { colors } = useTheme();
+  const { parentProfile, logout } = useAuthStore();
 
   const handleLogout = () => {
+    logout();
     router.replace("/");
   };
 
@@ -44,20 +47,20 @@ export default function SettingsScreen() {
           }}
         >
           <SettingsRow
-            label="Profile"
-            detail="Manage your account"
+            label="Email"
+            detail={parentProfile?.email ?? "—"}
             colors={colors}
           />
           <Divider color={colors.border} />
           <SettingsRow
             label="Children"
-            detail="Add or manage children"
+            detail={`${parentProfile?.children.length ?? 0} linked`}
             colors={colors}
           />
           <Divider color={colors.border} />
           <SettingsRow
-            label="Subscription"
-            detail="Free plan"
+            label="Plan"
+            detail={parentProfile?.plan ?? "SPARK"}
             colors={colors}
           />
         </View>

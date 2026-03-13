@@ -17,16 +17,17 @@ import {
 } from "react-native";
 
 import { useTheme } from "../../lib/theme";
+import { useAuthStore } from "../../store/auth";
 import { getChildProgress } from "@aauti/api-client";
 import type { ChildProgressResponse } from "@aauti/api-client";
 import { MasteryBar } from "../../components/ui/MasteryBar";
 
 export default function ReportsScreen() {
   const { colors } = useTheme();
+  const { parentProfile, selectedChildId } = useAuthStore();
 
-  // Parent auth not yet implemented — using demo data
-  const parentId = "demo-parent-1";
-  const childId = "demo-student-1";
+  const parentId = parentProfile?.parentId ?? "";
+  const childId = selectedChildId ?? parentProfile?.children[0]?.id ?? "";
 
   const [data, setData] = useState<ChildProgressResponse | null>(null);
   const [loading, setLoading] = useState(true);

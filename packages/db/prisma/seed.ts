@@ -931,12 +931,15 @@ async function seed() {
   }
 
   // Create a demo parent user
+  // Password: "parent123" (bcrypt hash with salt rounds 10)
   const demoParent = await prisma.user.upsert({
     where: { email: "demo@aautilearn.com" },
-    update: {},
+    update: {
+      passwordHash: "$2b$10$bC2bz/kbqDG.yGzZ5BNnZeAXUSt3q78/nA6teV0/mXge0ZW/ztLme",
+    },
     create: {
       email: "demo@aautilearn.com",
-      passwordHash: "PLACEHOLDER_HASH_USE_AUTH0",
+      passwordHash: "$2b$10$bC2bz/kbqDG.yGzZ5BNnZeAXUSt3q78/nA6teV0/mXge0ZW/ztLme",
       role: "PARENT",
     },
   });

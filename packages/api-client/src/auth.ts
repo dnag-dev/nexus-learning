@@ -4,7 +4,7 @@
 
 import { apiPost, apiGet } from "./client";
 
-// ─── Types ───
+// ─── Child Auth Types ───
 
 export interface LoginRequest {
   username: string;
@@ -29,7 +29,36 @@ export interface SessionResponse {
   firstLoginComplete: boolean;
 }
 
-// ─── API Functions ───
+// ─── Parent Auth Types ───
+
+export interface ParentLoginResponse {
+  parentId: string;
+  email: string;
+  name: string;
+  plan: string;
+  token: string;
+  children: Array<{
+    id: string;
+    displayName: string;
+    avatarPersonaId: string;
+    gradeLevel: string;
+  }>;
+}
+
+export interface ParentSessionResponse {
+  parentId: string;
+  email: string;
+  name: string;
+  plan: string;
+  children: Array<{
+    id: string;
+    displayName: string;
+    avatarPersonaId: string;
+    gradeLevel: string;
+  }>;
+}
+
+// ─── Child Auth API Functions ───
 
 /**
  * Login with username + PIN.
@@ -48,4 +77,28 @@ export async function login(
  */
 export async function getSession(): Promise<SessionResponse> {
   return apiGet<SessionResponse>("/api/auth/child-session");
+}
+
+// ─── Parent Auth API Functions ───
+
+/**
+ * Login with email + password.
+ * Returns parent info + JWT token + children list.
+ */
+export async function parentLogin(
+  email: string,
+  password: string
+): Promise<ParentLoginResponse> {
+  return apiPost<ParentLoginResponse>("/api/auth/parent-login", {
+    email,
+    password,
+  });
+}
+
+/**
+ * Verify parent session and get fresh profile + children.
+ * Requires auth token (set via configureApiClient).
+ */
+export async function getParentSession(): Promise<ParentSessionResponse> {
+  return apiGet<ParentSessionResponse>("/api/auth/parent-session");
 }

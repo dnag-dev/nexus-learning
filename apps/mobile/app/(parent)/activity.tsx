@@ -17,6 +17,7 @@ import {
 } from "react-native";
 
 import { useTheme } from "../../lib/theme";
+import { useAuthStore } from "../../store/auth";
 import { getActivityLog } from "@aauti/api-client";
 import type { ActivityLogEntry } from "@aauti/api-client";
 
@@ -46,10 +47,10 @@ function formatTimeAgo(dateStr: string): string {
 
 export default function ActivityScreen() {
   const { colors } = useTheme();
+  const { parentProfile, selectedChildId } = useAuthStore();
 
-  // Parent auth not yet implemented — using demo data
-  const parentId = "demo-parent-1";
-  const childId = "demo-student-1";
+  const parentId = parentProfile?.parentId ?? "";
+  const childId = selectedChildId ?? parentProfile?.children[0]?.id ?? "";
 
   const [activities, setActivities] = useState<ActivityLogEntry[]>([]);
   const [loading, setLoading] = useState(true);

@@ -9,6 +9,7 @@ import type { PersonaId } from "@/lib/personas/persona-config";
 import TeachingCard from "@/components/session/TeachingCard";
 import SessionHeader from "@/components/session/SessionHeader";
 import PracticeQuestion from "@/components/session/PracticeQuestion";
+import CoordinatePlane from "@/components/session/CoordinatePlane";
 import MasteryCelebration from "@/components/session/MasteryCelebration";
 import FluencyDrill from "@/components/session/FluencyDrill";
 import type { FluencyAnswerResult } from "@/components/session/FluencyDrill";
@@ -52,6 +53,13 @@ interface PracticeQuestionData {
   options: { id: string; text: string; isCorrect: boolean }[];
   correctAnswer: string;
   explanation: string;
+  /** Present for coordinate plane questions */
+  questionType?: "coordinate_plane";
+  correctX?: number;
+  correctY?: number;
+  tolerance?: number;
+  gridMin?: number;
+  gridMax?: number;
 }
 
 interface MasteryInfo {
@@ -229,6 +237,12 @@ function SessionPage() {
   const [learningStep, setLearningStep] = useState(1);
   const [stepProgress, setStepProgress] = useState<StepProgress | null>(null);
   const [remediation, setRemediation] = useState<RemediationData | null>(null);
+
+  // ─── Coordinate Plane State ───
+  const [coordAnswered, setCoordAnswered] = useState(false);
+  const [coordWasCorrect, setCoordWasCorrect] = useState<boolean | undefined>();
+  const [coordPlacedX, setCoordPlacedX] = useState<number | undefined>();
+  const [coordPlacedY, setCoordPlacedY] = useState<number | undefined>();
 
   // ─── Fluency Drill State ───
   const [fluencyConsecutive, setFluencyConsecutive] = useState(0);
@@ -510,6 +524,11 @@ function SessionPage() {
     setFeedback(null);
     setRemediation(null);
     setHint(null);
+    // Reset coordinate plane state
+    setCoordAnswered(false);
+    setCoordWasCorrect(undefined);
+    setCoordPlacedX(undefined);
+    setCoordPlacedY(undefined);
 
     try {
       const res = await fetch(
@@ -742,6 +761,154 @@ function SessionPage() {
       }
     },
     [sessionId, question, triggerVoice]
+  );
+
+  // ─── Coordinate Plane Answer Handler ───
+  const submitCoordinateAnswer = useCallback(
+    async (x: number, y: number, isCorrectLocal: boolean) => {
+      if (!sessionId || !question) return;
+
+      setCoordPlacedX(x);
+      setCoordPlacedY(y);
+      setCoordAnswered(true);
+      setCoordWasCorrect(isCorrectLocal);
+
+      const responseTimeMs = questionStartTimeRef.current > 0
+        ? Date.now() - questionStartTimeRef.current
+        : undefined;
+
+      setIsLoading(true);
+      try {
+        const res = await fetch("/api/session/answer", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sessionId,
+            selectedOptionId: `(${x},${y})`,
+            isCorrect: isCorrectLocal,
+            questionText: question.questionText,
+            selectedAnswerText: `(${x}, ${y})`,
+            correctAnswerText: `(${question.correctX}, ${question.correctY})`,
+            explanation: question.explanation,
+            responseTimeMs,
+            // Coordinate plane fields for server-side validation
+            questionType: "coordinate_plane",
+            selectedX: x,
+            selectedY: y,
+            correctX: question.correctX,
+            correctY: question.correctY,
+            tolerance: question.tolerance ?? 0.5,
+          }),
+          signal: AbortSignal.timeout(30000),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+
+        setQuestionsAnswered((prev) => prev + 1);
+
+        // Track mastery
+        const prevProb = prevMasteryRef.current;
+        prevMasteryRef.current = data.mastery?.probability ?? prevProb;
+        setMastery(data.mastery);
+
+        // Record in history
+        setAnswerHistory((prev) => [
+          ...prev,
+          {
+            questionText: question.questionText,
+            selectedAnswer: `(${x}, ${y})`,
+            correctAnswer: `(${question.correctX}, ${question.correctY})`,
+            isCorrect: isCorrectLocal,
+            masteryBefore: prevProb,
+            masteryAfter: data.mastery?.probability ?? prevProb,
+            explanation: question.explanation || undefined,
+            step: data.learningStep ?? learningStep,
+          },
+        ]);
+
+        // Feedback
+        if (!isCorrectLocal) {
+          const msg = getAnswerFeedbackMessage(false);
+          setReassuranceMsg(msg);
+          setTimeout(() => setReassuranceMsg(null), 2000);
+        }
+
+        // Update step tracking
+        if (data.learningStep !== undefined) setLearningStep(data.learningStep);
+        if (data.stepProgress) setStepProgress(data.stepProgress);
+        if (data.remediation) setRemediation(data.remediation);
+        else setRemediation(null);
+
+        // Gamification
+        if (data.gamification) {
+          setGamification(data.gamification);
+          setSessionXPEarned((prev) => prev + (data.gamification.xpAwarded ?? 0));
+        }
+
+        // Streak
+        if (isCorrectLocal) {
+          setCorrectStreak((prev) => prev + 1);
+        } else {
+          setCorrectStreak(0);
+        }
+
+        // Handle celebrating
+        if (data.state === "CELEBRATING") {
+          setConceptsMasteredThisSession((prev) => prev + 1);
+          setCelebration(data.celebration);
+          setGradeCompletion(data.gradeCompletion ?? null);
+          setFeedback(null);
+          setRemediation(null);
+          setPhase("celebrating");
+          if (data.celebration?.celebration) triggerVoice(data.celebration.celebration);
+        } else {
+          setFeedback(data.feedback);
+          setPhase("feedback");
+          if (data.feedback?.message) triggerVoice(data.feedback.message);
+
+          if (data.questionPrefetched) {
+            const feedbackDelay = data.remediation ? 5000 : 2500;
+            const questionPromise = fetch(
+              `/api/session/next-question?sessionId=${sessionId}`,
+              { signal: AbortSignal.timeout(25000) }
+            ).then((r) => r.json()).then((d) => d.question).catch(() => null);
+
+            setTimeout(() => {
+              setFeedback(null);
+              setRemediation(null);
+              setSelectedOption(null);
+              setHint(null);
+              setIsLoading(true);
+              setPhase("practice");
+              // Reset coordinate plane state
+              setCoordAnswered(false);
+              setCoordWasCorrect(undefined);
+              setCoordPlacedX(undefined);
+              setCoordPlacedY(undefined);
+
+              questionPromise.then((nextQ) => {
+                setIsLoading(false);
+                if (nextQ) {
+                  setQuestion(nextQ);
+                  questionStartTimeRef.current = Date.now();
+                }
+              });
+            }, feedbackDelay);
+          }
+        }
+      } catch (err) {
+        const message =
+          err instanceof Error && err.name === "AbortError"
+            ? "Request timed out — please try again"
+            : err instanceof Error
+              ? err.message
+              : "Failed to submit";
+        setError(message);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [sessionId, question, triggerVoice, learningStep, answerHistory]
   );
 
   const requestHint = useCallback(async () => {
@@ -1100,19 +1267,88 @@ function SessionPage() {
             </main>
           ) : question ? (
             <>
-              <PracticeQuestion
-                question={question}
-                phase={phase === "feedback" ? "feedback" : "practice"}
-                feedback={feedback}
-                selectedOption={selectedOption}
-                isLoading={isLoading}
-                hint={hint}
-                domain={currentDomain}
-                error={error}
-                onSubmitAnswer={submitAnswer}
-                onRequestHint={showHintButton ? requestHint : undefined}
-                onClearError={() => { setError(null); setSelectedOption(null); }}
-              />
+              {/* ─── Coordinate Plane or Multiple Choice ─── */}
+              {question.questionType === "coordinate_plane" && question.correctX !== undefined && question.correctY !== undefined ? (
+                <main className="max-w-2xl mx-auto px-4 py-8">
+                  {/* Feedback Banner */}
+                  {coordAnswered && feedback && (
+                    <div
+                      className={`mb-6 p-4 rounded-2xl text-center font-medium animate-fade-in-up ${
+                        coordWasCorrect
+                          ? "bg-aauti-success/15 text-aauti-success border border-aauti-success/20"
+                          : "bg-aauti-warning/15 text-aauti-warning border border-aauti-warning/20"
+                      }`}
+                    >
+                      {feedback.message}
+                    </div>
+                  )}
+
+                  {/* Question Text */}
+                  <div className="bg-[#1A2744] rounded-2xl p-6 border border-white/10 mb-6 border-l-4 border-l-cyan-500">
+                    <p className="text-xl text-white leading-relaxed">
+                      {question.questionText}
+                    </p>
+                  </div>
+
+                  {/* Interactive Coordinate Plane */}
+                  <CoordinatePlane
+                    gridMin={question.gridMin ?? -10}
+                    gridMax={question.gridMax ?? 10}
+                    correctX={question.correctX}
+                    correctY={question.correctY}
+                    tolerance={question.tolerance ?? 0.5}
+                    onAnswer={submitCoordinateAnswer}
+                    answered={coordAnswered}
+                    wasCorrect={coordWasCorrect}
+                    placedX={coordPlacedX}
+                    placedY={coordPlacedY}
+                    disabled={isLoading}
+                  />
+
+                  {/* Explanation after answer */}
+                  {coordAnswered && question.explanation && (
+                    <div className={`mt-4 p-4 rounded-2xl border ${
+                      coordWasCorrect
+                        ? "bg-green-500/10 border-green-500/20"
+                        : "bg-blue-500/10 border-blue-500/20"
+                    }`}>
+                      <div className="flex items-start gap-2">
+                        <span className="text-lg">💡</span>
+                        <p className="text-sm text-gray-300 leading-relaxed">
+                          {question.explanation}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Error */}
+                  {error && (
+                    <div className="text-center mt-4">
+                      <p className="text-sm text-aauti-danger mb-2">{error}</p>
+                      <button
+                        onClick={() => { setError(null); }}
+                        className="text-sm text-aauti-primary hover:underline"
+                      >
+                        Try again
+                      </button>
+                    </div>
+                  )}
+                </main>
+              ) : (
+                <PracticeQuestion
+                  question={question}
+                  phase={phase === "feedback" ? "feedback" : "practice"}
+                  feedback={feedback}
+                  selectedOption={selectedOption}
+                  isLoading={isLoading}
+                  hint={hint}
+                  domain={currentDomain}
+                  error={error}
+                  onSubmitAnswer={submitAnswer}
+                  onRequestHint={showHintButton ? requestHint : undefined}
+                  onClearError={() => { setError(null); setSelectedOption(null); }}
+                />
+              )}
 
               {/* ─── Remediation Card (Step 3 wrong answers) ─── */}
               {phase === "feedback" && remediation && (

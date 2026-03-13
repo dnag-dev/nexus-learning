@@ -819,6 +819,7 @@ export async function getNextConceptInPlan(
   nodeCode: string;
   title: string;
   description: string;
+  gradeLevel: string;
   estimatedHours: number;
   positionInPlan: number;
   totalInPlan: number;
@@ -834,7 +835,7 @@ export async function getNextConceptInPlan(
   const nodeCode = plan.conceptSequence[idx];
   const node = await prisma.knowledgeNode.findFirst({
     where: { nodeCode },
-    select: { nodeCode: true, title: true, description: true, difficulty: true },
+    select: { nodeCode: true, title: true, description: true, difficulty: true, gradeLevel: true },
   });
 
   if (!node) return null;
@@ -845,6 +846,7 @@ export async function getNextConceptInPlan(
     nodeCode: node.nodeCode,
     title: node.title,
     description: node.description,
+    gradeLevel: node.gradeLevel,
     estimatedHours,
     positionInPlan: idx + 1,
     totalInPlan: plan.conceptSequence.length,

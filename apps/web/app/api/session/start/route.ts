@@ -102,14 +102,20 @@ export async function POST(request: Request) {
       // ─── Plan-aware mode: pick next concept from specified plan ───
       const nextInPlan = await getNextConceptInPlan(planId);
       if (nextInPlan) {
-        targetNode = await prisma.knowledgeNode.findFirst({
-          where: { nodeCode: nextInPlan.nodeCode },
-        });
+        // Grade guardrail: never serve content more than 1 grade below student's level
+        const nodeGradeIdx = GRADE_TO_INDEX[nextInPlan.gradeLevel] ?? 0;
+        const studentGradeIdx = GRADE_TO_INDEX[student.gradeLevel] ?? 0;
+        if (studentGradeIdx - nodeGradeIdx <= 1) {
+          targetNode = await prisma.knowledgeNode.findFirst({
+            where: { nodeCode: nextInPlan.nodeCode },
+          });
+        }
+        // else: concept too far below student's level — fall through to legacy
       }
-      // If plan has no next concept, fall through to default selection
+      // If plan has no next concept or grade check failed, fall through to default selection
     } else {
       // ─── Smart sequencer: pick the most urgent concept across all active plans ───
-      const selectedFromPlan = await selectMostUrgentConcept(studentId);
+      const selectedFromPlan = await selectMostUrgentConcept(studentId, student.gradeLevel);
       if (selectedFromPlan) {
         targetNode = await prisma.knowledgeNode.findFirst({
           where: { nodeCode: selectedFromPlan.nodeCode },
@@ -335,7 +341,8 @@ export async function POST(request: Request) {
  * 4. Most recently active plan (recency)
  */
 async function selectMostUrgentConcept(
-  studentId: string
+  studentId: string,
+  studentGrade?: string
 ): Promise<{ nodeCode: string; planId: string } | null> {
   const activePlans = await prisma.learningPlan.findMany({
     where: { studentId, status: "ACTIVE" },
@@ -347,7 +354,18 @@ async function selectMostUrgentConcept(
   if (activePlans.length === 1) {
     // Single plan — just use getNextConceptInPlan
     const next = await getNextConceptInPlan(activePlans[0].id);
-    return next ? { nodeCode: next.nodeCode, planId: activePlans[0].id } : null;
+    if (next) {
+      // Grade guardrail: never serve content more than 1 grade below student's level
+      if (studentGrade && next.gradeLevel) {
+        const nodeGradeIdx = GRADE_TO_INDEX[next.gradeLevel] ?? 0;
+        const sGradeIdx = GRADE_TO_INDEX[studentGrade] ?? 0;
+        if (sGradeIdx - nodeGradeIdx > 1) {
+          return null; // Too far below — fall through to legacy grade-proximity search
+        }
+      }
+      return { nodeCode: next.nodeCode, planId: activePlans[0].id };
+    }
+    return null;
   }
 
   // Score each plan for urgency
@@ -405,9 +423,18 @@ async function selectMostUrgentConcept(
   scored.sort((a, b) => b.urgencyScore - a.urgencyScore);
 
   // Try each plan in urgency order until we find a next concept
+  const studentGradeIdx = studentGrade ? (GRADE_TO_INDEX[studentGrade] ?? 0) : -1;
   for (const { plan } of scored) {
     const next = await getNextConceptInPlan(plan.id);
     if (next) {
+      // Grade guardrail: never serve content more than 1 grade below student's level
+      // (e.g. a G5 student should never get K or G1-G3 content from a plan)
+      if (studentGrade && next.gradeLevel) {
+        const nodeGradeIdx = GRADE_TO_INDEX[next.gradeLevel] ?? 0;
+        if (studentGradeIdx - nodeGradeIdx > 1) {
+          continue; // Skip this plan's concept — too far below student's level
+        }
+      }
       return { nodeCode: next.nodeCode, planId: plan.id };
     }
   }

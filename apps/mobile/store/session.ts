@@ -49,6 +49,13 @@ interface MobileQuestion {
   options: Array<{ id: string; text: string }>;
   correctAnswer?: string;
   explanation?: string;
+  /** Coordinate plane question fields */
+  questionType?: "coordinate_plane";
+  correctX?: number;
+  correctY?: number;
+  tolerance?: number;
+  gridMin?: number;
+  gridMax?: number;
 }
 
 interface SessionState {
@@ -100,6 +107,7 @@ interface SessionState {
   start: (studentId: string, nodeCode: string) => Promise<void>;
   selectOption: (optionId: string) => void;
   confirmAnswer: (studentId: string) => void;
+  confirmCoordinateAnswer: (studentId: string, x: number, y: number) => void;
   advanceToNext: () => Promise<void>;
   endSessionAction: (studentId: string) => Promise<void>;
   dismissTeaching: () => void;
@@ -133,6 +141,27 @@ const initialState = {
   prefetchedLearningStep: null,
 };
 
+/** Map API question response to MobileQuestion, preserving coordinate plane fields */
+function mapApiQuestion(q: any): MobileQuestion | null {
+  if (!q) return null;
+  const base: MobileQuestion = {
+    questionText: q.questionText,
+    options: (q.options ?? []).map((o: any) => ({ id: o.id, text: o.text })),
+    correctAnswer: q.correctAnswer,
+    explanation: q.explanation,
+  };
+  // Coordinate plane fields
+  if (q.questionType === "coordinate_plane") {
+    base.questionType = "coordinate_plane";
+    base.correctX = q.correctX;
+    base.correctY = q.correctY;
+    base.tolerance = q.tolerance;
+    base.gridMin = q.gridMin;
+    base.gridMax = q.gridMax;
+  }
+  return base;
+}
+
 export const useSessionStore = create<SessionState>((set, get) => ({
   ...initialState,
 
@@ -152,17 +181,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       // Immediately fetch first question
       const q = await apiNextQ(res.sessionId);
       set({
-        currentQuestion: q.question
-          ? {
-              questionText: q.question.questionText,
-              options: q.question.options.map((o) => ({
-                id: o.id,
-                text: o.text,
-              })),
-              correctAnswer: q.question.correctAnswer,
-              explanation: q.question.explanation,
-            }
-          : null,
+        currentQuestion: mapApiQuestion(q.question),
         learningStep: q.learningStep ?? 0,
         questionStartTime: Date.now(),
         isLoading: false,
@@ -249,15 +268,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       .then((q) => {
         if (q.question) {
           set({
-            prefetchedQuestion: {
-              questionText: q.question.questionText,
-              options: q.question.options.map((o) => ({
-                id: o.id,
-                text: o.text,
-              })),
-              correctAnswer: q.question.correctAnswer,
-              explanation: q.question.explanation,
-            },
+            prefetchedQuestion: mapApiQuestion(q.question),
             prefetchedLearningStep: q.learningStep ?? null,
           });
         } else {
@@ -268,6 +279,80 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       .catch(() => {
         // Will fetch on advance instead
       });
+  },
+
+  // INSTANT: Coordinate plane answer — show result immediately, submit in background
+  confirmCoordinateAnswer: (studentId: string, x: number, y: number) => {
+    const { sessionId, currentQuestion, questionStartTime } = get();
+    if (!sessionId || !currentQuestion || currentQuestion.questionType !== "coordinate_plane") return;
+
+    const correctX = currentQuestion.correctX ?? 0;
+    const correctY = currentQuestion.correctY ?? 0;
+    const tolerance = currentQuestion.tolerance ?? 0.5;
+    const dx = Math.abs(x - correctX);
+    const dy = Math.abs(y - correctY);
+    const isCorrectLocal = dx <= tolerance && dy <= tolerance;
+    const responseTimeMs = Date.now() - questionStartTime;
+
+    // ── INSTANT UI UPDATE ──
+    set((state) => ({
+      isConfirmed: true,
+      isSubmitting: false,
+      isCorrect: isCorrectLocal,
+      explanation: currentQuestion.explanation || null,
+      questionsAnswered: state.questionsAnswered + 1,
+      totalCorrect: isCorrectLocal ? state.totalCorrect + 1 : state.totalCorrect,
+      correctStreak: isCorrectLocal ? state.correctStreak + 1 : 0,
+      masteryPercent: isCorrectLocal
+        ? Math.min(100, state.masteryPercent + 12)
+        : state.masteryPercent,
+    }));
+
+    // ── BACKGROUND: Submit to API ──
+    apiSubmit({
+      sessionId,
+      questionType: "coordinate_plane",
+      selectedX: x,
+      selectedY: y,
+      correctX,
+      correctY,
+      isCorrect: isCorrectLocal,
+      responseTimeMs,
+      questionText: currentQuestion.questionText,
+      explanation: currentQuestion.explanation,
+    })
+      .then((raw) => {
+        const res = raw as SubmitAnswerResult;
+        const rawMastery = res.mastery?.probability ?? res.mastery?.bktProbability ?? 0;
+        const masteryPct = Math.min(100, Math.round(rawMastery > 1 ? rawMastery : rawMastery * 100));
+        const mastered =
+          res.state === "MASTERED" || res.nextAction === "mastered" || res.celebration != null;
+        const xp = res.gamification?.xpAwarded ?? res.gamification?.newXP ?? res.sessionXP ?? 0;
+
+        set((state) => ({
+          masteryPercent: masteryPct > 0 ? masteryPct : state.masteryPercent,
+          learningStep: res.learningStep ?? state.learningStep,
+          xpEarned: xp > state.xpEarned ? xp : state.xpEarned,
+          isMastered: mastered,
+          showCelebration: mastered,
+          gradeCompletion: res.gradeCompletion ?? state.gradeCompletion,
+        }));
+      })
+      .catch(() => {});
+
+    // Prefetch next question
+    apiNextQ(sessionId)
+      .then((q) => {
+        if (q.question) {
+          set({
+            prefetchedQuestion: mapApiQuestion(q.question),
+            prefetchedLearningStep: q.learningStep ?? null,
+          });
+        } else {
+          set({ prefetchedQuestion: null, prefetchedLearningStep: null });
+        }
+      })
+      .catch(() => {});
   },
 
   advanceToNext: async () => {
@@ -315,15 +400,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       }
 
       set({
-        currentQuestion: {
-          questionText: q.question.questionText,
-          options: q.question.options.map((o) => ({
-            id: o.id,
-            text: o.text,
-          })),
-          correctAnswer: q.question.correctAnswer,
-          explanation: q.question.explanation,
-        },
+        currentQuestion: mapApiQuestion(q.question),
         learningStep: q.learningStep ?? get().learningStep,
         questionStartTime: Date.now(),
         isLoading: false,

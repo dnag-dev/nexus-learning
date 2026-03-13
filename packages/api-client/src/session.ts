@@ -63,7 +63,8 @@ export interface NextQuestionResponse {
 
 export interface SubmitAnswerRequest {
   sessionId: string;
-  selectedOptionId: string;
+  /** Required for multiple choice; omitted for coordinate plane */
+  selectedOptionId?: string;
   isCorrect: boolean;
   responseTimeMs: number;
   questionText?: string;

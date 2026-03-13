@@ -30,6 +30,7 @@ import { useAuthStore } from "../../../store/auth";
 import { StepProgress } from "../../../components/ui/StepProgress";
 import { MasteryBar } from "../../../components/ui/MasteryBar";
 import { CelebrationScreen } from "../../../components/session/CelebrationScreen";
+import { CoordinatePlane } from "../../../components/session/CoordinatePlane";
 import { estimateQuestionsRemaining } from "../../../lib/completion-estimate";
 
 // ─── Option label helpers ───
@@ -70,6 +71,7 @@ export default function SessionScreen() {
     start,
     selectOption,
     confirmAnswer,
+    confirmCoordinateAnswer,
     advanceToNext,
     endSessionAction,
     reset,
@@ -80,6 +82,15 @@ export default function SessionScreen() {
   const autoAdvanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const countdownInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const [autoAdvanceSeconds, setAutoAdvanceSeconds] = useState<number | null>(null);
+
+  // Coordinate plane answer state
+  const [coordPlacedX, setCoordPlacedX] = useState<number | undefined>(undefined);
+  const [coordPlacedY, setCoordPlacedY] = useState<number | undefined>(undefined);
+  const [coordWasCorrect, setCoordWasCorrect] = useState<boolean | undefined>(undefined);
+  const [coordAnswered, setCoordAnswered] = useState(false);
+
+  // Whether current question is a coordinate plane question
+  const isCoordinatePlane = currentQuestion?.questionType === "coordinate_plane";
 
   // ─── Start session on mount ───
   useEffect(() => {
@@ -172,9 +183,27 @@ export default function SessionScreen() {
     if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
     if (countdownInterval.current) clearInterval(countdownInterval.current);
     setAutoAdvanceSeconds(null);
+    // Reset coordinate plane state for next question
+    setCoordPlacedX(undefined);
+    setCoordPlacedY(undefined);
+    setCoordWasCorrect(undefined);
+    setCoordAnswered(false);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     advanceToNext();
   }, [advanceToNext]);
+
+  const handleCoordinateAnswer = useCallback(
+    (x: number, y: number, correct: boolean) => {
+      if (!profile?.studentId || coordAnswered) return;
+      setCoordPlacedX(x);
+      setCoordPlacedY(y);
+      setCoordWasCorrect(correct);
+      setCoordAnswered(true);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      confirmCoordinateAnswer(profile.studentId, x, y);
+    },
+    [profile?.studentId, coordAnswered, confirmCoordinateAnswer]
+  );
 
   const handleClose = useCallback(() => {
     if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
@@ -283,7 +312,8 @@ export default function SessionScreen() {
       : "transparent";
 
   // Determine which sticky bottom button to show
-  const showCheckButton = selectedOptionId && !isConfirmed;
+  // Coordinate plane: no "Check Answer" — answer is confirmed on tap
+  const showCheckButton = !isCoordinatePlane && selectedOptionId && !isConfirmed;
   const showNextButton = isConfirmed && isCorrect !== null;
 
   return (
@@ -389,97 +419,114 @@ export default function SessionScreen() {
               </Text>
             </View>
 
-            {/* Answer Options */}
-            {currentQuestion.options.map((option, index) => {
-              const isSelected = selectedOptionId === option.id;
-              const isCorrectOption =
-                option.id === currentQuestion.correctAnswer;
+            {/* Coordinate Plane or Multiple Choice */}
+            {isCoordinatePlane ? (
+              <CoordinatePlane
+                gridMin={currentQuestion.gridMin ?? 0}
+                gridMax={currentQuestion.gridMax ?? 10}
+                correctX={currentQuestion.correctX ?? 0}
+                correctY={currentQuestion.correctY ?? 0}
+                tolerance={currentQuestion.tolerance ?? 0.5}
+                onAnswer={handleCoordinateAnswer}
+                answered={coordAnswered}
+                wasCorrect={coordWasCorrect}
+                placedX={coordPlacedX}
+                placedY={coordPlacedY}
+                disabled={coordAnswered}
+              />
+            ) : (
+              /* Answer Options (Multiple Choice) */
+              currentQuestion.options.map((option, index) => {
+                const isSelected = selectedOptionId === option.id;
+                const isCorrectOption =
+                  option.id === currentQuestion.correctAnswer;
 
-              // Determine style based on state
-              let bgColor = colors.surface;
-              let borderColor = colors.border;
-              let labelBg = colors.surfaceAlt;
-              let labelColor = colors.textSecondary;
+                // Determine style based on state
+                let bgColor = colors.surface;
+                let borderColor = colors.border;
+                let labelBg = colors.surfaceAlt;
+                let labelColor = colors.textSecondary;
 
-              if (isConfirmed && isCorrect !== null) {
-                if (isCorrectOption) {
-                  bgColor = colors.successLight;
-                  borderColor = colors.success;
-                  labelBg = colors.success;
-                  labelColor = "#ffffff";
-                } else if (isSelected && !isCorrectOption) {
-                  bgColor = colors.errorLight;
-                  borderColor = colors.error;
-                  labelBg = colors.error;
+                if (isConfirmed && isCorrect !== null) {
+                  if (isCorrectOption) {
+                    bgColor = colors.successLight;
+                    borderColor = colors.success;
+                    labelBg = colors.success;
+                    labelColor = "#ffffff";
+                  } else if (isSelected && !isCorrectOption) {
+                    bgColor = colors.errorLight;
+                    borderColor = colors.error;
+                    labelBg = colors.error;
+                    labelColor = "#ffffff";
+                  }
+                } else if (isSelected) {
+                  bgColor = colors.primaryLight;
+                  borderColor = colors.primary;
+                  labelBg = colors.primary;
                   labelColor = "#ffffff";
                 }
-              } else if (isSelected) {
-                bgColor = colors.primaryLight;
-                borderColor = colors.primary;
-                labelBg = colors.primary;
-                labelColor = "#ffffff";
-              }
 
-              return (
-                <Pressable
-                  key={option.id}
-                  onPress={() => handleSelectOption(option.id)}
-                  disabled={isConfirmed}
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    backgroundColor: bgColor,
-                    borderRadius: 14,
-                    minHeight: 56,
-                    paddingVertical: 14,
-                    paddingHorizontal: 14,
-                    borderWidth: 1.5,
-                    borderColor: borderColor,
-                    marginBottom: 10,
-                  }}
-                >
-                  <View
+                return (
+                  <Pressable
+                    key={option.id}
+                    onPress={() => handleSelectOption(option.id)}
+                    disabled={isConfirmed}
                     style={{
-                      width: 34,
-                      height: 34,
-                      borderRadius: 17,
-                      backgroundColor: labelBg,
+                      flexDirection: "row",
                       alignItems: "center",
-                      justifyContent: "center",
-                      marginRight: 14,
-                      flexShrink: 0,
+                      backgroundColor: bgColor,
+                      borderRadius: 14,
+                      minHeight: 56,
+                      paddingVertical: 14,
+                      paddingHorizontal: 14,
+                      borderWidth: 1.5,
+                      borderColor: borderColor,
+                      marginBottom: 10,
                     }}
                   >
-                    <Text
+                    <View
                       style={{
-                        fontSize: 14,
-                        fontWeight: "700",
-                        color: labelColor,
+                        width: 34,
+                        height: 34,
+                        borderRadius: 17,
+                        backgroundColor: labelBg,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginRight: 14,
+                        flexShrink: 0,
                       }}
                     >
-                      {OPTION_LABELS[index] || String(index + 1)}
+                      <Text
+                        style={{
+                          fontSize: 14,
+                          fontWeight: "700",
+                          color: labelColor,
+                        }}
+                      >
+                        {OPTION_LABELS[index] || String(index + 1)}
+                      </Text>
+                    </View>
+                    <Text
+                      style={{
+                        flex: 1,
+                        fontSize: 16,
+                        lineHeight: 22,
+                        color: colors.text,
+                        fontWeight: "500",
+                      }}
+                    >
+                      {option.text}
                     </Text>
-                  </View>
-                  <Text
-                    style={{
-                      flex: 1,
-                      fontSize: 16,
-                      lineHeight: 22,
-                      color: colors.text,
-                      fontWeight: "500",
-                    }}
-                  >
-                    {option.text}
-                  </Text>
-                  {isConfirmed && isCorrectOption && (
-                    <Text style={{ fontSize: 20, marginLeft: 8 }}>✅</Text>
-                  )}
-                  {isConfirmed && isSelected && !isCorrectOption && (
-                    <Text style={{ fontSize: 20, marginLeft: 8 }}>❌</Text>
-                  )}
-                </Pressable>
-              );
-            })}
+                    {isConfirmed && isCorrectOption && (
+                      <Text style={{ fontSize: 20, marginLeft: 8 }}>✅</Text>
+                    )}
+                    {isConfirmed && isSelected && !isCorrectOption && (
+                      <Text style={{ fontSize: 20, marginLeft: 8 }}>❌</Text>
+                    )}
+                  </Pressable>
+                );
+              })
+            )}
 
             {/* Inline Explanation (no button — button is sticky bottom) */}
             {isConfirmed && isCorrect !== null && (

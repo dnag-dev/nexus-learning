@@ -34,10 +34,17 @@ function isEnglishSubject(subject: string): boolean {
 
 // ─── Grade ordering ───
 // API returns "K", "G1", "G2", … "G12" (Prisma GradeLevel enum).
-// Normalize by stripping the optional "G" prefix so sorting is numeric.
+// Explicit numeric map so G10 always comes after G9, never after G1.
+
+const GRADE_ORDER: Record<string, number> = {
+  K: 0, G1: 1, G2: 2, G3: 3, G4: 4, G5: 5,
+  G6: 6, G7: 7, G8: 8, G9: 9, G10: 10, G11: 11, G12: 12,
+};
 
 export function gradeNumeric(g: string): number {
-  if (g === "K") return -1;
+  if (g in GRADE_ORDER) return GRADE_ORDER[g];
+  // Fallback: strip "G" prefix and parse as integer
+  if (g === "K") return 0;
   const bare = g.startsWith("G") ? g.slice(1) : g;
   const n = parseInt(bare, 10);
   return isNaN(n) ? 999 : n;

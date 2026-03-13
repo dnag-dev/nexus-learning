@@ -73,6 +73,33 @@ export interface PracticeResponse {
   explanation: string;
 }
 
+// ─── Coordinate Plane Question Types ───
+
+/** Question type constant for coordinate plane interactive questions */
+export const COORDINATE_PLANE_TYPE = "coordinate_plane";
+
+/** A coordinate plane question where students tap/click to place a point */
+export interface CoordinatePlaneQuestion {
+  questionText: string;
+  questionType: "coordinate_plane";
+  correctX: number;
+  correctY: number;
+  /** Tolerance in grid units for accepting an answer (default: 0.5) */
+  tolerance?: number;
+  explanation: string;
+  /** Optional: grid range override (default: -10 to 10) */
+  gridMin?: number;
+  gridMax?: number;
+}
+
+/** Combined question type — either multiple choice or coordinate plane */
+export type SessionQuestion = PracticeResponse | CoordinatePlaneQuestion;
+
+/** Type guard to check if a question is a coordinate plane question */
+export function isCoordinatePlaneQuestion(q: any): q is CoordinatePlaneQuestion {
+  return q?.questionType === COORDINATE_PLANE_TYPE;
+}
+
 export interface HintResponse {
   hint: string;
   encouragement: string;

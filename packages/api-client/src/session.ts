@@ -49,6 +49,13 @@ export interface NextQuestionResponse {
     options: QuestionOption[];
     correctAnswer: string;
     explanation: string;
+    /** Present when this is a coordinate plane question */
+    questionType?: "coordinate_plane";
+    correctX?: number;
+    correctY?: number;
+    tolerance?: number;
+    gridMin?: number;
+    gridMax?: number;
   };
   source: "prefetch" | "on-demand" | "fallback";
   learningStep: number;
@@ -63,6 +70,12 @@ export interface SubmitAnswerRequest {
   selectedAnswerText?: string;
   correctAnswerText?: string;
   explanation?: string;
+  /** Coordinate plane answer fields */
+  questionType?: "coordinate_plane";
+  selectedX?: number;
+  selectedY?: number;
+  correctX?: number;
+  correctY?: number;
 }
 
 export interface SubmitAnswerResponse {

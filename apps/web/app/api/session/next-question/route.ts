@@ -22,6 +22,10 @@ import type {
   EmotionalStateValue,
   LearningStepType,
 } from "@/lib/prompts/types";
+import {
+  isCoordinatePlaneNode,
+  pickCoordinatePlaneFallback,
+} from "@/lib/session/coordinate-plane-questions";
 
 export const maxDuration = 30;
 
@@ -136,6 +140,20 @@ export async function GET(request: Request) {
     ? previousQuestionTexts.join("\n- ")
     : undefined;
 
+  // ─── Coordinate Plane: Sometimes return interactive questions for geometry nodes ───
+  const isCoordNode = isCoordinatePlaneNode(node.nodeCode, node.title, node.domain);
+  if (isCoordNode && Math.random() < 0.5) {
+    const coordQuestion = pickCoordinatePlaneFallback(node.gradeLevel, previousQuestionTexts);
+    if (coordQuestion) {
+      console.log(`[next-question] Coordinate plane question for ${sessionId}`);
+      return NextResponse.json({
+        question: coordQuestion,
+        source: "on-demand",
+        learningStep: step,
+      });
+    }
+  }
+
   // Generate step-aware question
   const prompt = stepPrompt.buildStepPrompt(promptParams, stepType, {
     previousQuestions,
@@ -157,10 +175,21 @@ export async function GET(request: Request) {
     console.warn(`[next-question] Parse failed for ${sessionId} — using fallback`);
   }
 
-  // Fallback
+  // Fallback — prefer coordinate plane questions for geometry nodes
   console.error(
     `[next-question] Claude unavailable/unparseable for ${sessionId} — using fallback`
   );
+
+  if (isCoordNode) {
+    const coordFallback = pickCoordinatePlaneFallback(node.gradeLevel, previousQuestionTexts);
+    if (coordFallback) {
+      return NextResponse.json({
+        question: coordFallback,
+        source: "fallback",
+        learningStep: step,
+      });
+    }
+  }
 
   const question = generateFallbackQuestion(
     node.title,

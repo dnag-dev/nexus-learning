@@ -64,13 +64,29 @@ function stepToType(step: number): LearningStepType {
   }
 }
 
+/**
+ * Validate a coordinate plane answer — checks if the selected point is
+ * within the tolerance of the correct answer.
+ */
+function validateCoordinateAnswer(
+  selectedX: number,
+  selectedY: number,
+  correctX: number,
+  correctY: number,
+  tolerance: number = 0.5
+): boolean {
+  const dx = Math.abs(selectedX - correctX);
+  const dy = Math.abs(selectedY - correctY);
+  return dx <= tolerance && dy <= tolerance;
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const {
       sessionId,
       selectedOptionId,
-      isCorrect,
+      isCorrect: isCorrectFromClient,
       // Remediation context (client sends these for Step 3 wrong answers)
       questionText,
       selectedAnswerText,
@@ -78,7 +94,28 @@ export async function POST(request: Request) {
       explanation,
       // Response time tracking (client sends milliseconds from question display to submit)
       responseTimeMs,
+      // Coordinate plane answer fields
+      questionType: submittedQuestionType,
+      selectedX,
+      selectedY,
+      correctX,
+      correctY,
+      tolerance: submittedTolerance,
     } = body;
+
+    // For coordinate plane questions, validate server-side instead of trusting client
+    const isCorrect: boolean =
+      submittedQuestionType === "coordinate_plane" &&
+      selectedX !== undefined &&
+      selectedY !== undefined
+        ? validateCoordinateAnswer(
+            selectedX,
+            selectedY,
+            correctX ?? 0,
+            correctY ?? 0,
+            submittedTolerance ?? 0.5
+          )
+        : isCorrectFromClient;
 
     if (!sessionId || isCorrect === undefined) {
       return NextResponse.json(

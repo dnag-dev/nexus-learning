@@ -113,8 +113,9 @@ export default function SessionScreen() {
       }
 
       // Auto-advance with visible countdown: 3s for correct, 5s for incorrect
-      if (!isMastered) {
-        const totalSeconds = isCorrect ? 3 : 5;
+      // When mastered, still auto-advance (advanceToNext triggers celebration)
+      {
+        const totalSeconds = isMastered ? 2 : isCorrect ? 3 : 5;
         setAutoAdvanceSeconds(totalSeconds);
 
         // Tick countdown every second
@@ -283,7 +284,7 @@ export default function SessionScreen() {
 
   // Determine which sticky bottom button to show
   const showCheckButton = selectedOptionId && !isConfirmed;
-  const showNextButton = isConfirmed && isCorrect !== null && !isMastered;
+  const showNextButton = isConfirmed && isCorrect !== null;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
@@ -639,7 +640,7 @@ export default function SessionScreen() {
             <Text
               style={{ fontSize: 18, fontWeight: "700", color: "#ffffff" }}
             >
-              Next Question{autoAdvanceSeconds !== null ? ` (${autoAdvanceSeconds}s)` : ""}
+              {isMastered ? "See Results" : "Next Question"}{autoAdvanceSeconds !== null ? ` (${autoAdvanceSeconds}s)` : ""}
             </Text>
             <Text style={{ fontSize: 18, color: "#ffffff" }}>→</Text>
           </Pressable>

@@ -176,6 +176,8 @@ export const useSessionStore = create<SessionState>((set, get) => ({
         nodeTitle: res.node?.title || nodeCode,
         nodeCode: res.node?.nodeCode || nodeCode,
         subject: res.subject || "",
+        // Use existing BKT mastery instead of starting at 0
+        masteryPercent: res.initialMastery ?? 0,
       });
 
       // Immediately fetch first question

@@ -28,6 +28,8 @@ export interface StartSessionResponse {
   };
   subject: string;
   persona: { id: string; studentName: string };
+  /** Existing BKT mastery for this node (0-100), 0 if new topic */
+  initialMastery?: number;
   todaysPlan?: {
     planId: string;
     goalName: string;

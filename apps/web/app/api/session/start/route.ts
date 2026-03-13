@@ -242,6 +242,26 @@ export async function POST(request: Request) {
       { nodeCode: targetNode.nodeCode }
     );
 
+    // ═══ INITIAL MASTERY: Load existing BKT probability for this node ═══
+    let initialMastery = 0;
+    try {
+      const existingMastery = await prisma.masteryScore.findUnique({
+        where: {
+          studentId_nodeId: { studentId, nodeId: targetNode.id },
+        },
+        select: { bktProbability: true },
+      });
+      if (existingMastery) {
+        initialMastery = Math.min(100, Math.round(
+          existingMastery.bktProbability > 1
+            ? existingMastery.bktProbability
+            : existingMastery.bktProbability * 100
+        ));
+      }
+    } catch {
+      // Non-critical — mastery bar will start at 0
+    }
+
     // ═══ SPACED REPETITION: Check for due reviews ═══
     let reviewSuggestion = null;
     try {
@@ -309,6 +329,7 @@ export async function POST(request: Request) {
         id: student.avatarPersonaId,
         studentName: student.displayName,
       },
+      initialMastery,
       reviewSuggestion,
       // Plan-aware metadata
       ...(resolvedPlanId ? { planId: resolvedPlanId } : {}),

@@ -124,15 +124,16 @@ export async function GET(request: Request) {
     bktProbability: existing?.bktProbability ?? 0.3,
   };
 
-  // Fetch previously asked questions in this session to avoid repeats
+  // Fetch ALL previously asked questions in this session to avoid repeats
+  // (no limit — a session rarely exceeds 15-20 questions)
   const previousResponses = await prisma.questionResponse.findMany({
     where: { sessionId, nodeId: node.id },
     select: { questionText: true },
     orderBy: { createdAt: "desc" },
-    take: 10,
   });
-  const previousQuestions = previousResponses.length > 0
-    ? previousResponses.map((r) => r.questionText).join("\n- ")
+  const previousQuestionTexts = previousResponses.map((r) => r.questionText);
+  const previousQuestions = previousQuestionTexts.length > 0
+    ? previousQuestionTexts.join("\n- ")
     : undefined;
 
   // Generate step-aware question
@@ -164,7 +165,8 @@ export async function GET(request: Request) {
   const question = generateFallbackQuestion(
     node.title,
     node.difficulty,
-    node.domain
+    node.domain,
+    previousQuestionTexts
   );
   return NextResponse.json({
     question,
@@ -180,17 +182,19 @@ const ELA_DOMAINS = new Set(["GRAMMAR", "READING", "WRITING", "VOCABULARY"]);
 function generateFallbackQuestion(
   nodeTitle: string,
   difficulty: number,
-  domain: string
+  domain: string,
+  previousQuestionTexts: string[] = []
 ) {
   if (ELA_DOMAINS.has(domain)) {
-    return generateELAFallbackQuestion(nodeTitle, difficulty);
+    return generateELAFallbackQuestion(nodeTitle, difficulty, previousQuestionTexts);
   }
-  return generateMathFallbackQuestion(nodeTitle, difficulty);
+  return generateMathFallbackQuestion(nodeTitle, difficulty, previousQuestionTexts);
 }
 
 function generateELAFallbackQuestion(
   nodeTitle: string,
-  difficulty: number
+  difficulty: number,
+  previousQuestionTexts: string[] = []
 ) {
   const easyQuestions = [
     {
@@ -262,13 +266,13 @@ function generateELAFallbackQuestion(
   ];
 
   const questions = difficulty <= 4 ? easyQuestions : mediumQuestions;
-  const idx = Math.floor(Math.random() * questions.length);
-  return questions[idx];
+  return pickUnaskedFallback(questions, previousQuestionTexts);
 }
 
 function generateMathFallbackQuestion(
   nodeTitle: string,
-  difficulty: number
+  difficulty: number,
+  previousQuestionTexts: string[] = []
 ) {
   const easyQuestions = [
     {
@@ -333,6 +337,21 @@ function generateMathFallbackQuestion(
   ];
 
   const questions = difficulty <= 4 ? easyQuestions : mediumQuestions;
-  const idx = Math.floor(Math.random() * questions.length);
-  return questions[idx];
+  return pickUnaskedFallback(questions, previousQuestionTexts);
+}
+
+/**
+ * Pick a fallback question that hasn't been asked yet in this session.
+ * Falls back to random if all have been asked (pool exhausted).
+ */
+function pickUnaskedFallback(
+  questions: Array<{ questionText: string; options: any[]; correctAnswer: string; explanation: string }>,
+  previousQuestionTexts: string[]
+) {
+  // Filter out questions whose text matches a previously asked question
+  const unseen = questions.filter(
+    (q) => !previousQuestionTexts.some((prev) => prev.includes(q.questionText) || q.questionText.includes(prev))
+  );
+  const pool = unseen.length > 0 ? unseen : questions;
+  return pool[Math.floor(Math.random() * pool.length)];
 }

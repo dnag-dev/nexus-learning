@@ -22,6 +22,7 @@ import * as Haptics from "expo-haptics";
 
 import { useTheme } from "../../../lib/theme";
 import { useAuthStore } from "../../../store/auth";
+import { gradeSort } from "../../../hooks/useTopicTree";
 import {
   getTopics,
   startFluencyZone,
@@ -76,10 +77,10 @@ export default function FluencyZoneScreen() {
     try {
       const apiSubject = subject === "math" ? "MATH" : "ENGLISH";
       const res = await getTopics(profile.studentId, apiSubject);
-      // Filter to mastered topics only and sort by personal best descending
+      // Filter to mastered topics only and sort by grade numerically
       const mastered = (res.topics ?? [])
         .filter((t) => t.bktProbability >= 0.85)
-        .sort((a, b) => (b.personalBestQPM ?? 0) - (a.personalBestQPM ?? 0));
+        .sort((a, b) => gradeSort(a.gradeLevel, b.gradeLevel));
       setTopics(mastered);
     } catch (err) {
       setError(
@@ -360,98 +361,150 @@ export default function FluencyZoneScreen() {
             </Text>
           </View>
         ) : (
-          <View style={{ gap: 8 }}>
-            {topics.map((topic) => {
-              const isSelected = selectedTopic?.nodeId === topic.nodeId;
-              return (
-                <Pressable
-                  key={topic.nodeId}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setSelectedTopic(topic);
-                  }}
-                  style={({ pressed }) => ({
-                    backgroundColor: isSelected
-                      ? colors.primaryLight
-                      : colors.surface,
-                    borderRadius: 14,
-                    padding: 14,
-                    borderWidth: 1.5,
-                    borderColor: isSelected ? colors.primary : colors.border,
-                    opacity: pressed ? 0.85 : 1,
-                    flexDirection: "row",
-                    alignItems: "center",
-                  })}
-                >
-                  {/* Radio */}
-                  <View
-                    style={{
-                      width: 22,
-                      height: 22,
-                      borderRadius: 11,
-                      borderWidth: 2,
-                      borderColor: isSelected
-                        ? colors.primary
-                        : colors.textMuted,
-                      alignItems: "center",
-                      justifyContent: "center",
-                      marginRight: 12,
-                    }}
-                  >
-                    {isSelected && (
-                      <View
-                        style={{
-                          width: 12,
-                          height: 12,
-                          borderRadius: 6,
-                          backgroundColor: colors.primary,
-                        }}
-                      />
-                    )}
-                  </View>
+          <View style={{ gap: 6 }}>
+            {(() => {
+              // Group topics by grade level
+              const gradeMap = new Map<string, FluencyTopic[]>();
+              for (const t of topics) {
+                const g = t.gradeLevel || "?";
+                const arr = gradeMap.get(g);
+                if (arr) arr.push(t);
+                else gradeMap.set(g, [t]);
+              }
+              const sortedGrades = [...gradeMap.keys()].sort(gradeSort);
 
-                  {/* Info */}
-                  <View style={{ flex: 1 }}>
+              return sortedGrades.map((grade) => {
+                const gradeTopics = gradeMap.get(grade)!;
+                const bare = grade.startsWith("G") ? grade.slice(1) : grade;
+                const gradeLabel =
+                  grade === "K" ? "Kindergarten" : `Grade ${bare}`;
+
+                return (
+                  <View key={grade}>
+                    {/* Grade sub-header */}
                     <Text
                       style={{
-                        fontSize: 15,
-                        fontWeight: "600",
-                        color: colors.text,
-                        marginBottom: 2,
+                        fontSize: 9,
+                        fontWeight: "700",
+                        color: colors.textMuted,
+                        textTransform: "uppercase",
+                        letterSpacing: 1.2,
+                        marginTop: 10,
+                        marginBottom: 6,
+                        marginLeft: 2,
                       }}
-                      numberOfLines={1}
                     >
-                      {topic.title}
+                      {gradeLabel}
                     </Text>
-                    <Text style={{ fontSize: 11, color: colors.textMuted }}>
-                      {topic.gradeLevel === "K"
-                        ? "Kindergarten"
-                        : `Grade ${topic.gradeLevel}`}
-                      {" \u00B7 "}
-                      {topic.domain}
-                    </Text>
-                  </View>
 
-                  {/* Personal best */}
-                  {topic.personalBestQPM != null && topic.personalBestQPM > 0 && (
-                    <View style={{ alignItems: "flex-end" }}>
-                      <Text
-                        style={{
-                          fontSize: 14,
-                          fontWeight: "700",
-                          color: colors.gold,
-                        }}
-                      >
-                        {Math.round(topic.personalBestQPM)}
-                      </Text>
-                      <Text style={{ fontSize: 9, color: colors.textMuted }}>
-                        Q/min best
-                      </Text>
-                    </View>
-                  )}
-                </Pressable>
-              );
-            })}
+                    {gradeTopics.map((topic) => {
+                      const isSelected =
+                        selectedTopic?.nodeId === topic.nodeId;
+                      return (
+                        <Pressable
+                          key={topic.nodeId}
+                          onPress={() => {
+                            Haptics.impactAsync(
+                              Haptics.ImpactFeedbackStyle.Light
+                            );
+                            setSelectedTopic(topic);
+                          }}
+                          style={({ pressed }) => ({
+                            backgroundColor: isSelected
+                              ? colors.primaryLight
+                              : colors.surface,
+                            borderRadius: 14,
+                            padding: 14,
+                            marginBottom: 6,
+                            borderWidth: 1.5,
+                            borderColor: isSelected
+                              ? colors.primary
+                              : colors.border,
+                            opacity: pressed ? 0.85 : 1,
+                            flexDirection: "row",
+                            alignItems: "center",
+                          })}
+                        >
+                          {/* Radio */}
+                          <View
+                            style={{
+                              width: 22,
+                              height: 22,
+                              borderRadius: 11,
+                              borderWidth: 2,
+                              borderColor: isSelected
+                                ? colors.primary
+                                : colors.textMuted,
+                              alignItems: "center",
+                              justifyContent: "center",
+                              marginRight: 12,
+                            }}
+                          >
+                            {isSelected && (
+                              <View
+                                style={{
+                                  width: 12,
+                                  height: 12,
+                                  borderRadius: 6,
+                                  backgroundColor: colors.primary,
+                                }}
+                              />
+                            )}
+                          </View>
+
+                          {/* Info */}
+                          <View style={{ flex: 1 }}>
+                            <Text
+                              style={{
+                                fontSize: 15,
+                                fontWeight: "600",
+                                color: colors.text,
+                                marginBottom: 2,
+                              }}
+                              numberOfLines={1}
+                            >
+                              {topic.title}
+                            </Text>
+                            <Text
+                              style={{
+                                fontSize: 11,
+                                color: colors.textMuted,
+                              }}
+                            >
+                              {topic.domain}
+                            </Text>
+                          </View>
+
+                          {/* Personal best */}
+                          {topic.personalBestQPM != null &&
+                            topic.personalBestQPM > 0 && (
+                              <View style={{ alignItems: "flex-end" }}>
+                                <Text
+                                  style={{
+                                    fontSize: 14,
+                                    fontWeight: "700",
+                                    color: colors.gold,
+                                  }}
+                                >
+                                  {Math.round(topic.personalBestQPM)}
+                                </Text>
+                                <Text
+                                  style={{
+                                    fontSize: 9,
+                                    color: colors.textMuted,
+                                  }}
+                                >
+                                  Q/min best
+                                </Text>
+                              </View>
+                            )}
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                );
+              });
+            })()}
           </View>
         )}
       </ScrollView>

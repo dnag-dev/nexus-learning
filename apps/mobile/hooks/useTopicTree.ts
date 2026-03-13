@@ -33,30 +33,18 @@ function isEnglishSubject(subject: string): boolean {
 }
 
 // ─── Grade ordering ───
+// API returns "K", "G1", "G2", … "G12" (Prisma GradeLevel enum).
+// Normalize by stripping the optional "G" prefix so sorting is numeric.
 
-const GRADE_ORDER = [
-  "K",
-  "1",
-  "2",
-  "3",
-  "4",
-  "5",
-  "6",
-  "7",
-  "8",
-  "9",
-  "10",
-  "11",
-  "12",
-];
+export function gradeNumeric(g: string): number {
+  if (g === "K") return -1;
+  const bare = g.startsWith("G") ? g.slice(1) : g;
+  const n = parseInt(bare, 10);
+  return isNaN(n) ? 999 : n;
+}
 
-function gradeSort(a: string, b: string): number {
-  const ai = GRADE_ORDER.indexOf(a);
-  const bi = GRADE_ORDER.indexOf(b);
-  if (ai === -1 && bi === -1) return a.localeCompare(b);
-  if (ai === -1) return 1;
-  if (bi === -1) return -1;
-  return ai - bi;
+export function gradeSort(a: string, b: string): number {
+  return gradeNumeric(a) - gradeNumeric(b);
 }
 
 // ─── Types ───
@@ -179,9 +167,10 @@ export function useTopicTree(studentId: string | null): TopicTreeData {
       totalN += nodes.length;
       totalM += mastered;
 
+      const bare = grade.startsWith("G") ? grade.slice(1) : grade;
       return {
         grade,
-        label: grade === "K" ? "Kindergarten" : `Grade ${grade}`,
+        label: grade === "K" ? "Kindergarten" : `Grade ${bare}`,
         nodes,
         mastered,
         total: nodes.length,

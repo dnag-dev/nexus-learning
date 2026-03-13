@@ -267,7 +267,11 @@ export function Tier2Dashboard({
                       style={{
                         height: "100%",
                         width: `${pct}%`,
-                        backgroundColor: pct === 100 ? colors.success : colors.primary,
+                        backgroundColor:
+                          pct === 100 ? "#3DB54A"   // 100% — green
+                          : pct >= 50 ? "#1CB0F6"   // 50%+ — blue
+                          : pct > 0 ? "#7C3AED"     // started — purple
+                          : "#E2E8F0",               // 0% — grey
                         borderRadius: 3,
                       }}
                     />

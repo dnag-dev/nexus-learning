@@ -90,42 +90,72 @@ export default function TopicTreeScreen() {
         mastered: number;
         total: number;
       };
-    }) => (
-      <View
-        style={{
-          backgroundColor: colors.background,
-          paddingHorizontal: 16,
-          paddingTop: 20,
-          paddingBottom: 10,
-        }}
-      >
+    }) => {
+      const isGradeComplete =
+        section.total > 0 && section.mastered >= section.total;
+
+      return (
         <View
           style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 8,
+            backgroundColor: colors.background,
+            paddingHorizontal: 16,
+            paddingTop: 20,
+            paddingBottom: 10,
           }}
         >
-          <Text
+          <View
             style={{
-              fontSize: 16,
-              fontWeight: "700",
-              color: colors.text,
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 8,
             }}
           >
-            {section.title}
-          </Text>
-          <Text
-            style={{
-              fontSize: 12,
-              fontWeight: "600",
-              color: colors.textMuted,
-            }}
-          >
-            {section.mastered}/{section.total} mastered
-          </Text>
-        </View>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <Text
+                style={{
+                  fontSize: 16,
+                  fontWeight: "700",
+                  color: colors.text,
+                }}
+              >
+                {section.title}
+              </Text>
+              {isGradeComplete && (
+                <View
+                  style={{
+                    backgroundColor: "#FEF3C7",
+                    borderRadius: 8,
+                    paddingHorizontal: 8,
+                    paddingVertical: 3,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  <Text style={{ fontSize: 12 }}>{"\uD83C\uDF93"}</Text>
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      fontWeight: "700",
+                      color: "#92400E",
+                    }}
+                  >
+                    COMPLETE
+                  </Text>
+                </View>
+              )}
+            </View>
+            <Text
+              style={{
+                fontSize: 12,
+                fontWeight: "600",
+                color: isGradeComplete ? colors.success : colors.textMuted,
+              }}
+            >
+              {section.mastered}/{section.total} mastered
+            </Text>
+          </View>
         <MasteryBar
           progress={
             section.total > 0
@@ -137,7 +167,8 @@ export default function TopicTreeScreen() {
           showLabel={false}
         />
       </View>
-    ),
+      );
+    },
     [colors]
   );
 

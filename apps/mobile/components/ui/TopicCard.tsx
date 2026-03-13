@@ -88,8 +88,10 @@ export function TopicCard({
         gap: 10,
       })}
     >
-      {/* Icon */}
-      <Text style={{ fontSize: 18 }}>{config.icon}</Text>
+      {/* Icon — fixed 32px width for consistent alignment */}
+      <View style={{ width: 32, height: 32, alignItems: "center", justifyContent: "center" }}>
+        <Text style={{ fontSize: 18 }}>{config.icon}</Text>
+      </View>
 
       {/* Name + domain */}
       <View style={{ flex: 1, minWidth: 0 }}>

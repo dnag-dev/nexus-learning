@@ -13,7 +13,7 @@
  */
 
 import { prisma } from "@aauti/db";
-import { awardXP, type XPSource } from "./xp";
+import { awardXP, getLevelForXP, getXPProgress, type XPSource } from "./xp";
 import {
   updateDailyStreak,
   isPerfectSession,
@@ -458,9 +458,17 @@ export async function getStudentGamificationData(studentId: string) {
 
   if (!student) return null;
 
+  // Compute XP progress toward next level
+  const levelInfo = getLevelForXP(student.xp);
+  const xpIntoLevel = student.xp - levelInfo.xpRequired;
+  const xpNeededForNext = levelInfo.xpForNext - levelInfo.xpRequired;
+
   return {
     xp: student.xp,
     level: student.level,
+    title: levelInfo.title,
+    xpProgress: xpIntoLevel,
+    xpForNext: xpNeededForNext,
     streak: streakData
       ? {
           type: "daily" as const,
@@ -472,12 +480,19 @@ export async function getStudentGamificationData(studentId: string) {
           freezesUsed: streakData.freezesUsed,
         }
       : null,
-    badges: badges.map((b) => ({
-      badgeType: b.badgeType,
-      category: b.category,
-      earnedAt: b.earnedAt,
-      displayed: b.displayed,
-    })),
+    badges: badges.map((b) => {
+      const def = getBadgeById(b.badgeType);
+      return {
+        id: b.id,
+        badgeType: b.badgeType,
+        category: b.category,
+        name: def?.name ?? b.badgeType.replace(/_/g, " "),
+        description: def?.description ?? "",
+        icon: def?.icon ?? "🏅",
+        earnedAt: b.earnedAt,
+        displayed: b.displayed,
+      };
+    }),
     bossChallenges: bossChallenges.map((bc) => ({
       id: bc.id,
       status: bc.status,

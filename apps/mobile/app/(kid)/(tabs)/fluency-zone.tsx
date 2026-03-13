@@ -349,7 +349,7 @@ export default function FluencyZoneScreen() {
               borderColor: colors.border,
             }}
           >
-            <Text style={{ fontSize: 36, marginBottom: 8 }}>📚</Text>
+            <Text style={{ fontSize: 36, marginBottom: 8 }}>{"\uD83D\uDCAA"}</Text>
             <Text
               style={{
                 fontSize: 14,
@@ -357,7 +357,7 @@ export default function FluencyZoneScreen() {
                 textAlign: "center",
               }}
             >
-              No mastered topics yet.{"\n"}Master a concept first, then drill here!
+              Master some topics first, then come{"\n"}back to build speed!
             </Text>
           </View>
         ) : (

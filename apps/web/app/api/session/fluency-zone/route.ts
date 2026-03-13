@@ -41,7 +41,8 @@ export async function POST(req: NextRequest) {
 
 /**
  * Get available topics for Fluency Zone.
- * Only shows topics the student has attempted (BKT > 0).
+ * Only shows mastered topics (BKT >= 0.85) — speed practice on concepts
+ * the student has already demonstrated proficiency in.
  */
 async function handleTopics(body: { studentId: string; subject?: string }) {
   const { studentId, subject } = body;
@@ -50,7 +51,7 @@ async function handleTopics(body: { studentId: string; subject?: string }) {
     return NextResponse.json({ error: "studentId required" }, { status: 400 });
   }
 
-  const where: any = { studentId, bktProbability: { gt: 0 } };
+  const where: any = { studentId, bktProbability: { gte: 0.85 } };
 
   // Get mastery scores to find practiced topics
   const masteryScores = await prisma.masteryScore.findMany({

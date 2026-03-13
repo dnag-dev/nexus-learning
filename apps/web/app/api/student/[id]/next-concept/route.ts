@@ -9,6 +9,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@aauti/db";
 
+const GRADE_TO_INDEX: Record<string, number> = {
+  K: 0, G1: 1, G2: 2, G3: 3, G4: 4, G5: 5, G6: 6,
+  G7: 7, G8: 8, G9: 9, G10: 10, G11: 11, G12: 12,
+};
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -36,28 +41,46 @@ export async function GET(
     });
 
     if (plan && plan.currentConceptIndex < plan.conceptSequence.length) {
-      const nodeCode = plan.conceptSequence[plan.currentConceptIndex];
-      const node = await prisma.knowledgeNode.findFirst({
-        where: { nodeCode },
-        select: { nodeCode: true, title: true, description: true, difficulty: true },
-      });
+      // Walk the plan sequence, skipping concepts more than 1 grade below student
+      const studentGradeIdx = GRADE_TO_INDEX[student.gradeLevel] ?? 0;
+      let planNode = null;
+      let planIdx = plan.currentConceptIndex;
 
-      // Get the next node in sequence for "unlocks" info
-      let unlocksTitle: string | null = null;
-      if (plan.currentConceptIndex + 1 < plan.conceptSequence.length) {
-        const nextCode = plan.conceptSequence[plan.currentConceptIndex + 1];
-        const nextNode = await prisma.knowledgeNode.findFirst({
-          where: { nodeCode: nextCode },
-          select: { title: true },
+      while (planIdx < plan.conceptSequence.length) {
+        const nodeCode = plan.conceptSequence[planIdx];
+        const candidate = await prisma.knowledgeNode.findFirst({
+          where: { nodeCode },
+          select: { nodeCode: true, title: true, description: true, difficulty: true, gradeLevel: true },
         });
-        unlocksTitle = nextNode?.title ?? null;
+
+        if (candidate) {
+          const nodeGradeIdx = GRADE_TO_INDEX[candidate.gradeLevel] ?? 0;
+          // Accept if within 1 grade below student level (or above)
+          if (studentGradeIdx - nodeGradeIdx <= 1) {
+            planNode = candidate;
+            break;
+          }
+        }
+        planIdx++;
       }
 
-      if (node) {
+      if (planNode) {
+        // Get the next node in sequence for "unlocks" info
+        let unlocksTitle: string | null = null;
+        if (planIdx + 1 < plan.conceptSequence.length) {
+          const nextCode = plan.conceptSequence[planIdx + 1];
+          const nextNode = await prisma.knowledgeNode.findFirst({
+            where: { nodeCode: nextCode },
+            select: { title: true },
+          });
+          unlocksTitle = nextNode?.title ?? null;
+        }
+
         return NextResponse.json({
-          title: node.title,
-          description: node.description,
-          estimatedMinutes: Math.round((node.difficulty <= 4 ? 0.5 : 1.0) * 20),
+          title: planNode.title,
+          nodeCode: planNode.nodeCode,
+          description: planNode.description,
+          estimatedMinutes: Math.round((planNode.difficulty <= 4 ? 0.5 : 1.0) * 20),
           unlocks: unlocksTitle,
           source: "learning_plan",
           goalName: plan.goal?.name ?? null,
@@ -97,6 +120,7 @@ export async function GET(
 
       return NextResponse.json({
         title: nextNode.title,
+        nodeCode: nextNode.nodeCode,
         description: nextNode.description,
         estimatedMinutes: 20,
         unlocks: afterNode?.title ?? null,

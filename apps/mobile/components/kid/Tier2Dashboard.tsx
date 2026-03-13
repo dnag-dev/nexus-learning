@@ -2,11 +2,29 @@
  * Tier 2 Dashboard (G4-G7) — stats, subject tabs, mission card.
  */
 
+import { useMemo } from "react";
 import { View, Text, Pressable, ScrollView } from "react-native";
 import { router } from "expo-router";
 import { useTheme } from "../../lib/theme";
 import { SubjectTabs, XPBadge, StreakBadge, MasteryBar, Card } from "../ui";
 import type { GradeProgress, RecentTopic } from "../../hooks/useDashboard";
+
+const GRADE_ORDER = ["K","G1","G2","G3","G4","G5","G6","G7","G8","G9","G10","G11","G12"];
+
+function fullGradeName(g: string): string {
+  if (g === "K") return "Kindergarten";
+  const num = g.replace("G", "");
+  return `Grade ${num}`;
+}
+
+function barColor(mastered: number, total: number): string {
+  if (total === 0) return "#E2E8F0";
+  const ratio = mastered / total;
+  if (ratio === 1) return "#3DB54A";      // 100% — green
+  if (ratio >= 0.5) return "#1CB0F6";     // 50%+ — blue
+  if (ratio > 0) return "#7C3AED";        // started — purple
+  return "#E2E8F0";                        // 0% — grey
+}
 
 interface Tier2DashboardProps {
   displayName: string;
@@ -47,6 +65,35 @@ export function Tier2Dashboard({
 
   const masteryPercent =
     totalCount > 0 ? Math.round((masteryCount / totalCount) * 100) : 0;
+
+  // Find the student's active grade (highest with some progress but not complete)
+  const activeGrade = useMemo(() => {
+    let active: GradeProgress | null = null;
+    for (const gp of gradeProgress) {
+      if (gp.total > 0 && gp.mastered < gp.total) active = gp;
+    }
+    // Fallback: first grade with any content
+    if (!active && gradeProgress.length > 0) active = gradeProgress[0];
+    return active;
+  }, [gradeProgress]);
+
+  // Grade progress: show only current grade ± 1 (3 rows max)
+  const visibleGrades = useMemo(() => {
+    if (!activeGrade) return gradeProgress.slice(0, 3);
+    const idx = GRADE_ORDER.indexOf(activeGrade.grade);
+    if (idx < 0) return gradeProgress.slice(0, 3);
+    const minIdx = Math.max(0, idx - 1);
+    const maxIdx = idx + 1;
+    return gradeProgress.filter((gp) => {
+      const gi = GRADE_ORDER.indexOf(gp.grade);
+      return gi >= minIdx && gi <= maxIdx;
+    });
+  }, [gradeProgress, activeGrade]);
+
+  // Summary text: "Grade 5 Math — 4/17 topics"
+  const summaryText = activeGrade
+    ? `${fullGradeName(activeGrade.grade)} ${subject === "math" ? "Math" : "English"} — ${activeGrade.mastered}/${activeGrade.total} topics`
+    : `${masteryCount} / ${totalCount} concepts mastered`;
 
   return (
     <ScrollView
@@ -98,6 +145,7 @@ export function Tier2Dashboard({
                 color: colors.text,
                 marginBottom: 6,
               }}
+              numberOfLines={1}
             >
               {nextConcept.title}
             </Text>
@@ -153,7 +201,7 @@ export function Tier2Dashboard({
               marginTop: 8,
             }}
           >
-            {masteryCount} / {totalCount} concepts mastered
+            {summaryText}
           </Text>
         </Card>
       </View>
@@ -165,10 +213,7 @@ export function Tier2Dashboard({
         );
         if (completedGrades.length === 0) return null;
         const latest = completedGrades[completedGrades.length - 1];
-        const gradeLabel =
-          latest.grade === "K"
-            ? "Kindergarten"
-            : `Grade ${latest.grade.replace("G", "")}`;
+        const gradeLabel = fullGradeName(latest.grade);
         const subjectLabel = subject === "math" ? "Math" : "English";
         return (
           <Pressable
@@ -215,8 +260,8 @@ export function Tier2Dashboard({
         );
       })()}
 
-      {/* Grade progress breakdown */}
-      {gradeProgress.length > 0 && (
+      {/* Grade progress breakdown — show current grade ± 1 */}
+      {visibleGrades.length > 0 && (
         <View style={{ marginTop: 16 }}>
           <Card>
             <Text
@@ -229,37 +274,38 @@ export function Tier2Dashboard({
             >
               GRADE PROGRESS
             </Text>
-            {gradeProgress.map((gp) => {
+            {visibleGrades.map((gp) => {
               const pct = gp.total > 0 ? Math.round((gp.mastered / gp.total) * 100) : 0;
-              const gradeLabel = gp.grade === "K" ? "K" : gp.grade;
+              const label = fullGradeName(gp.grade);
               const isComplete = gp.total > 0 && gp.mastered >= gp.total;
+              const bColor = barColor(gp.mastered, gp.total);
               return (
-                <View key={gp.grade} style={{ marginBottom: 8 }}>
+                <View key={gp.grade} style={{ marginBottom: 10 }}>
                   <View
                     style={{
                       flexDirection: "row",
                       justifyContent: "space-between",
                       alignItems: "center",
-                      marginBottom: 3,
+                      marginBottom: 4,
                     }}
                   >
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
                       <Text style={{ fontSize: 13, fontWeight: "600", color: colors.text }}>
-                        {gradeLabel}
+                        {label}
                       </Text>
                       {isComplete && (
                         <Text style={{ fontSize: 11 }}>{"\uD83C\uDF93"}</Text>
                       )}
                     </View>
-                    <Text style={{ fontSize: 11, color: isComplete ? colors.success : colors.textMuted }}>
+                    <Text style={{ fontSize: 12, fontWeight: "600", color: bColor }}>
                       {gp.mastered}/{gp.total}
                     </Text>
                   </View>
                   <View
                     style={{
-                      height: 6,
+                      height: 8,
                       backgroundColor: colors.surfaceAlt,
-                      borderRadius: 3,
+                      borderRadius: 4,
                       overflow: "hidden",
                     }}
                   >
@@ -267,12 +313,8 @@ export function Tier2Dashboard({
                       style={{
                         height: "100%",
                         width: `${pct}%`,
-                        backgroundColor:
-                          pct === 100 ? "#3DB54A"   // 100% — green
-                          : pct >= 50 ? "#1CB0F6"   // 50%+ — blue
-                          : pct > 0 ? "#7C3AED"     // started — purple
-                          : "#E2E8F0",               // 0% — grey
-                        borderRadius: 3,
+                        backgroundColor: bColor,
+                        borderRadius: 4,
                       }}
                     />
                   </View>
@@ -312,7 +354,7 @@ export function Tier2Dashboard({
                   }}
                 >
                   <Text style={{ fontSize: 16, marginRight: 10 }}>
-                    {isMastered ? "⭐" : "📘"}
+                    {isMastered ? "\u2B50" : "\uD83D\uDCD8"}
                   </Text>
                   <View style={{ flex: 1 }}>
                     <Text
@@ -356,7 +398,7 @@ export function Tier2Dashboard({
             opacity: pressed ? 0.8 : 1,
           })}
         >
-          <Text style={{ fontSize: 28, marginBottom: 6 }}>🗺️</Text>
+          <Text style={{ fontSize: 28, marginBottom: 6 }}>{"\uD83D\uDDFA\uFE0F"}</Text>
           <Text style={{ fontSize: 13, fontWeight: "600", color: colors.text }}>
             Topics
           </Text>
@@ -375,7 +417,7 @@ export function Tier2Dashboard({
             opacity: pressed ? 0.8 : 1,
           })}
         >
-          <Text style={{ fontSize: 28, marginBottom: 6 }}>⚡</Text>
+          <Text style={{ fontSize: 28, marginBottom: 6 }}>{"\u26A1"}</Text>
           <Text style={{ fontSize: 13, fontWeight: "600", color: colors.text }}>
             Speed Drill
           </Text>

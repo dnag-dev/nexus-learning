@@ -442,8 +442,9 @@ export default function SessionScreen() {
                   option.id === currentQuestion.correctAnswer;
 
                 // Determine style based on state
-                let bgColor = colors.surface;
-                let borderColor = colors.border;
+                let bgColor = "#ffffff";
+                let borderColor = "#E2E8F0";
+                let borderW = 1.5;
                 let labelBg = colors.surfaceAlt;
                 let labelColor = colors.textSecondary;
 
@@ -451,18 +452,21 @@ export default function SessionScreen() {
                   if (isCorrectOption) {
                     bgColor = colors.successLight;
                     borderColor = colors.success;
+                    borderW = 2;
                     labelBg = colors.success;
                     labelColor = "#ffffff";
                   } else if (isSelected && !isCorrectOption) {
                     bgColor = colors.errorLight;
                     borderColor = colors.error;
+                    borderW = 2;
                     labelBg = colors.error;
                     labelColor = "#ffffff";
                   }
                 } else if (isSelected) {
-                  bgColor = colors.primaryLight;
-                  borderColor = colors.primary;
-                  labelBg = colors.primary;
+                  bgColor = "#EFF6FF";
+                  borderColor = "#1CB0F6";
+                  borderW = 2;
+                  labelBg = "#1CB0F6";
                   labelColor = "#ffffff";
                 }
 
@@ -477,9 +481,9 @@ export default function SessionScreen() {
                       backgroundColor: bgColor,
                       borderRadius: 14,
                       minHeight: 56,
-                      paddingVertical: 14,
+                      paddingVertical: 16,
                       paddingHorizontal: 14,
-                      borderWidth: 1.5,
+                      borderWidth: borderW,
                       borderColor: borderColor,
                       marginBottom: 10,
                     }}

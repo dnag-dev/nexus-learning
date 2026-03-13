@@ -66,7 +66,7 @@ export function MasteryBar({
             borderRadius: height / 2,
           } as ViewStyle}
         />
-        {/* Goal marker */}
+        {/* Goal marker — visible purple tick */}
         {goal > 0 && goal < 100 && (
           <View
             style={{
@@ -75,8 +75,7 @@ export function MasteryBar({
               top: 0,
               bottom: 0,
               width: 2,
-              backgroundColor: colors.textMuted,
-              opacity: 0.5,
+              backgroundColor: "#7C3AED",
             } as ViewStyle}
           />
         )}
@@ -84,8 +83,8 @@ export function MasteryBar({
       {estimate && (
         <Text
           style={{
-            fontSize: 11,
-            color: colors.textMuted,
+            fontSize: 13,
+            color: "#4B5563",
             marginTop: 4,
           }}
         >

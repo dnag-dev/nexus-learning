@@ -23,7 +23,6 @@ export function StepProgress({
         {STEPS.map((_, index) => {
           const isCompleted = index < completedSteps;
           const isCurrent = index === currentStep;
-          const isUpcoming = index > currentStep;
 
           return (
             <View key={index} style={{ flexDirection: "row", alignItems: "center" }}>
@@ -33,12 +32,13 @@ export function StepProgress({
                   height: isCurrent ? 14 : 10,
                   borderRadius: 7,
                   backgroundColor: isCompleted
-                    ? colors.success
+                    ? "#3DB54A"    // completed — green
                     : isCurrent
-                      ? colors.primary
-                      : colors.border,
+                      ? "#1CB0F6" // active — blue
+                      : "#E2E8F0", // upcoming — grey
                   borderWidth: isCurrent ? 2 : 0,
-                  borderColor: isCurrent ? colors.primary : undefined,
+                  borderColor: isCurrent ? "#1CB0F6" : undefined,
+                  transform: isCurrent ? [{ scale: 1.2 }] : [],
                 }}
               />
               {index < STEPS.length - 1 && (
@@ -47,7 +47,7 @@ export function StepProgress({
                     width: 24,
                     height: 2,
                     backgroundColor:
-                      index < completedSteps ? colors.success : colors.border,
+                      index < completedSteps ? "#3DB54A" : "#E2E8F0",
                   }}
                 />
               )}
@@ -58,20 +58,28 @@ export function StepProgress({
 
       {/* Labels */}
       <View style={{ flexDirection: "row", justifyContent: "space-between", width: "100%" }}>
-        {STEPS.map((label, index) => (
-          <Text
-            key={label}
-            style={{
-              fontSize: 9,
-              fontWeight: index === currentStep ? "700" : "400",
-              color: index === currentStep ? colors.primary : colors.textMuted,
-              textAlign: "center",
-              flex: 1,
-            }}
-          >
-            {label}
-          </Text>
-        ))}
+        {STEPS.map((label, index) => {
+          const isCompleted = index < completedSteps;
+          const isCurrent = index === currentStep;
+          return (
+            <Text
+              key={label}
+              style={{
+                fontSize: 9,
+                fontWeight: isCurrent ? "700" : "400",
+                color: isCurrent
+                  ? "#1CB0F6"
+                  : isCompleted
+                    ? "#3DB54A"
+                    : colors.textMuted,
+                textAlign: "center",
+                flex: 1,
+              }}
+            >
+              {label}
+            </Text>
+          );
+        })}
       </View>
     </View>
   );

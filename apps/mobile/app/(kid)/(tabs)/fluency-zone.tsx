@@ -76,7 +76,11 @@ export default function FluencyZoneScreen() {
     try {
       const apiSubject = subject === "math" ? "MATH" : "ENGLISH";
       const res = await getTopics(profile.studentId, apiSubject);
-      setTopics(res.topics ?? []);
+      // Filter to mastered topics only and sort by personal best descending
+      const mastered = (res.topics ?? [])
+        .filter((t) => t.bktProbability >= 0.85)
+        .sort((a, b) => (b.personalBestQPM ?? 0) - (a.personalBestQPM ?? 0));
+      setTopics(mastered);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to load topics"
@@ -352,7 +356,7 @@ export default function FluencyZoneScreen() {
                 textAlign: "center",
               }}
             >
-              No topics available yet.{"\n"}Complete some lessons first!
+              No mastered topics yet.{"\n"}Master a concept first, then drill here!
             </Text>
           </View>
         ) : (
@@ -441,7 +445,7 @@ export default function FluencyZoneScreen() {
                         {Math.round(topic.personalBestQPM)}
                       </Text>
                       <Text style={{ fontSize: 9, color: colors.textMuted }}>
-                        Best speed
+                        Q/min best
                       </Text>
                     </View>
                   )}

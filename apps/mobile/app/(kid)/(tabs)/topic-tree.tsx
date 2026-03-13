@@ -2,17 +2,19 @@
  * Topic Tree — browse all concepts grouped by grade with mastery states.
  *
  * - Grade sections with progress bars (X/Y mastered)
+ * - Completed grades collapsed by default with gold badge + "show N topics"
+ * - Highest in-progress grade expanded by default
  * - TopicCard components per node (locked/available/in_progress/mastered)
  * - Haptic feedback on tap
  * - Subject tabs (Math/English)
- * - Locked tap shows prerequisite toast
  */
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, useMemo, useEffect } from "react";
 import {
   View,
   Text,
-  SectionList,
+  ScrollView,
+  Pressable,
   RefreshControl,
   SafeAreaView,
   Alert,
@@ -22,7 +24,11 @@ import * as Haptics from "expo-haptics";
 
 import { useTheme } from "../../../lib/theme";
 import { useAuthStore } from "../../../store/auth";
-import { useTopicTree, type GradeGroup, type TopicNode } from "../../../hooks/useTopicTree";
+import {
+  useTopicTree,
+  type GradeGroup,
+  type TopicNode,
+} from "../../../hooks/useTopicTree";
 import { SubjectTabs } from "../../../components/ui/SubjectTabs";
 import { TopicCard } from "../../../components/ui/TopicCard";
 import { MasteryBar } from "../../../components/ui/MasteryBar";
@@ -45,154 +51,72 @@ export default function TopicTreeScreen() {
 
   const [refreshing, setRefreshing] = useState(false);
 
+  // ─── Collapse state ───
+  // Expanded set: grades NOT in this set are collapsed.
+  const [expandedGrades, setExpandedGrades] = useState<Set<string>>(new Set());
+
+  // Determine the "active" grade: highest grade that has at least one
+  // in-progress or available node (and is not fully mastered).
+  const activeGrade = useMemo(() => {
+    let active: string | null = null;
+    for (const g of grades) {
+      const isComplete = g.total > 0 && g.mastered >= g.total;
+      if (!isComplete && g.total > 0) {
+        active = g.grade; // keep overwriting — last non-complete = highest
+      }
+    }
+    return active;
+  }, [grades]);
+
+  // Re-compute expanded set whenever grades or subject changes:
+  // - Completed grades: collapsed
+  // - Active grade: expanded
+  // - Others: expanded
+  useEffect(() => {
+    const expanded = new Set<string>();
+    for (const g of grades) {
+      const isComplete = g.total > 0 && g.mastered >= g.total;
+      if (!isComplete) {
+        expanded.add(g.grade);
+      }
+    }
+    // Always expand active grade
+    if (activeGrade) expanded.add(activeGrade);
+    setExpandedGrades(expanded);
+  }, [grades, activeGrade, subject]);
+
+  const toggleGrade = useCallback((grade: string) => {
+    setExpandedGrades((prev) => {
+      const next = new Set(prev);
+      if (next.has(grade)) {
+        next.delete(grade);
+      } else {
+        next.add(grade);
+      }
+      return next;
+    });
+  }, []);
+
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     refresh();
-    // Brief delay so the spinner is visible
     setTimeout(() => setRefreshing(false), 600);
   }, [refresh]);
 
-  const handleNodePress = useCallback(
-    (node: TopicNode) => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  const handleNodePress = useCallback((node: TopicNode) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-      if (node.state === "locked") {
-        const prereqText =
-          node.prerequisiteNames.length > 0
-            ? `Complete "${node.prerequisiteNames[0]}" first`
-            : "Complete prerequisites first";
-        Alert.alert("Locked", prereqText);
-        return;
-      }
+    if (node.state === "locked") {
+      const prereqText =
+        node.prerequisiteNames.length > 0
+          ? `Complete "${node.prerequisiteNames[0]}" first`
+          : "Complete prerequisites first";
+      Alert.alert("Locked", prereqText);
+      return;
+    }
 
-      router.push(`/(kid)/session/${node.nodeCode}`);
-    },
-    []
-  );
-
-  // Convert grades to SectionList format
-  const sections = grades.map((group) => ({
-    title: group.label,
-    grade: group.grade,
-    mastered: group.mastered,
-    total: group.total,
-    data: group.nodes,
-  }));
-
-  // ─── Section header ───
-  const renderSectionHeader = useCallback(
-    ({
-      section,
-    }: {
-      section: {
-        title: string;
-        grade: string;
-        mastered: number;
-        total: number;
-      };
-    }) => {
-      const isGradeComplete =
-        section.total > 0 && section.mastered >= section.total;
-
-      return (
-        <View
-          style={{
-            backgroundColor: colors.background,
-            paddingHorizontal: 16,
-            paddingTop: 20,
-            paddingBottom: 10,
-          }}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 8,
-            }}
-          >
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <Text
-                style={{
-                  fontSize: 16,
-                  fontWeight: "700",
-                  color: colors.text,
-                }}
-              >
-                {section.title}
-              </Text>
-              {isGradeComplete && (
-                <View
-                  style={{
-                    backgroundColor: "#FEF3C7",
-                    borderRadius: 8,
-                    paddingHorizontal: 8,
-                    paddingVertical: 3,
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 4,
-                  }}
-                >
-                  <Text style={{ fontSize: 12 }}>{"\uD83C\uDF93"}</Text>
-                  <Text
-                    style={{
-                      fontSize: 11,
-                      fontWeight: "700",
-                      color: "#92400E",
-                    }}
-                  >
-                    COMPLETE
-                  </Text>
-                </View>
-              )}
-            </View>
-            <Text
-              style={{
-                fontSize: 12,
-                fontWeight: "600",
-                color: isGradeComplete ? colors.success : colors.textMuted,
-              }}
-            >
-              {section.mastered}/{section.total} mastered
-            </Text>
-          </View>
-        <MasteryBar
-          progress={
-            section.total > 0
-              ? Math.round((section.mastered / section.total) * 100)
-              : 0
-          }
-          goal={0}
-          height={6}
-          showLabel={false}
-        />
-      </View>
-      );
-    },
-    [colors]
-  );
-
-  // ─── Item renderer ───
-  const renderItem = useCallback(
-    ({ item }: { item: TopicNode }) => (
-      <View style={{ paddingHorizontal: 16, paddingVertical: 4 }}>
-        <TopicCard
-          title={item.title}
-          gradeLevel={item.gradeLevel}
-          domain={item.domain}
-          state={item.state}
-          masteryPercent={item.masteryPercent}
-          onPress={() => handleNodePress(item)}
-        />
-      </View>
-    ),
-    [handleNodePress]
-  );
-
-  const keyExtractor = useCallback(
-    (item: TopicNode) => item.id || item.nodeCode,
-    []
-  );
+    router.push(`/(kid)/session/${node.nodeCode}`);
+  }, []);
 
   // ─── Loading ───
   if (loading && grades.length === 0) {
@@ -207,7 +131,6 @@ export default function TopicTreeScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       {/* Header */}
       <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
-        {/* Overall stats */}
         <View
           style={{
             flexDirection: "row",
@@ -253,7 +176,6 @@ export default function TopicTreeScreen() {
           </View>
         </View>
 
-        {/* Subject tabs */}
         <SubjectTabs
           selected={subject}
           onSelect={(s) => setSubject(s as "math" | "english")}
@@ -268,13 +190,9 @@ export default function TopicTreeScreen() {
       )}
 
       {/* Topic list */}
-      <SectionList
-        sections={sections}
-        keyExtractor={keyExtractor}
-        renderItem={renderItem}
-        renderSectionHeader={renderSectionHeader}
+      <ScrollView
         contentContainerStyle={{ paddingBottom: 100 }}
-        stickySectionHeadersEnabled={false}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -282,7 +200,8 @@ export default function TopicTreeScreen() {
             tintColor={colors.primary}
           />
         }
-        ListEmptyComponent={
+      >
+        {grades.length === 0 && (
           <View
             style={{
               alignItems: "center",
@@ -290,7 +209,9 @@ export default function TopicTreeScreen() {
               padding: 40,
             }}
           >
-            <Text style={{ fontSize: 48, marginBottom: 12 }}>🗺️</Text>
+            <Text style={{ fontSize: 48, marginBottom: 12 }}>
+              {"\uD83D\uDDFA\uFE0F"}
+            </Text>
             <Text
               style={{
                 fontSize: 15,
@@ -302,8 +223,149 @@ export default function TopicTreeScreen() {
               {"\n"}Check back later!
             </Text>
           </View>
-        }
-      />
+        )}
+
+        {grades.map((group) => {
+          const isComplete = group.total > 0 && group.mastered >= group.total;
+          const isExpanded = expandedGrades.has(group.grade);
+          const pct =
+            group.total > 0
+              ? Math.round((group.mastered / group.total) * 100)
+              : 0;
+
+          return (
+            <View key={group.grade}>
+              {/* ─── Section header ─── */}
+              <Pressable
+                onPress={() => toggleGrade(group.grade)}
+                style={{
+                  backgroundColor: colors.background,
+                  paddingHorizontal: 16,
+                  paddingTop: 20,
+                  paddingBottom: 10,
+                }}
+              >
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: 8,
+                  }}
+                >
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 8,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "700",
+                        color: colors.text,
+                      }}
+                    >
+                      {group.label}
+                    </Text>
+                    {isComplete ? (
+                      <View
+                        style={{
+                          backgroundColor: "#FEF3C7",
+                          borderRadius: 8,
+                          paddingHorizontal: 8,
+                          paddingVertical: 3,
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 4,
+                        }}
+                      >
+                        <Text style={{ fontSize: 11 }}>
+                          {"\u2713"}
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: 11,
+                            fontWeight: "700",
+                            color: "#92400E",
+                          }}
+                        >
+                          Complete!
+                        </Text>
+                      </View>
+                    ) : (
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          fontWeight: "600",
+                          color: colors.textMuted,
+                        }}
+                      >
+                        {group.mastered}/{group.total} mastered
+                      </Text>
+                    )}
+                  </View>
+                  {/* Chevron */}
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: colors.textMuted,
+                    }}
+                  >
+                    {isExpanded ? "\u25B2" : "\u25BC"}
+                  </Text>
+                </View>
+                <MasteryBar
+                  progress={pct}
+                  goal={0}
+                  height={6}
+                  showLabel={false}
+                />
+              </Pressable>
+
+              {/* ─── Collapsed hint ─── */}
+              {!isExpanded && (
+                <Pressable
+                  onPress={() => toggleGrade(group.grade)}
+                  style={{
+                    paddingHorizontal: 16,
+                    paddingBottom: 8,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      color: colors.primary,
+                      fontWeight: "600",
+                    }}
+                  >
+                    show {group.total} topics {"\u25BE"}
+                  </Text>
+                </Pressable>
+              )}
+
+              {/* ─── Nodes ─── */}
+              {isExpanded &&
+                group.nodes.map((node) => (
+                  <View
+                    key={node.id || node.nodeCode}
+                    style={{ paddingHorizontal: 16, paddingVertical: 4 }}
+                  >
+                    <TopicCard
+                      title={node.title}
+                      gradeLevel={node.gradeLevel}
+                      domain={node.domain}
+                      state={node.state}
+                      masteryPercent={node.masteryPercent}
+                      onPress={() => handleNodePress(node)}
+                    />
+                  </View>
+                ))}
+            </View>
+          );
+        })}
+      </ScrollView>
     </SafeAreaView>
   );
 }

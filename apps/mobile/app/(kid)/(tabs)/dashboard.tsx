@@ -89,6 +89,8 @@ export default function KidDashboardScreen() {
       nextConcept={dashboard.nextConcept}
       masteryCount={dashboard.masteryCount}
       totalCount={dashboard.totalCount}
+      gradeProgress={dashboard.gradeProgress}
+      recentTopics={dashboard.recentTopics}
     />
   );
 }

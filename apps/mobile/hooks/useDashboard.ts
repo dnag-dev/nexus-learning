@@ -46,6 +46,18 @@ interface NextConceptResponse {
   goalName?: string;
 }
 
+export interface GradeProgress {
+  grade: string;
+  mastered: number;
+  total: number;
+}
+
+export interface RecentTopic {
+  name: string;
+  gradeLevel: string;
+  bktProbability: number;
+}
+
 interface DashboardData {
   // Gamification
   xp: number;
@@ -63,6 +75,10 @@ interface DashboardData {
   // Mastery stats
   masteryCount: number;
   totalCount: number;
+  // Grade breakdown
+  gradeProgress: GradeProgress[];
+  // Recently practiced topics (top 5 by BKT > 0)
+  recentTopics: RecentTopic[];
   // Loading state
   loading: boolean;
   error: string | null;
@@ -87,6 +103,8 @@ export function useDashboard(studentId: string | null): DashboardData {
     useState<DashboardData["nextConcept"]>(null);
   const [masteryCount, setMasteryCount] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
+  const [gradeProgress, setGradeProgress] = useState<GradeProgress[]>([]);
+  const [recentTopics, setRecentTopics] = useState<RecentTopic[]>([]);
 
   const fetchData = useCallback(async () => {
     if (!studentId) return;
@@ -157,6 +175,33 @@ export function useDashboard(studentId: string | null): DashboardData {
 
         setMasteryCount(mastered);
         setTotalCount(subjectNodes.length);
+
+        // Compute per-grade progress
+        const gradeMap = new Map<string, { mastered: number; total: number }>();
+        for (const n of subjectNodes) {
+          const g = n.gradeLevel || "?";
+          const entry = gradeMap.get(g) || { mastered: 0, total: 0 };
+          entry.total++;
+          if ((n.probability ?? n.bktProbability ?? 0) >= 0.85) entry.mastered++;
+          gradeMap.set(g, entry);
+        }
+        const gradeOrder = ["K","G1","G2","G3","G4","G5","G6","G7","G8","G9","G10","G11","G12"];
+        const grades = Array.from(gradeMap.entries())
+          .map(([grade, { mastered: m, total: t }]) => ({ grade, mastered: m, total: t }))
+          .sort((a, b) => gradeOrder.indexOf(a.grade) - gradeOrder.indexOf(b.grade));
+        setGradeProgress(grades);
+
+        // Recent activity: topics with BKT > 0, sorted by probability descending, top 5
+        const practiced = subjectNodes
+          .filter((n) => (n.probability ?? n.bktProbability ?? 0) > 0)
+          .sort((a, b) => (b.bktProbability ?? b.probability ?? 0) - (a.bktProbability ?? a.probability ?? 0))
+          .slice(0, 5)
+          .map((n) => ({
+            name: n.name || n.nodeCode || "Topic",
+            gradeLevel: n.gradeLevel || "?",
+            bktProbability: n.bktProbability ?? n.probability ?? 0,
+          }));
+        setRecentTopics(practiced);
       }
     } catch (err) {
       setError(
@@ -179,6 +224,8 @@ export function useDashboard(studentId: string | null): DashboardData {
     nextConcept,
     masteryCount,
     totalCount,
+    gradeProgress,
+    recentTopics,
     loading,
     error,
     subject,

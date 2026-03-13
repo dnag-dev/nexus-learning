@@ -6,6 +6,7 @@ import { View, Text, Pressable, ScrollView } from "react-native";
 import { router } from "expo-router";
 import { useTheme } from "../../lib/theme";
 import { SubjectTabs, XPBadge, StreakBadge, MasteryBar, Card } from "../ui";
+import type { GradeProgress, RecentTopic } from "../../hooks/useDashboard";
 
 interface Tier2DashboardProps {
   displayName: string;
@@ -24,6 +25,8 @@ interface Tier2DashboardProps {
   } | null;
   masteryCount: number;
   totalCount: number;
+  gradeProgress?: GradeProgress[];
+  recentTopics?: RecentTopic[];
 }
 
 export function Tier2Dashboard({
@@ -37,6 +40,8 @@ export function Tier2Dashboard({
   nextConcept,
   masteryCount,
   totalCount,
+  gradeProgress = [],
+  recentTopics = [],
 }: Tier2DashboardProps) {
   const { colors } = useTheme();
 
@@ -152,6 +157,122 @@ export function Tier2Dashboard({
           </Text>
         </Card>
       </View>
+
+      {/* Grade progress breakdown */}
+      {gradeProgress.length > 0 && (
+        <View style={{ marginTop: 16 }}>
+          <Card>
+            <Text
+              style={{
+                fontSize: 12,
+                color: colors.textMuted,
+                fontWeight: "600",
+                marginBottom: 10,
+              }}
+            >
+              GRADE PROGRESS
+            </Text>
+            {gradeProgress.map((gp) => {
+              const pct = gp.total > 0 ? Math.round((gp.mastered / gp.total) * 100) : 0;
+              const gradeLabel = gp.grade === "K" ? "K" : gp.grade;
+              return (
+                <View key={gp.grade} style={{ marginBottom: 8 }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 3,
+                    }}
+                  >
+                    <Text style={{ fontSize: 13, fontWeight: "600", color: colors.text }}>
+                      {gradeLabel}
+                    </Text>
+                    <Text style={{ fontSize: 11, color: colors.textMuted }}>
+                      {gp.mastered}/{gp.total}
+                    </Text>
+                  </View>
+                  <View
+                    style={{
+                      height: 6,
+                      backgroundColor: colors.surfaceAlt,
+                      borderRadius: 3,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <View
+                      style={{
+                        height: "100%",
+                        width: `${pct}%`,
+                        backgroundColor: pct === 100 ? colors.success : colors.primary,
+                        borderRadius: 3,
+                      }}
+                    />
+                  </View>
+                </View>
+              );
+            })}
+          </Card>
+        </View>
+      )}
+
+      {/* Recent activity */}
+      {recentTopics.length > 0 && (
+        <View style={{ marginTop: 16 }}>
+          <Card>
+            <Text
+              style={{
+                fontSize: 12,
+                color: colors.textMuted,
+                fontWeight: "600",
+                marginBottom: 10,
+              }}
+            >
+              RECENTLY PRACTICED
+            </Text>
+            {recentTopics.map((topic, idx) => {
+              const pct = Math.round(topic.bktProbability * 100);
+              const isMastered = pct >= 85;
+              return (
+                <View
+                  key={idx}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingVertical: 6,
+                    borderBottomWidth: idx < recentTopics.length - 1 ? 1 : 0,
+                    borderBottomColor: colors.border,
+                  }}
+                >
+                  <Text style={{ fontSize: 16, marginRight: 10 }}>
+                    {isMastered ? "⭐" : "📘"}
+                  </Text>
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{ fontSize: 13, fontWeight: "600", color: colors.text }}
+                      numberOfLines={1}
+                    >
+                      {topic.name}
+                    </Text>
+                    <Text style={{ fontSize: 11, color: colors.textMuted }}>
+                      {topic.gradeLevel === "K" ? "Kindergarten" : `Grade ${topic.gradeLevel}`}
+                    </Text>
+                  </View>
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontWeight: "700",
+                      color: isMastered ? colors.success : colors.primary,
+                    }}
+                  >
+                    {pct}%
+                  </Text>
+                </View>
+              );
+            })}
+          </Card>
+        </View>
+      )}
 
       {/* Quick links */}
       <View style={{ flexDirection: "row", gap: 12, marginTop: 16 }}>

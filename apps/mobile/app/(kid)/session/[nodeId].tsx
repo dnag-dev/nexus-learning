@@ -2,9 +2,9 @@
  * Active Learning Session — two-step answer flow with mastery tracking.
  *
  * Flow: Start → (Teaching) → Questions → Celebration
- *   - Select option → "Check Answer" button appears
+ *   - Select option → "Check Answer" button appears (sticky bottom)
  *   - Confirm → submit → correct (green) / wrong (red + explanation)
- *   - Auto-advance after 2.5s or tap "Next"
+ *   - "Next Question" button appears (sticky bottom) + auto-advance
  *   - Mastery bar updates after each answer
  *   - Celebration screen when concept mastered
  */
@@ -29,7 +29,6 @@ import { useSessionStore } from "../../../store/session";
 import { useAuthStore } from "../../../store/auth";
 import { StepProgress } from "../../../components/ui/StepProgress";
 import { MasteryBar } from "../../../components/ui/MasteryBar";
-import { ExplanationSheet } from "../../../components/session/ExplanationSheet";
 import { CelebrationScreen } from "../../../components/session/CelebrationScreen";
 
 // ─── Option label helpers ───
@@ -74,7 +73,6 @@ export default function SessionScreen() {
   } = useSessionStore();
 
   // Animations
-  const confirmButtonAnim = useRef(new Animated.Value(0)).current;
   const resultFlashAnim = useRef(new Animated.Value(0)).current;
   const autoAdvanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -89,24 +87,6 @@ export default function SessionScreen() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodeId, profile?.studentId]);
-
-  // ─── Animate confirm button when option selected ───
-  useEffect(() => {
-    if (selectedOptionId && !isConfirmed) {
-      Animated.spring(confirmButtonAnim, {
-        toValue: 1,
-        useNativeDriver: true,
-        tension: 60,
-        friction: 8,
-      }).start();
-    } else {
-      Animated.timing(confirmButtonAnim, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [selectedOptionId, isConfirmed, confirmButtonAnim]);
 
   // ─── Flash result and auto-advance ───
   useEffect(() => {
@@ -168,6 +148,7 @@ export default function SessionScreen() {
 
   const handleNext = useCallback(() => {
     if (autoAdvanceTimer.current) clearTimeout(autoAdvanceTimer.current);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     advanceToNext();
   }, [advanceToNext]);
 
@@ -270,21 +251,15 @@ export default function SessionScreen() {
 
   // ─── Main Session UI ───
 
-  const confirmTranslateY = confirmButtonAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [60, 0],
-  });
-
-  const confirmOpacity = confirmButtonAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 1],
-  });
-
   const flashColor = isCorrect
     ? colors.successLight
     : isCorrect === false
       ? colors.errorLight
       : "transparent";
+
+  // Determine which sticky bottom button to show
+  const showCheckButton = selectedOptionId && !isConfirmed;
+  const showNextButton = isConfirmed && isCorrect !== null && !isMastered;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
@@ -353,8 +328,9 @@ export default function SessionScreen() {
       {/* ─── Scrollable Content ─── */}
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 140 }}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         {/* Loading next question */}
         {isLoading && (
@@ -480,23 +456,40 @@ export default function SessionScreen() {
               );
             })}
 
-            {/* Explanation Sheet (inline, shown after confirm) */}
+            {/* Inline Explanation (no button — button is sticky bottom) */}
             {isConfirmed && isCorrect !== null && (
-              <ExplanationSheet
-                isCorrect={isCorrect}
-                explanation={explanation}
-                selectedAnswer={
-                  currentQuestion.options.find(
-                    (o) => o.id === selectedOptionId
-                  )?.text
-                }
-                correctAnswer={
-                  currentQuestion.options.find(
-                    (o) => o.id === currentQuestion.correctAnswer
-                  )?.text
-                }
-                onNext={handleNext}
-              />
+              <View
+                style={{
+                  backgroundColor: isCorrect ? colors.successLight : colors.errorLight,
+                  borderRadius: 16,
+                  padding: 20,
+                  marginBottom: 16,
+                }}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                  <Text style={{ fontSize: 28 }}>{isCorrect ? "✅" : "❌"}</Text>
+                  <Text
+                    style={{
+                      fontSize: 18,
+                      fontWeight: "700",
+                      color: isCorrect ? colors.success : colors.error,
+                    }}
+                  >
+                    {isCorrect ? "Correct!" : "Not quite..."}
+                  </Text>
+                </View>
+                {explanation && (
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: colors.text,
+                      lineHeight: 22,
+                    }}
+                  >
+                    {explanation}
+                  </Text>
+                )}
+              </View>
             )}
           </>
         )}
@@ -526,8 +519,8 @@ export default function SessionScreen() {
         )}
       </ScrollView>
 
-      {/* ─── Confirm Button (sticky bottom) ─── */}
-      {selectedOptionId && !isConfirmed && (
+      {/* ─── STICKY BOTTOM: Check Answer Button ─── */}
+      {showCheckButton && (
         <View
           style={{
             paddingHorizontal: 16,
@@ -571,6 +564,46 @@ export default function SessionScreen() {
                 </Text>
               </>
             )}
+          </Pressable>
+        </View>
+      )}
+
+      {/* ─── STICKY BOTTOM: Next Question Button ─── */}
+      {showNextButton && (
+        <View
+          style={{
+            paddingHorizontal: 16,
+            paddingTop: 14,
+            paddingBottom: safeBottom + 24,
+            backgroundColor: colors.background,
+            borderTopWidth: 1,
+            borderTopColor: colors.border,
+          }}
+        >
+          <Pressable
+            onPress={handleNext}
+            style={({ pressed }) => ({
+              backgroundColor: isCorrect ? colors.success : colors.primary,
+              borderRadius: 16,
+              paddingVertical: 18,
+              alignItems: "center",
+              justifyContent: "center",
+              flexDirection: "row",
+              gap: 8,
+              opacity: pressed ? 0.85 : 1,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.25,
+              shadowRadius: 8,
+              elevation: 6,
+            })}
+          >
+            <Text
+              style={{ fontSize: 18, fontWeight: "700", color: "#ffffff" }}
+            >
+              Next Question
+            </Text>
+            <Text style={{ fontSize: 18, color: "#ffffff" }}>→</Text>
           </Pressable>
         </View>
       )}

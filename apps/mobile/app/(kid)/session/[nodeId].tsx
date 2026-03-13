@@ -66,6 +66,7 @@ export default function SessionScreen() {
     error,
     showCelebration,
     xpEarned,
+    gradeCompletion,
     start,
     selectOption,
     confirmAnswer,
@@ -195,6 +196,7 @@ export default function SessionScreen() {
         xpEarned={xpEarned}
         questionsAnswered={questionsAnswered}
         masteryPercent={masteryPercent}
+        gradeCompletion={gradeCompletion}
         onContinue={handleCelebrationContinue}
         onBackToDashboard={() => router.replace("/(kid)/dashboard")}
       />

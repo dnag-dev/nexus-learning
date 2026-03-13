@@ -32,6 +32,16 @@ interface SubmitAnswerResult {
   gamification?: { xpAwarded?: number; newXP?: number };
   sessionXP?: number;
   learningStep?: number;
+  gradeCompletion?: GradeCompletionData;
+}
+
+/** Grade completion data — present when mastering a node completes an entire grade+subject. */
+export interface GradeCompletionData {
+  grade: string;
+  subject: string;
+  totalNodes: number;
+  nextGrade: string | null;
+  upcomingTopics: string[];
 }
 
 interface MobileQuestion {
@@ -76,6 +86,9 @@ interface SessionState {
   // XP earned
   xpEarned: number;
 
+  // Grade completion (populated when mastering a node completes an entire grade)
+  gradeCompletion: GradeCompletionData | null;
+
   // Timing
   questionStartTime: number;
 
@@ -114,6 +127,7 @@ const initialState = {
   error: null,
   showCelebration: false,
   xpEarned: 0,
+  gradeCompletion: null,
   questionStartTime: Date.now(),
   prefetchedQuestion: null,
   prefetchedLearningStep: null,
@@ -215,13 +229,14 @@ export const useSessionStore = create<SessionState>((set, get) => ({
           res.state === "MASTERED" || res.nextAction === "mastered" || res.celebration != null;
         const xp = res.gamification?.xpAwarded ?? res.gamification?.newXP ?? res.sessionXP ?? 0;
 
-        // Update with real server data (mastery, XP, mastered status)
+        // Update with real server data (mastery, XP, mastered status, grade completion)
         set((state) => ({
           masteryPercent: masteryPct > 0 ? masteryPct : state.masteryPercent,
           learningStep: res.learningStep ?? state.learningStep,
           xpEarned: xp > state.xpEarned ? xp : state.xpEarned,
           isMastered: mastered,
           showCelebration: mastered,
+          gradeCompletion: res.gradeCompletion ?? state.gradeCompletion,
         }));
       })
       .catch(() => {

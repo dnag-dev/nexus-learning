@@ -143,9 +143,9 @@ export function CelebrationScreen({
         <View
           style={{
             width: "100%",
-            backgroundColor: "#FFFBEB",
+            backgroundColor: "#FFF7E6",
             borderWidth: 2,
-            borderColor: "#FCD34D",
+            borderColor: colors.gold,
             borderRadius: 16,
             padding: 20,
             marginBottom: 24,
@@ -247,7 +247,9 @@ export function CelebrationScreen({
             borderRadius: 16,
             paddingVertical: 16,
             alignItems: "center",
-            opacity: pressed ? 0.8 : 1,
+            borderBottomWidth: pressed ? 2 : 4,
+            borderBottomColor: colors.primaryShadow,
+            transform: pressed ? [{ translateY: 2 }] : [],
           })}
         >
           <Text style={{ fontSize: 16, fontWeight: "600", color: "#ffffff" }}>

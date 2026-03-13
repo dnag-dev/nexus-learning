@@ -5,20 +5,41 @@ const baseConfig: Partial<Config> = {
     extend: {
       colors: {
         aauti: {
-          primary: "#6C5CE7",
-          secondary: "#00CEC9",
-          accent: "#FDCB6E",
-          success: "#00B894",
-          warning: "#E17055",
-          danger: "#D63031",
+          primary: "#1CB0F6",
+          "primary-shadow": "#0A85C7",
+          brand: "#7C3AED",
+          "brand-shadow": "#5B21B6",
+          secondary: "#7C3AED",
+          accent: "#FFC800",
+          success: "#3DB54A",
+          "success-shadow": "#2A8A35",
+          warning: "#FF9600",
+          danger: "#FF4B4B",
+          xp: "#FFC800",
+          streak: "#FF9600",
           bg: {
-            light: "#F8F9FA",
-            dark: "#1A1A2E",
+            light: "#F8F9FF",
+            dark: "#060d1f",
           },
+          surface: {
+            DEFAULT: "#FFFFFF",
+            alt: "#F3F4F6",
+          },
+          border: "#E2E8F0",
           text: {
-            primary: "#2D3436",
-            secondary: "#636E72",
-            muted: "#B2BEC3",
+            primary: "#1F2937",
+            secondary: "#6B7280",
+            muted: "#9CA3AF",
+          },
+          math: {
+            DEFAULT: "#3b82f6",
+            light: "#EFF6FF",
+            border: "#BFDBFE",
+          },
+          english: {
+            DEFAULT: "#a855f7",
+            light: "#F5F3FF",
+            border: "#DDD6FE",
           },
         },
         constellation: {

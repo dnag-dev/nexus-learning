@@ -35,7 +35,7 @@ const BADGE_ICONS: Record<string, string> = {
 };
 
 export default function ProfileScreen() {
-  const { colors } = useTheme();
+  const { colors, isDark, toggleTheme } = useTheme();
   const profile = useAuthStore((s) => s.profile);
   const logout = useAuthStore((s) => s.logout);
 
@@ -466,6 +466,50 @@ export default function ProfileScreen() {
             </View>
           </>
         )}
+
+        {/* Appearance toggle */}
+        <View
+          style={{
+            backgroundColor: colors.surface,
+            borderRadius: 16,
+            padding: 16,
+            borderWidth: 1,
+            borderColor: colors.border,
+            marginBottom: 12,
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <Text style={{ fontSize: 20 }}>{isDark ? "\uD83C\uDF19" : "\u2600\uFE0F"}</Text>
+            <Text style={{ fontSize: 15, fontWeight: "600", color: colors.text }}>
+              {isDark ? "Night Mode" : "Day Mode"}
+            </Text>
+          </View>
+          <Pressable
+            onPress={toggleTheme}
+            style={({ pressed }) => ({
+              width: 52,
+              height: 30,
+              borderRadius: 15,
+              backgroundColor: isDark ? colors.accent : colors.surfaceAlt,
+              justifyContent: "center",
+              paddingHorizontal: 3,
+              opacity: pressed ? 0.8 : 1,
+            })}
+          >
+            <View
+              style={{
+                width: 24,
+                height: 24,
+                borderRadius: 12,
+                backgroundColor: "#FFFFFF",
+                alignSelf: isDark ? "flex-end" : "flex-start",
+              }}
+            />
+          </Pressable>
+        </View>
 
         {/* Log out */}
         <Pressable

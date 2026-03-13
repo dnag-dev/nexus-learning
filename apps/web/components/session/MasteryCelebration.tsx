@@ -85,7 +85,7 @@ export default function MasteryCelebration({
         particleCount: 100,
         spread: 70,
         origin: { y: 0.6 },
-        colors: ["#FDCB6E", "#6C5CE7", "#00B894", "#FF6B6B", "#74B9FF"],
+        colors: ["#FFC800", "#7C3AED", "#3DB54A", "#FF4B4B", "#1CB0F6"],
       });
       // Second burst (staggered)
       setTimeout(() => {
@@ -94,7 +94,7 @@ export default function MasteryCelebration({
           particleCount: 60,
           spread: 100,
           origin: { y: 0.5, x: 0.6 },
-          colors: ["#FDCB6E", "#6C5CE7", "#00B894"],
+          colors: ["#FFC800", "#7C3AED", "#3DB54A"],
         });
       }, 300);
     });
@@ -248,7 +248,8 @@ export default function MasteryCelebration({
         >
           <button
             onClick={onNextConcept}
-            className="flex-1 py-3.5 text-white font-semibold rounded-xl shadow-lg animate-bounce-subtle bg-gradient-to-r from-aauti-primary to-purple-600 hover:from-purple-600 hover:to-aauti-primary transition-all"
+            className="flex-1 py-3.5 text-white font-semibold rounded-xl btn-3d animate-bounce-subtle bg-aauti-primary hover:bg-aauti-primary/90 transition-all"
+            style={{ "--btn-shadow-color": "#0A85C7" } as React.CSSProperties}
           >
             Next Concept →
           </button>

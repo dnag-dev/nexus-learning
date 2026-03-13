@@ -29,15 +29,50 @@
 
 @layer utilities {
   .text-gradient-gold {
-    background: linear-gradient(135deg, #FDCB6E 0%, #F8A500 50%, #FDCB6E 100%);
+    background: linear-gradient(135deg, #FFC800 0%, #FF9600 50%, #FFC800 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+  }
+
+  /* Celebration gradients */
+  .bg-gradient-mastered {
+    background: linear-gradient(135deg, #3DB54A, #1CB0F6);
+  }
+
+  .bg-gradient-level-up {
+    background: linear-gradient(135deg, #7C3AED, #1CB0F6);
+  }
+
+  .bg-gradient-grade-complete {
+    background: linear-gradient(135deg, #FFC800, #FF9600);
+  }
+
+  /* 3D button effect */
+  .btn-3d {
+    box-shadow: 0 4px 0 var(--btn-shadow-color, #0A85C7);
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+
+  .btn-3d:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 var(--btn-shadow-color, #0A85C7);
   }
 
   .progress-ring-circle {
     transition: stroke-dashoffset 0.8s ease-out;
     transform: rotate(-90deg);
     transform-origin: 50% 50%;
+  }
+
+  /* Night mode toggle styles */
+  .dark body {
+    background-color: #060d1f;
+    color: #ffffff;
+  }
+
+  .dark .aauti-card {
+    background-color: #0c1628;
+    border-color: rgba(255, 255, 255, 0.06);
   }
 }

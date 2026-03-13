@@ -9,7 +9,7 @@ import { useTheme } from "../../lib/theme";
 import { useAuthStore } from "../../store/auth";
 
 export default function SettingsScreen() {
-  const { colors } = useTheme();
+  const { colors, isDark, toggleTheme } = useTheme();
   const { parentProfile, logout } = useAuthStore();
 
   const handleLogout = () => {
@@ -105,6 +105,69 @@ export default function SettingsScreen() {
             detail="Enabled"
             colors={colors}
           />
+        </View>
+
+        {/* Appearance */}
+        <Text
+          style={{
+            fontSize: 13,
+            fontWeight: "600",
+            color: colors.textMuted,
+            textTransform: "uppercase",
+            letterSpacing: 1,
+            marginBottom: 10,
+          }}
+        >
+          Appearance
+        </Text>
+        <View
+          style={{
+            backgroundColor: colors.surface,
+            borderRadius: 16,
+            borderWidth: 1,
+            borderColor: colors.border,
+            overflow: "hidden",
+            marginBottom: 24,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              paddingHorizontal: 16,
+              paddingVertical: 14,
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+              <Text style={{ fontSize: 18 }}>{isDark ? "\uD83C\uDF19" : "\u2600\uFE0F"}</Text>
+              <Text style={{ fontSize: 15, color: colors.text }}>
+                {isDark ? "Night Mode" : "Day Mode"}
+              </Text>
+            </View>
+            <Pressable
+              onPress={toggleTheme}
+              style={({ pressed }) => ({
+                width: 52,
+                height: 30,
+                borderRadius: 15,
+                backgroundColor: isDark ? colors.accent : colors.surfaceAlt,
+                justifyContent: "center",
+                paddingHorizontal: 3,
+                opacity: pressed ? 0.8 : 1,
+              })}
+            >
+              <View
+                style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: 12,
+                  backgroundColor: "#FFFFFF",
+                  alignSelf: isDark ? "flex-end" : "flex-start",
+                }}
+              />
+            </Pressable>
+          </View>
         </View>
 
         {/* About */}

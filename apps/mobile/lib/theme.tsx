@@ -1,12 +1,21 @@
 /**
  * Theme system for Aauti Learn mobile app.
  *
- * Uses React Native's useColorScheme() to automatically follow
- * the system light/dark mode setting. No manual toggle needed.
+ * Manual light/dark toggle persisted with AsyncStorage.
+ * Default: Light mode.
  */
 
-import React, { createContext, useContext, useMemo } from "react";
-import { useColorScheme } from "react-native";
+import React, {
+  createContext,
+  useContext,
+  useMemo,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const THEME_STORAGE_KEY = "aauti_theme_preference";
 
 // ─── Color Tokens ───
 
@@ -20,10 +29,13 @@ export interface ThemeColors {
   textMuted: string;
   primary: string;
   primaryLight: string;
+  primaryShadow: string;
   accent: string;
   accentLight: string;
+  accentShadow: string;
   success: string;
   successLight: string;
+  successShadow: string;
   error: string;
   errorLight: string;
   warning: string;
@@ -32,38 +44,45 @@ export interface ThemeColors {
   xpLight: string;
   math: string;
   mathLight: string;
+  mathBorder: string;
   english: string;
   englishLight: string;
+  englishBorder: string;
   gold: string;
   tabBar: string;
   tabBarBorder: string;
 }
 
 export const lightColors: ThemeColors = {
-  background: "#F8F9FA",
+  background: "#F8F9FF",
   surface: "#FFFFFF",
-  surfaceAlt: "#F0F0F5",
+  surfaceAlt: "#F3F4F6",
   border: "#E2E8F0",
-  text: "#2D3436",
-  textSecondary: "#636E72",
-  textMuted: "#B2BEC3",
-  primary: "#6C5CE7",
-  primaryLight: "rgba(108,92,231,0.1)",
-  accent: "#00CEC9",
-  accentLight: "rgba(0,206,201,0.1)",
-  success: "#00B894",
-  successLight: "rgba(0,184,148,0.1)",
-  error: "#D63031",
-  errorLight: "rgba(214,48,49,0.1)",
-  warning: "#E17055",
-  warningLight: "rgba(225,112,85,0.1)",
-  xp: "#F97316",
-  xpLight: "rgba(249,115,22,0.1)",
+  text: "#1F2937",
+  textSecondary: "#6B7280",
+  textMuted: "#9CA3AF",
+  primary: "#1CB0F6",
+  primaryLight: "rgba(28,176,246,0.1)",
+  primaryShadow: "#0A85C7",
+  accent: "#7C3AED",
+  accentLight: "rgba(124,58,237,0.1)",
+  accentShadow: "#5B21B6",
+  success: "#3DB54A",
+  successLight: "rgba(61,181,74,0.1)",
+  successShadow: "#2A8A35",
+  error: "#FF4B4B",
+  errorLight: "rgba(255,75,75,0.1)",
+  warning: "#FF9600",
+  warningLight: "rgba(255,150,0,0.1)",
+  xp: "#FFC800",
+  xpLight: "rgba(255,200,0,0.12)",
   math: "#3b82f6",
-  mathLight: "rgba(59,130,246,0.1)",
+  mathLight: "#EFF6FF",
+  mathBorder: "#BFDBFE",
   english: "#a855f7",
-  englishLight: "rgba(168,85,247,0.1)",
-  gold: "#FDCB6E",
+  englishLight: "#F5F3FF",
+  englishBorder: "#DDD6FE",
+  gold: "#FFC800",
   tabBar: "#FFFFFF",
   tabBarBorder: "#E2E8F0",
 };
@@ -78,10 +97,13 @@ export const darkColors: ThemeColors = {
   textMuted: "#64748b",
   primary: "#a78bfa",
   primaryLight: "rgba(167,139,250,0.15)",
+  primaryShadow: "#7c3aed",
   accent: "#06b6d4",
   accentLight: "rgba(6,182,212,0.15)",
+  accentShadow: "#0891b2",
   success: "#34d399",
   successLight: "rgba(52,211,153,0.15)",
+  successShadow: "#059669",
   error: "#f87171",
   errorLight: "rgba(248,113,113,0.15)",
   warning: "#fb923c",
@@ -90,8 +112,10 @@ export const darkColors: ThemeColors = {
   xpLight: "rgba(249,115,22,0.15)",
   math: "#3b82f6",
   mathLight: "rgba(59,130,246,0.15)",
+  mathBorder: "rgba(59,130,246,0.3)",
   english: "#a855f7",
   englishLight: "rgba(168,85,247,0.15)",
+  englishBorder: "rgba(168,85,247,0.3)",
   gold: "#fbbf24",
   tabBar: "#0c1628",
   tabBarBorder: "rgba(255,255,255,0.06)",
@@ -102,25 +126,43 @@ export const darkColors: ThemeColors = {
 interface ThemeContextValue {
   colors: ThemeColors;
   isDark: boolean;
+  toggleTheme: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
   colors: lightColors,
   isDark: false,
+  toggleTheme: () => {},
 });
 
 // ─── Provider ───
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const [isDark, setIsDark] = useState(false);
+
+  // Load saved preference on mount
+  useEffect(() => {
+    AsyncStorage.getItem(THEME_STORAGE_KEY).then((val) => {
+      if (val === "dark") setIsDark(true);
+      // Default is light — no action needed if val is null or "light"
+    });
+  }, []);
+
+  const toggleTheme = useCallback(() => {
+    setIsDark((prev) => {
+      const next = !prev;
+      AsyncStorage.setItem(THEME_STORAGE_KEY, next ? "dark" : "light");
+      return next;
+    });
+  }, []);
 
   const value = useMemo(
     () => ({
       colors: isDark ? darkColors : lightColors,
       isDark,
+      toggleTheme,
     }),
-    [isDark]
+    [isDark, toggleTheme]
   );
 
   return (

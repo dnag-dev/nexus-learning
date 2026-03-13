@@ -2,6 +2,7 @@ import type { Config } from "tailwindcss";
 import baseConfig from "../../packages/config/tailwind/base";
 
 const config: Config = {
+  darkMode: "class",
   content: [
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -41,8 +42,8 @@ const config: Config = {
           "40%": { opacity: "1", transform: "scale(1)" },
         },
         "glow-pulse": {
-          "0%, 100%": { boxShadow: "0 0 12px 2px rgba(108, 92, 231, 0.25)" },
-          "50%": { boxShadow: "0 0 22px 6px rgba(108, 92, 231, 0.45)" },
+          "0%, 100%": { boxShadow: "0 0 12px 2px rgba(28, 176, 246, 0.25)" },
+          "50%": { boxShadow: "0 0 22px 6px rgba(28, 176, 246, 0.45)" },
         },
         "star-burst": {
           "0%": { transform: "scale(0) rotate(0deg)", opacity: "0" },
@@ -58,8 +59,8 @@ const config: Config = {
           "100%": { backgroundPosition: "200% 0" },
         },
         "meter-glow": {
-          "0%, 100%": { filter: "drop-shadow(0 0 4px rgba(108, 92, 231, 0.3))" },
-          "50%": { filter: "drop-shadow(0 0 12px rgba(108, 92, 231, 0.6))" },
+          "0%, 100%": { filter: "drop-shadow(0 0 4px rgba(28, 176, 246, 0.3))" },
+          "50%": { filter: "drop-shadow(0 0 12px rgba(28, 176, 246, 0.6))" },
         },
         "streak-bump": {
           "0%": { transform: "scale(1)" },
@@ -72,8 +73,8 @@ const config: Config = {
           "75%": { transform: "translateX(4px)" },
         },
         "ring-glow": {
-          "0%, 100%": { filter: "drop-shadow(0 0 8px rgba(253, 203, 110, 0.4))" },
-          "50%": { filter: "drop-shadow(0 0 20px rgba(253, 203, 110, 0.7))" },
+          "0%, 100%": { filter: "drop-shadow(0 0 8px rgba(255, 200, 0, 0.4))" },
+          "50%": { filter: "drop-shadow(0 0 20px rgba(255, 200, 0, 0.7))" },
         },
         "bounce-gentle": {
           "0%, 100%": { transform: "translateY(0)" },

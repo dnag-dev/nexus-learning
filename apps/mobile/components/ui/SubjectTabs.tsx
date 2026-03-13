@@ -26,7 +26,9 @@ export function SubjectTabs({ selected, onSelect }: SubjectTabsProps) {
           borderRadius: 10,
           alignItems: "center",
           backgroundColor:
-            selected === "math" ? colors.surface : "transparent",
+            selected === "math" ? colors.mathLight : "transparent",
+          borderWidth: selected === "math" ? 1 : 0,
+          borderColor: selected === "math" ? colors.mathBorder : "transparent",
         }}
       >
         <Text
@@ -48,7 +50,9 @@ export function SubjectTabs({ selected, onSelect }: SubjectTabsProps) {
           borderRadius: 10,
           alignItems: "center",
           backgroundColor:
-            selected === "english" ? colors.surface : "transparent",
+            selected === "english" ? colors.englishLight : "transparent",
+          borderWidth: selected === "english" ? 1 : 0,
+          borderColor: selected === "english" ? colors.englishBorder : "transparent",
         }}
       >
         <Text

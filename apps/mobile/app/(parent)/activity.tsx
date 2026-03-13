@@ -22,10 +22,28 @@ import { getActivityLog } from "@aauti/api-client";
 import type { ActivityLogEntry } from "@aauti/api-client";
 
 // Event type → icon mapping
+// Prisma enum uses UPPER_CASE; include both forms for safety.
 const EVENT_ICONS: Record<string, string> = {
+  // Prisma enum values (what the API actually returns)
+  SESSION_STARTED: "\uD83D\uDCDA",
+  SESSION_COMPLETED: "\u2705",
+  CONCEPT_MASTERED: "\u2B50",
+  GRADE_COMPLETED: "\uD83C\uDF93",
+  GRADE_ADVANCED: "\uD83D\uDE80",
+  LEVEL_UP: "\uD83C\uDF1F",
+  BADGE_EARNED: "\uD83C\uDFC5",
+  STREAK_MILESTONE: "\uD83D\uDD25",
+  FLUENCY_DRILL_COMPLETED: "\u26A1",
+  DIAGNOSTIC_COMPLETED: "\uD83E\uDDE0",
+  QUESTION_ANSWERED: "\u2753",
+  SUBJECT_SWITCHED: "\uD83D\uDD04",
+  TOPIC_SELECTED: "\uD83D\uDCCC",
+  TEST_OUT_PASSED: "\uD83C\uDFC6",
+  // Legacy lowercase aliases
   session_start: "\uD83D\uDCDA",
   session_end: "\u2705",
   mastery: "\u2B50",
+  grade_completed: "\uD83C\uDF93",
   level_up: "\uD83C\uDF1F",
   badge_earned: "\uD83C\uDFC5",
   streak: "\uD83D\uDD25",
@@ -104,6 +122,9 @@ export default function ActivityScreen() {
   const renderItem = useCallback(
     ({ item }: { item: ActivityLogEntry }) => {
       const icon = EVENT_ICONS[item.eventType] || "\uD83D\uDD35";
+      const isGradeComplete =
+        item.eventType === "GRADE_COMPLETED" ||
+        item.eventType === "grade_completed";
 
       return (
         <View
@@ -131,11 +152,11 @@ export default function ActivityScreen() {
           <View
             style={{
               flex: 1,
-              backgroundColor: colors.surface,
+              backgroundColor: isGradeComplete ? "#FEF3C7" : colors.surface,
               borderRadius: 14,
               padding: 14,
-              borderWidth: 1,
-              borderColor: colors.border,
+              borderWidth: isGradeComplete ? 2 : 1,
+              borderColor: isGradeComplete ? "#FCD34D" : colors.border,
             }}
           >
             <View
@@ -149,8 +170,8 @@ export default function ActivityScreen() {
               <Text
                 style={{
                   fontSize: 14,
-                  fontWeight: "600",
-                  color: colors.text,
+                  fontWeight: isGradeComplete ? "800" : "600",
+                  color: isGradeComplete ? "#92400E" : colors.text,
                   flex: 1,
                 }}
               >
@@ -170,7 +191,7 @@ export default function ActivityScreen() {
               <Text
                 style={{
                   fontSize: 13,
-                  color: colors.textSecondary,
+                  color: isGradeComplete ? "#B45309" : colors.textSecondary,
                   lineHeight: 19,
                 }}
               >

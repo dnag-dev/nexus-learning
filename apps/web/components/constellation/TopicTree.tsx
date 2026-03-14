@@ -39,6 +39,7 @@ interface TopicBranchInfo {
   name: string;
   description: string;
   domain: string;
+  gradeLevel: string;
   isAdvanced: boolean;
   nodes: BranchNode[];
   unlocked: boolean;
@@ -151,8 +152,8 @@ export default function TopicTree({
   }, [studentId, domain]);
 
   // Filter branches by selected subject (Math vs English)
-  // Sort by grade level within each subject
-  const GRADE_ORDER = ["K","G1","G2","G3","G4","G5","G6","G7","G8","G9","G10"];
+  // Sort by grade level within each subject: K → G1 → G2 → ...
+  const GRADE_ORDER: Record<string, number> = { K: 0, G1: 1, G2: 2, G3: 3, G4: 4, G5: 5, G6: 6, G7: 7, G8: 8, G9: 9, G10: 10 };
   const branches = useMemo(() => {
     // If domain prop is already set, don't show tabs — just use all branches
     if (domain) return allBranches;
@@ -163,11 +164,7 @@ export default function TopicTree({
         return subject === "ENGLISH" ? isELA : !isELA;
       })
       .sort((a, b) => {
-        // Extract grade from branch name or use domain sort
-        const aGrade = GRADE_ORDER.indexOf(a.nodes[0]?.nodeCode?.split(".")[0] ?? "");
-        const bGrade = GRADE_ORDER.indexOf(b.nodes[0]?.nodeCode?.split(".")[0] ?? "");
-        if (aGrade !== bGrade) return aGrade - bGrade;
-        return 0;
+        return (GRADE_ORDER[a.gradeLevel] ?? 99) - (GRADE_ORDER[b.gradeLevel] ?? 99);
       });
   }, [allBranches, subject, domain]);
 

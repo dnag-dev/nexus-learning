@@ -265,9 +265,13 @@ export function isCoordinatePlaneNode(
 
   // Known coordinate plane node codes
   const coordinateNodeCodes = new Set([
+    "3.G.CP.1", // Plot points in Quadrant I
+    "4.G.CP.1", // Identify coordinates of plotted points
     "5.G.1", // Graph Points on a Coordinate Plane
+    "6.G.CP.1", // Plot points in all four quadrants
     "6.NS.6", // Understand rational numbers on number line/coordinate plane
     "6.G.1", // Area by composing into geometric shapes (uses coordinates)
+    "7.G.CP.1", // Reflect points across axes
     "8.G.1", // Verify properties of transformations (uses coordinate plane)
     "8.G.6", // Distance formula (coordinate plane)
   ]);

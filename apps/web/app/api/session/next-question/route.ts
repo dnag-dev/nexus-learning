@@ -142,7 +142,7 @@ export async function GET(request: Request) {
 
   // ─── Coordinate Plane: Sometimes return interactive questions for geometry nodes ───
   const isCoordNode = isCoordinatePlaneNode(node.nodeCode, node.title, node.domain);
-  if (isCoordNode && Math.random() < 0.5) {
+  if (isCoordNode && Math.random() < 0.8) {
     const coordQuestion = pickCoordinatePlaneFallback(node.gradeLevel, previousQuestionTexts);
     if (coordQuestion) {
       console.log(`[next-question] Coordinate plane question for ${sessionId}`);

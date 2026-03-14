@@ -876,6 +876,48 @@ const knowledgeNodes: NodeSeed[] = [
     difficulty: 6,
     prerequisiteCodes: ["5.OA.3"],
   },
+
+  // ─── Coordinate Plane nodes across grades ───
+  {
+    nodeCode: "3.G.CP.1",
+    title: "Plot points in Quadrant I",
+    description:
+      "Identify and plot points using ordered pairs in the first quadrant of the coordinate plane. Understand that the first number tells how far to move right and the second tells how far to move up.",
+    gradeLevel: GradeLevel.G3,
+    domain: KnowledgeDomain.GEOMETRY,
+    difficulty: 3,
+    prerequisiteCodes: [],
+  },
+  {
+    nodeCode: "4.G.CP.1",
+    title: "Identify coordinates of plotted points",
+    description:
+      "Read and write ordered pairs for points already plotted in Quadrant I. Given a point on the grid, identify its x-coordinate and y-coordinate.",
+    gradeLevel: GradeLevel.G4,
+    domain: KnowledgeDomain.GEOMETRY,
+    difficulty: 4,
+    prerequisiteCodes: ["3.G.CP.1"],
+  },
+  {
+    nodeCode: "6.G.CP.1",
+    title: "Plot points in all four quadrants",
+    description:
+      "Extend coordinate plane understanding to all four quadrants. Plot and identify points with positive and negative x- and y-coordinates.",
+    gradeLevel: GradeLevel.G6,
+    domain: KnowledgeDomain.GEOMETRY,
+    difficulty: 5,
+    prerequisiteCodes: ["5.G.1"],
+  },
+  {
+    nodeCode: "7.G.CP.1",
+    title: "Reflect points across axes on coordinate plane",
+    description:
+      "Reflect points across the x-axis and y-axis on the coordinate plane. Understand how reflections change the sign of coordinates.",
+    gradeLevel: GradeLevel.G7,
+    domain: KnowledgeDomain.GEOMETRY,
+    difficulty: 6,
+    prerequisiteCodes: ["6.G.CP.1"],
+  },
 ];
 
 async function seed() {

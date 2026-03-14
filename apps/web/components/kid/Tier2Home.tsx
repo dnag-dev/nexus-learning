@@ -52,7 +52,7 @@ interface GamData {
     longest: number;
   } | null;
   badges: Array<{ badgeType: string; category: string; earnedAt: string }>;
-  masteryMap: Array<{ level: string; domain: string }>;
+  masteryMap: Array<{ level: string; domain: string; subject: string; bktProbability: number }>;
 }
 
 interface NextConceptData {
@@ -103,7 +103,7 @@ export default function Tier2Home() {
   const streakDays = gam?.streak?.current ?? 0;
   // Filter mastery count by active subject tab so stats reflect the selected subject
   const totalMastered = gam?.masteryMap?.filter(
-    (n) => n.level === "MASTERED" && n.domain === subject
+    (n) => n.bktProbability >= 0.8 && n.subject === subject
   ).length ?? 0;
   const xpForLevel = 100;
   const xpProgress = Math.min(((xp % xpForLevel) / xpForLevel) * 100, 100);

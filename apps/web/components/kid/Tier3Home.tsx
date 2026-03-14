@@ -36,6 +36,7 @@ interface GamData {
     nodeCode: string;
     nodeTitle: string;
     domain: string;
+    subject: string;
     level: string;
     bktProbability: number;
   }>;
@@ -80,7 +81,7 @@ export default function Tier3Home() {
   const streakDays = gam?.streak?.current ?? 0;
   // Filter mastery count by active subject tab so stats reflect the selected subject
   const totalMastered = gam?.masteryMap?.filter(
-    (n) => n.level === "MASTERED" && n.domain === subject
+    (n) => n.bktProbability >= 0.8 && n.subject === subject
   ).length ?? 0;
   const totalBadges = gam?.badges?.length ?? 0;
   const currentLevel = gam?.level ?? 1;

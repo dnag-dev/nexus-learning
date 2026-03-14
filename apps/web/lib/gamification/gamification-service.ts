@@ -505,6 +505,7 @@ export async function getStudentGamificationData(studentId: string) {
       nodeCode: ms.node.nodeCode,
       nodeTitle: ms.node.title,
       domain: ms.node.domain,
+      subject: ms.node.subject,
       gradeLevel: ms.node.gradeLevel,
       level: ms.level,
       bktProbability: ms.bktProbability,

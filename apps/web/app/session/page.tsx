@@ -233,6 +233,11 @@ function SessionPage() {
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<Record<string, unknown> | null>(null);
 
+  // ─── Auto-advance countdown ───
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const nextQuestionPromiseRef = useRef<Promise<PracticeQuestionData | null> | null>(null);
+
   // ─── 5-Step Learning Loop State ───
   const [learningStep, setLearningStep] = useState(1);
   const [stepProgress, setStepProgress] = useState<StepProgress | null>(null);
@@ -309,6 +314,66 @@ function SessionPage() {
   const [reassuranceMsg, setReassuranceMsg] = useState<string | null>(null);
   // ─── Mastery onboarding (shown once per student) ───
   const shouldShowOnboarding = useShouldShowMasteryOnboarding(DEMO_STUDENT_ID);
+
+  // ─── Auto-advance: advance to next question ───
+  const advanceToNextQuestion = useCallback(() => {
+    // Clear countdown
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+    setCountdown(null);
+    setFeedback(null);
+    setRemediation(null);
+    setSelectedOption(null);
+    setHint(null);
+    setIsLoading(true);
+    setPhase("practice");
+    // Reset coordinate plane state
+    setCoordAnswered(false);
+    setCoordWasCorrect(undefined);
+    setCoordPlacedX(undefined);
+    setCoordPlacedY(undefined);
+
+    const promise = nextQuestionPromiseRef.current;
+    if (promise) {
+      promise.then((nextQ) => {
+        setIsLoading(false);
+        if (nextQ) {
+          setQuestion(nextQ);
+          questionStartTimeRef.current = Date.now();
+        }
+      });
+      nextQuestionPromiseRef.current = null;
+    } else {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Start countdown (in seconds) then auto-advance
+  const startCountdown = useCallback((seconds: number) => {
+    setCountdown(seconds);
+    if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+    countdownIntervalRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev === null || prev <= 1) {
+          if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+          countdownIntervalRef.current = null;
+          // Use setTimeout to avoid state update during render
+          setTimeout(() => advanceToNextQuestion(), 0);
+          return null;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, [advanceToNextQuestion]);
+
+  // Cleanup countdown on unmount
+  useEffect(() => {
+    return () => {
+      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current);
+    };
+  }, []);
 
   // ─── Voice + Avatar Helpers ───
 
@@ -729,22 +794,8 @@ function SessionPage() {
               .then((d) => d.question)
               .catch(() => null);
 
-            setTimeout(() => {
-              setFeedback(null);
-              setRemediation(null);
-              setSelectedOption(null);
-              setHint(null);
-              setIsLoading(true);
-              setPhase("practice");
-
-              questionPromise.then((nextQ) => {
-                setIsLoading(false);
-                if (nextQ) {
-                  setQuestion(nextQ);
-                  questionStartTimeRef.current = Date.now();
-                }
-              });
-            }, feedbackDelay);
+            nextQuestionPromiseRef.current = questionPromise;
+            startCountdown(data.remediation ? 5 : 2);
           }
         }
       } catch (err) {
@@ -760,7 +811,7 @@ function SessionPage() {
         setIsLoading(false);
       }
     },
-    [sessionId, question, triggerVoice]
+    [sessionId, question, triggerVoice, startCountdown]
   );
 
   // ─── Coordinate Plane Answer Handler ───
@@ -867,33 +918,13 @@ function SessionPage() {
           if (data.feedback?.message) triggerVoice(data.feedback.message);
 
           if (data.questionPrefetched) {
-            const feedbackDelay = data.remediation ? 5000 : 2500;
             const questionPromise = fetch(
               `/api/session/next-question?sessionId=${sessionId}`,
               { signal: AbortSignal.timeout(25000) }
             ).then((r) => r.json()).then((d) => d.question).catch(() => null);
 
-            setTimeout(() => {
-              setFeedback(null);
-              setRemediation(null);
-              setSelectedOption(null);
-              setHint(null);
-              setIsLoading(true);
-              setPhase("practice");
-              // Reset coordinate plane state
-              setCoordAnswered(false);
-              setCoordWasCorrect(undefined);
-              setCoordPlacedX(undefined);
-              setCoordPlacedY(undefined);
-
-              questionPromise.then((nextQ) => {
-                setIsLoading(false);
-                if (nextQ) {
-                  setQuestion(nextQ);
-                  questionStartTimeRef.current = Date.now();
-                }
-              });
-            }, feedbackDelay);
+            nextQuestionPromiseRef.current = questionPromise;
+            startCountdown(data.remediation ? 5 : 3);
           }
         }
       } catch (err) {
@@ -908,7 +939,7 @@ function SessionPage() {
         setIsLoading(false);
       }
     },
-    [sessionId, question, triggerVoice, learningStep, answerHistory]
+    [sessionId, question, triggerVoice, learningStep, answerHistory, startCountdown]
   );
 
   const requestHint = useCallback(async () => {
@@ -1384,6 +1415,18 @@ function SessionPage() {
                       </div>
                     </div>
                   </div>
+                </div>
+              )}
+
+              {/* ─── Auto-advance countdown ─── */}
+              {phase === "feedback" && countdown !== null && (
+                <div className="max-w-2xl mx-auto px-4 mt-2 pb-4">
+                  <button
+                    onClick={advanceToNextQuestion}
+                    className="w-full text-center text-sm text-[#6B7280] hover:text-[#1F2937] transition-colors cursor-pointer py-2"
+                  >
+                    Auto-advancing in {countdown}… <span className="text-xs underline">skip →</span>
+                  </button>
                 </div>
               )}
             </>

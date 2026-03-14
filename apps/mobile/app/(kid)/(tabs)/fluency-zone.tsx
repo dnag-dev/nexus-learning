@@ -414,46 +414,52 @@ export default function FluencyZoneScreen() {
                               ? colors.primaryLight
                               : colors.surface,
                             borderRadius: 14,
-                            padding: 14,
                             marginBottom: 6,
                             borderWidth: 1.5,
                             borderColor: isSelected
                               ? colors.primary
                               : colors.border,
                             opacity: pressed ? 0.85 : 1,
-                            flexDirection: "row",
-                            alignItems: "center",
+                            overflow: "hidden",
                           })}
                         >
-                          {/* Radio — iOS-style */}
+                          {/* Row wrapper — View for reliable flexDirection */}
                           <View
                             style={{
-                              width: 20,
-                              height: 20,
-                              borderRadius: 10,
-                              borderWidth: 1.5,
-                              borderColor: isSelected
-                                ? "#1CB0F6"
-                                : "#D1D5DB",
+                              flexDirection: "row",
                               alignItems: "center",
-                              justifyContent: "center",
-                              marginRight: 12,
+                              padding: 14,
                             }}
                           >
-                            {isSelected && (
-                              <View
-                                style={{
-                                  width: 10,
-                                  height: 10,
-                                  borderRadius: 5,
-                                  backgroundColor: "#1CB0F6",
-                                }}
-                              />
-                            )}
-                          </View>
+                            {/* Radio — iOS-style */}
+                            <View
+                              style={{
+                                width: 20,
+                                height: 20,
+                                borderRadius: 10,
+                                borderWidth: 1.5,
+                                borderColor: isSelected
+                                  ? "#1CB0F6"
+                                  : "#D1D5DB",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                marginRight: 12,
+                              }}
+                            >
+                              {isSelected && (
+                                <View
+                                  style={{
+                                    width: 10,
+                                    height: 10,
+                                    borderRadius: 5,
+                                    backgroundColor: "#1CB0F6",
+                                  }}
+                                />
+                              )}
+                            </View>
 
-                          {/* Info */}
-                          <View style={{ flex: 1 }}>
+                            {/* Info */}
+                            <View style={{ flex: 1, minWidth: 0 }}>
                             <Text
                               style={{
                                 fontSize: 15,
@@ -475,8 +481,8 @@ export default function FluencyZoneScreen() {
                             </Text>
                           </View>
 
-                          {/* Personal best or empty state */}
-                          <View style={{ alignItems: "flex-end" }}>
+                            {/* Personal best or empty state */}
+                            <View style={{ alignItems: "flex-end", marginLeft: 8 }}>
                             {topic.personalBestQPM != null &&
                               topic.personalBestQPM > 0 ? (
                               <>
@@ -507,7 +513,8 @@ export default function FluencyZoneScreen() {
                               >
                                 — No attempts
                               </Text>
-                            )}
+                              )}
+                            </View>
                           </View>
                         </Pressable>
                       );

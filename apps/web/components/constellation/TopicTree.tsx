@@ -18,9 +18,12 @@
  *   - compact: Whether to render in compact mode
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import SubjectTabs, { type Subject } from "@/components/kid/SubjectTabs";
+
+const ELA_DOMAINS = new Set(["GRAMMAR", "READING", "WRITING", "VOCABULARY"]);
 
 interface BranchNode {
   nodeId: string;
@@ -116,10 +119,11 @@ export default function TopicTree({
   compact = false,
 }: TopicTreeProps) {
   const router = useRouter();
-  const [branches, setBranches] = useState<TopicBranchInfo[]>([]);
+  const [allBranches, setAllBranches] = useState<TopicBranchInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
   const [expandedBranches, setExpandedBranches] = useState<Set<string>>(new Set());
+  const [subject, setSubject] = useState<Subject>("MATH");
 
   useEffect(() => {
     const url = domain
@@ -130,7 +134,7 @@ export default function TopicTree({
       .then((r) => r.json())
       .then((data) => {
         const branchList: TopicBranchInfo[] = data.branches ?? [];
-        setBranches(branchList);
+        setAllBranches(branchList);
         // Auto-expand all unlocked branches so nodes are visible and clickable
         const expanded = new Set<string>();
         for (const b of branchList) {
@@ -145,6 +149,27 @@ export default function TopicTree({
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [studentId, domain]);
+
+  // Filter branches by selected subject (Math vs English)
+  // Sort by grade level within each subject
+  const GRADE_ORDER = ["K","G1","G2","G3","G4","G5","G6","G7","G8","G9","G10"];
+  const branches = useMemo(() => {
+    // If domain prop is already set, don't show tabs — just use all branches
+    if (domain) return allBranches;
+
+    return allBranches
+      .filter((b) => {
+        const isELA = ELA_DOMAINS.has(b.domain);
+        return subject === "ENGLISH" ? isELA : !isELA;
+      })
+      .sort((a, b) => {
+        // Extract grade from branch name or use domain sort
+        const aGrade = GRADE_ORDER.indexOf(a.nodes[0]?.nodeCode?.split(".")[0] ?? "");
+        const bGrade = GRADE_ORDER.indexOf(b.nodes[0]?.nodeCode?.split(".")[0] ?? "");
+        if (aGrade !== bGrade) return aGrade - bGrade;
+        return 0;
+      });
+  }, [allBranches, subject, domain]);
 
   const handleNodeClick = useCallback(
     (node: BranchNode, branchUnlocked: boolean) => {
@@ -193,6 +218,12 @@ export default function TopicTree({
 
   return (
     <div className={compact ? "space-y-3" : "space-y-4"}>
+      {/* Subject tabs — only shown when no domain filter is applied */}
+      {!domain && (
+        <div className="flex justify-center mb-4">
+          <SubjectTabs subject={subject} onSubjectChange={setSubject} />
+        </div>
+      )}
       {branches.map((branch) => {
         const isExpanded = expandedBranches.has(branch.id);
 

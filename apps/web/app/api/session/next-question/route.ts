@@ -25,6 +25,7 @@ import type {
 import {
   isCoordinatePlaneNode,
   pickCoordinatePlaneFallback,
+  type CoordinatePlaneQuestionData,
 } from "@/lib/session/coordinate-plane-questions";
 
 export const maxDuration = 30;
@@ -98,11 +99,26 @@ export async function GET(request: Request) {
     // Discard any prefetched text MC — coordinate nodes always get interactive grid
     try { await getPrefetchedQuestion(sessionId); } catch { /* discard */ }
 
+    // Try question bank first
     const coordQuestion = pickCoordinatePlaneFallback(node.gradeLevel, previousQuestionTexts);
     if (coordQuestion) {
-      console.log(`[next-question] Coordinate plane grid question for ${sessionId}`);
+      console.log(`[next-question] Coordinate plane grid question (bank) for ${sessionId}`);
       return NextResponse.json({
         question: coordQuestion,
+        source: "on-demand",
+        learningStep: step,
+      });
+    }
+
+    // Bank exhausted — ask Claude to generate a coordinate plane grid question
+    console.log(`[next-question] Bank exhausted — asking Claude for coord grid question for ${sessionId}`);
+    const claudeCoordQuestion = await generateClaudeCoordinateQuestion(
+      node.gradeLevel, node.title, previousQuestionTexts
+    );
+    if (claudeCoordQuestion) {
+      console.log(`[next-question] Coordinate plane grid question (Claude) for ${sessionId}`);
+      return NextResponse.json({
+        question: claudeCoordQuestion,
         source: "on-demand",
         learningStep: step,
       });
@@ -390,4 +406,75 @@ function pickUnaskedFallback(
   );
   const pool = unseen.length > 0 ? unseen : questions;
   return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// ─── Claude-generated Coordinate Plane Questions ───
+
+/**
+ * When the question bank is exhausted, ask Claude to generate a NEW
+ * coordinate plane grid question (with correctX, correctY) instead
+ * of falling back to text multiple choice.
+ */
+async function generateClaudeCoordinateQuestion(
+  gradeLevel: string,
+  nodeTitle: string,
+  previousQuestionTexts: string[]
+): Promise<CoordinatePlaneQuestionData | null> {
+  // Determine grid range based on grade
+  const isNegative = ["G6", "G7", "G8"].includes(gradeLevel);
+  const gridMin = isNegative ? (["G7", "G8"].includes(gradeLevel) ? -10 : -6) : 0;
+  const gridMax = isNegative ? (["G7", "G8"].includes(gradeLevel) ? 10 : 6) : (["G3", "G4"].includes(gradeLevel) ? 6 : 10);
+
+  const previousList = previousQuestionTexts.length > 0
+    ? `\nDo NOT repeat these previously asked questions:\n- ${previousQuestionTexts.join("\n- ")}`
+    : "";
+
+  const prompt = `Generate a coordinate plane math question for a ${gradeLevel} student about "${nodeTitle}".
+
+Requirements:
+- The student must plot a SINGLE point on a coordinate grid
+- Grid range: x and y from ${gridMin} to ${gridMax}
+- Pick a specific coordinate the student must tap${isNegative ? " (can use negative numbers)" : " (positive numbers only, first quadrant)"}
+- Use a fun, engaging context (animals, treasure, rockets, sports, etc.)
+- Keep language age-appropriate${previousList}
+
+Respond in EXACTLY this JSON format (no markdown, no code fences):
+{"questionText": "...", "correctX": <number>, "correctY": <number>, "explanation": "..."}`;
+
+  try {
+    const response = await callClaude(prompt);
+    if (!response) return null;
+
+    // Strip markdown fences if present
+    const cleaned = response.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
+    const parsed = JSON.parse(cleaned);
+
+    if (
+      typeof parsed.questionText === "string" &&
+      typeof parsed.correctX === "number" &&
+      typeof parsed.correctY === "number" &&
+      typeof parsed.explanation === "string" &&
+      parsed.correctX >= gridMin && parsed.correctX <= gridMax &&
+      parsed.correctY >= gridMin && parsed.correctY <= gridMax
+    ) {
+      return {
+        questionText: parsed.questionText,
+        questionType: "coordinate_plane",
+        correctX: parsed.correctX,
+        correctY: parsed.correctY,
+        tolerance: 0.5,
+        explanation: parsed.explanation,
+        gridMin,
+        gridMax,
+        gradeLevels: [gradeLevel],
+        domain: "GEOMETRY",
+      };
+    }
+
+    console.warn("[next-question] Claude coord question failed validation:", parsed);
+    return null;
+  } catch (err) {
+    console.warn("[next-question] Claude coord question generation failed:", err);
+    return null;
+  }
 }

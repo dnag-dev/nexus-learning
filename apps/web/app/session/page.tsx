@@ -1835,7 +1835,7 @@ function SessionPage() {
                         <span className="text-sm font-bold text-[#1F2937]">
                           {goalProg.previousPct}% → {goalProg.currentPct}%
                           {goalProg.change > 0 && (
-                            <span className="text-green-400 ml-1">&#9650;{goalProg.change}%</span>
+                            <span className="text-green-400 ml-1">▲{goalProg.change}%</span>
                           )}
                         </span>
                       </div>

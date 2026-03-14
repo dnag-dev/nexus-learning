@@ -35,11 +35,11 @@ export interface MobileStatsRowProps extends SessionStatsProps {
 const MASTERY_LEVELS = ["NOVICE", "DEVELOPING", "PROFICIENT", "ADVANCED", "MASTERED"];
 
 const LEVEL_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  NOVICE: { bg: "bg-gray-500/20", text: "text-gray-300", border: "border-gray-500/30" },
-  DEVELOPING: { bg: "bg-blue-500/20", text: "text-blue-300", border: "border-blue-500/30" },
-  PROFICIENT: { bg: "bg-green-500/20", text: "text-green-300", border: "border-green-500/30" },
-  ADVANCED: { bg: "bg-purple-500/20", text: "text-purple-300", border: "border-purple-500/30" },
-  MASTERED: { bg: "bg-yellow-500/20", text: "text-yellow-300", border: "border-yellow-500/30" },
+  NOVICE: { bg: "bg-gray-100", text: "text-gray-600", border: "border-gray-300" },
+  DEVELOPING: { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-300" },
+  PROFICIENT: { bg: "bg-green-50", text: "text-green-700", border: "border-green-300" },
+  ADVANCED: { bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-300" },
+  MASTERED: { bg: "bg-yellow-50", text: "text-yellow-700", border: "border-yellow-300" },
 };
 
 const MASTERY_THRESHOLDS = [
@@ -93,7 +93,7 @@ function getNextMilestone(
   return { label: "All mastery badges earned!", icon: "🏆" };
 }
 
-// ─── Mastery Meter (animated circular gauge — dark theme with gradient arc) ───
+// ─── Mastery Meter (animated circular gauge — light theme with gradient arc) ───
 
 function MasteryMeter({
   probability,
@@ -207,7 +207,7 @@ function MasteryMeter({
             cy={thresholdY}
             r={isLarge ? 4 : 2.5}
             fill="#D63031"
-            stroke="rgba(13,27,42,0.8)"
+            stroke="rgba(255,255,255,0.9)"
             strokeWidth={isLarge ? 1.5 : 1}
           />
         </svg>
@@ -238,9 +238,9 @@ function MasteryMeter({
           </span>
           {/* Phase 8: Mastery clarity — show gain/loss per answer */}
           <div className="text-[10px] text-[#9CA3AF] leading-tight">
-            <span className="text-green-400">✅ Correct ≈ +15%</span>
+            <span className="text-green-600">✅ Correct ≈ +15%</span>
             {" · "}
-            <span className="text-red-400">❌ Wrong ≈ -10%</span>
+            <span className="text-red-600">❌ Wrong ≈ -10%</span>
           </div>
           <p className="text-[10px] text-gray-600 italic">
             Never resets to zero!
@@ -272,7 +272,7 @@ function useStreakAnim(streak: number) {
   return animClass;
 }
 
-// ─── Desktop Sidebar (dark theme) ───
+// ─── Desktop Sidebar (light theme) ───
 
 export default function SessionStats({
   mastery,
@@ -383,7 +383,7 @@ export default function SessionStats({
   );
 }
 
-// ─── Mobile Stats Row (dark theme) ───
+// ─── Mobile Stats Row (light theme) ───
 
 export function MobileStatsRow({
   mastery,
@@ -467,8 +467,8 @@ export function MobileStatsRow({
                 />
                 {/* Phase 8: Mobile mastery clarity */}
                 <p className="text-[9px] text-[#9CA3AF] mt-1 text-center leading-tight">
-                  <span className="text-green-400">✅+15%</span>{" "}
-                  <span className="text-red-400">❌-10%</span>
+                  <span className="text-green-600">✅+15%</span>{" "}
+                  <span className="text-red-600">❌-10%</span>
                 </p>
               </div>
 

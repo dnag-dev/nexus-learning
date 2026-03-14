@@ -48,11 +48,11 @@ interface SessionHeaderProps {
 }
 
 const MASTERY_BADGE_STYLES: Record<string, string> = {
-  NOVICE: "bg-gray-500/30 text-gray-200 border border-gray-400/30",
-  DEVELOPING: "bg-blue-500/30 text-blue-200 border border-blue-400/30",
-  PROFICIENT: "bg-green-500/30 text-green-200 border border-green-400/30",
-  ADVANCED: "bg-purple-500/30 text-purple-200 border border-purple-400/30",
-  MASTERED: "bg-gradient-to-r from-yellow-400/30 to-amber-500/30 text-yellow-200 border border-yellow-400/30",
+  NOVICE: "bg-white/20 text-white border border-white/30",
+  DEVELOPING: "bg-white/20 text-white border border-white/30",
+  PROFICIENT: "bg-white/25 text-white border border-white/40",
+  ADVANCED: "bg-white/25 text-white border border-white/40",
+  MASTERED: "bg-yellow-400/30 text-yellow-100 border border-yellow-300/50",
 };
 
 export default function SessionHeader({
@@ -83,7 +83,7 @@ export default function SessionHeader({
   return (
     <>
       {/* ─── Session Progress Bar (top of screen) ─── */}
-      <div className="h-[3px] w-full bg-gray-800/30">
+      <div className="h-[3px] w-full bg-gray-200">
         <div
           className="h-full transition-all duration-700 ease-out rounded-r-full"
           style={{
@@ -95,7 +95,7 @@ export default function SessionHeader({
 
       {/* ─── Gradient Header ─── */}
       <header
-        className="px-4 py-3 shadow-lg"
+        className="px-4 py-3 shadow-md"
         style={{ background: colors.gradient }}
       >
         <div className="max-w-2xl mx-auto flex items-center justify-between">
@@ -153,7 +153,7 @@ export default function SessionHeader({
                     {isMastered ? "MASTERED ✓" : `${mastery.level} ${mastery.probability}%`}
                   </span>
                   {!isMastered && (
-                    <span className="text-[10px] text-gray-400">
+                    <span className="text-[10px] text-white/70">
                       → {MASTERY_THRESHOLD}% to complete
                     </span>
                   )}

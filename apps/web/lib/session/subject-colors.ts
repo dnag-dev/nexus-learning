@@ -24,40 +24,40 @@ export interface SubjectColorConfig {
   hoverBg: string;
 }
 
-// ─── Math: Gold / Amber ───
+// ─── Math: Gold / Amber (light theme) ───
 const mathColors: SubjectColorConfig = {
-  primary: "#FDCB6E",
-  primaryLight: "rgba(253, 203, 110, 0.15)",
-  gradient: "linear-gradient(135deg, #1A1A2E 0%, #2D1B69 100%)",
-  border: "#FDCB6E",
+  primary: "#D97706",
+  primaryLight: "rgba(217, 119, 6, 0.10)",
+  gradient: "linear-gradient(135deg, #6C5CE7 0%, #7C3AED 100%)",
+  border: "#D97706",
   badgeBg: "#6C5CE7",
   badgeText: "#FFFFFF",
-  ringColor: "#FDCB6E",
-  hoverBg: "rgba(253, 203, 110, 0.08)",
+  ringColor: "#D97706",
+  hoverBg: "rgba(217, 119, 6, 0.06)",
 };
 
-// ─── Science: Teal ───
+// ─── Science: Teal (light theme) ───
 const scienceColors: SubjectColorConfig = {
-  primary: "#00CEC9",
-  primaryLight: "rgba(0, 206, 201, 0.15)",
-  gradient: "linear-gradient(135deg, #0D2137 0%, #0E4D5C 100%)",
-  border: "#00CEC9",
-  badgeBg: "#00B894",
+  primary: "#0D9488",
+  primaryLight: "rgba(13, 148, 136, 0.10)",
+  gradient: "linear-gradient(135deg, #0D9488 0%, #0891B2 100%)",
+  border: "#0D9488",
+  badgeBg: "#0D9488",
   badgeText: "#FFFFFF",
-  ringColor: "#00CEC9",
-  hoverBg: "rgba(0, 206, 201, 0.08)",
+  ringColor: "#0D9488",
+  hoverBg: "rgba(13, 148, 136, 0.06)",
 };
 
-// ─── English: Blue ───
+// ─── English: Blue (light theme) ───
 const englishColors: SubjectColorConfig = {
-  primary: "#74B9FF",
-  primaryLight: "rgba(116, 185, 255, 0.15)",
-  gradient: "linear-gradient(135deg, #1A1A2E 0%, #1B3A69 100%)",
-  border: "#74B9FF",
-  badgeBg: "#0984E3",
+  primary: "#2563EB",
+  primaryLight: "rgba(37, 99, 235, 0.10)",
+  gradient: "linear-gradient(135deg, #2563EB 0%, #4F46E5 100%)",
+  border: "#2563EB",
+  badgeBg: "#2563EB",
   badgeText: "#FFFFFF",
-  ringColor: "#74B9FF",
-  hoverBg: "rgba(116, 185, 255, 0.08)",
+  ringColor: "#2563EB",
+  hoverBg: "rgba(37, 99, 235, 0.06)",
 };
 
 const DOMAIN_COLORS: Record<string, SubjectColorConfig> = {

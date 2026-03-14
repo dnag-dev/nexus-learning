@@ -1109,7 +1109,7 @@ function SessionPage() {
               <div className="mb-4 bg-gradient-to-r from-amber-500/10 to-yellow-500/10 rounded-xl p-3 border border-amber-500/20 animate-fade-in-up">
                 <div className="flex items-center gap-2">
                   <span className="text-base">📚</span>
-                  <p className="text-xs text-amber-300 leading-relaxed">
+                  <p className="text-xs text-amber-700 leading-relaxed">
                     {gradeGuardrailMsg}
                   </p>
                 </div>
@@ -1393,26 +1393,26 @@ function SessionPage() {
                       <span className="text-2xl mt-0.5">💡</span>
                       <div className="space-y-3">
                         <div>
-                          <p className="text-sm font-semibold text-blue-400 mb-1">
+                          <p className="text-sm font-semibold text-blue-700 mb-1">
                             What happened:
                           </p>
-                          <p className="text-white/90 text-sm leading-relaxed">
+                          <p className="text-[#374151] text-sm leading-relaxed">
                             {remediation.whatWentWrong}
                           </p>
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-blue-400 mb-1">
+                          <p className="text-sm font-semibold text-blue-700 mb-1">
                             Let me explain it differently:
                           </p>
-                          <p className="text-white/90 text-sm leading-relaxed">
+                          <p className="text-[#374151] text-sm leading-relaxed">
                             {remediation.reExplanation}
                           </p>
                         </div>
                         <div className="bg-blue-500/10 rounded-xl p-3 border border-blue-500/10">
-                          <p className="text-sm font-semibold text-blue-300 mb-1">
+                          <p className="text-sm font-semibold text-blue-600 mb-1">
                             New example:
                           </p>
-                          <p className="text-white/80 text-sm leading-relaxed">
+                          <p className="text-[#4B5563] text-sm leading-relaxed">
                             {remediation.newExample}
                           </p>
                         </div>
@@ -1975,7 +1975,7 @@ function SessionPage() {
                         setTimeout(() => setShareToast(false), 2000);
                       }
                     }}
-                    className="w-full py-3 text-base font-semibold text-gray-300 bg-transparent border border-white/15 rounded-2xl hover:bg-white/5 hover:border-white/25 transition-colors"
+                    className="w-full py-3 text-base font-semibold text-[#6B7280] bg-transparent border border-[#E2E8F0] rounded-2xl hover:bg-gray-50 hover:border-[#D1D5DB] transition-colors"
                   >
                     Share with Parent
                   </button>
@@ -2031,7 +2031,7 @@ function SessionPage() {
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: 260, opacity: 0 }}
           transition={{ duration: 0.3, ease: "easeOut" as const }}
-          className="hidden lg:flex fixed right-0 top-0 bottom-0 w-[260px] bg-[#0F1B2D]/95 backdrop-blur-sm border-l border-white/5 shadow-lg z-30 overflow-y-auto"
+          className="hidden lg:flex fixed right-0 top-0 bottom-0 w-[260px] bg-white/95 backdrop-blur-sm border-l border-[#E2E8F0] shadow-lg z-30 overflow-y-auto"
         >
           <SessionStats {...statsProps} />
         </motion.aside>

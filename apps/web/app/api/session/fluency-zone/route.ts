@@ -109,7 +109,7 @@ async function handleStart(body: {
 
   const node = await prisma.knowledgeNode.findUnique({
     where: { id: nodeId },
-    select: { id: true, title: true, subject: true, domain: true },
+    select: { id: true, title: true, subject: true, domain: true, nodeCode: true, gradeLevel: true },
   });
 
   if (!node) {
@@ -138,6 +138,9 @@ async function handleStart(body: {
     nodeId: node.id,
     nodeName: node.title,
     subject: node.subject,
+    domain: node.domain,
+    nodeCode: node.nodeCode,
+    gradeLevel: node.gradeLevel,
     timeLimitSeconds,
     personalBest: previousBest
       ? {

@@ -11,6 +11,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { generateTopicQuestion } from "@/lib/fluency/topic-question-generators";
 
 interface FluencyAnswer {
   questionText: string;
@@ -25,97 +26,11 @@ interface FluencyZoneGameProps {
   nodeId: string;
   nodeName: string;
   subject: string;
+  domain: string;
+  nodeCode: string;
   timeLimitSeconds: number;
   personalBest: { questionsPerMin: number; correctCount: number } | null;
   onComplete: (answers: FluencyAnswer[], elapsedSeconds: number) => void;
-}
-
-// Simple math fact generator for speed drills
-function generateMathQuestion(domain: string): {
-  questionText: string;
-  correctAnswer: string;
-  options: string[];
-} {
-  const a = Math.floor(Math.random() * 12) + 1;
-  const b = Math.floor(Math.random() * 12) + 1;
-  const correct = a * b;
-  const questionText = `${a} × ${b} = ?`;
-  const correctAnswer = String(correct);
-
-  // Generate 3 wrong answers close to correct
-  const wrongs = new Set<string>();
-  while (wrongs.size < 3) {
-    const offset = Math.floor(Math.random() * 10) - 5;
-    const wrong = correct + offset;
-    if (wrong !== correct && wrong > 0) {
-      wrongs.add(String(wrong));
-    }
-  }
-
-  const options = [correctAnswer, ...Array.from(wrongs)].sort(
-    () => Math.random() - 0.5
-  );
-
-  return { questionText, correctAnswer, options };
-}
-
-// Simple ELA question generator for speed drills
-function generateELAQuestion(): {
-  questionText: string;
-  correctAnswer: string;
-  options: string[];
-} {
-  const questions = [
-    {
-      q: 'Which is a noun?',
-      correct: 'Mountain',
-      wrong: ['Quickly', 'Beautiful', 'Running'],
-    },
-    {
-      q: 'Which is a verb?',
-      correct: 'Jump',
-      wrong: ['Table', 'Happy', 'Slowly'],
-    },
-    {
-      q: 'Which is an adjective?',
-      correct: 'Bright',
-      wrong: ['Sing', 'Rapidly', 'Chair'],
-    },
-    {
-      q: 'Which word is a pronoun?',
-      correct: 'They',
-      wrong: ['House', 'Walk', 'Quiet'],
-    },
-    {
-      q: 'Which is an adverb?',
-      correct: 'Carefully',
-      wrong: ['Dog', 'Strong', 'Dance'],
-    },
-    {
-      q: 'Which sentence is correct?',
-      correct: 'She runs every day.',
-      wrong: ['She run every day.', 'Her runs every day.', 'She running every day.'],
-    },
-    {
-      q: 'Which is a complete sentence?',
-      correct: 'The dog barked loudly.',
-      wrong: ['Running fast.', 'Because of rain.', 'Under the table.'],
-    },
-    {
-      q: 'Which word means "happy"?',
-      correct: 'Joyful',
-      wrong: ['Sad', 'Angry', 'Tired'],
-    },
-  ];
-
-  const q = questions[Math.floor(Math.random() * questions.length)];
-  const options = [q.correct, ...q.wrong].sort(() => Math.random() - 0.5);
-
-  return {
-    questionText: q.q,
-    correctAnswer: q.correct,
-    options,
-  };
 }
 
 export default function FluencyZoneGame({
@@ -124,6 +39,8 @@ export default function FluencyZoneGame({
   nodeId,
   nodeName,
   subject,
+  domain,
+  nodeCode,
   timeLimitSeconds,
   personalBest,
   onComplete,
@@ -165,12 +82,11 @@ export default function FluencyZoneGame({
   }, [timeLeft, gameOver, answers, onComplete]);
 
   const nextQuestion = useCallback(() => {
-    const q =
-      subject === "MATH" ? generateMathQuestion("multiplication") : generateELAQuestion();
+    const q = generateTopicQuestion(subject, domain, nodeCode, nodeName);
     setCurrentQ(q);
     questionStartRef.current = Date.now();
     setLastResult(null);
-  }, [subject]);
+  }, [subject, domain, nodeCode, nodeName]);
 
   const handleAnswer = useCallback(
     (selectedAnswer: string) => {

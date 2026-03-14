@@ -23,6 +23,8 @@ interface GameSession {
   nodeId: string;
   nodeName: string;
   subject: string;
+  domain: string;
+  nodeCode: string;
   timeLimitSeconds: number;
   personalBest: { questionsPerMin: number; correctCount: number } | null;
 }
@@ -78,6 +80,8 @@ function FluencyZoneContent() {
           nodeId: data.nodeId,
           nodeName: data.nodeName,
           subject: data.subject,
+          domain: data.domain || "NUMBER_OPERATIONS",
+          nodeCode: data.nodeCode || "",
           timeLimitSeconds,
           personalBest: data.personalBest,
         });
@@ -171,6 +175,8 @@ function FluencyZoneContent() {
           nodeId={session.nodeId}
           nodeName={session.nodeName}
           subject={session.subject}
+          domain={session.domain}
+          nodeCode={session.nodeCode}
           timeLimitSeconds={session.timeLimitSeconds}
           personalBest={session.personalBest}
           onComplete={handleComplete}

@@ -55,29 +55,7 @@ export async function GET(request: Request) {
     );
   }
 
-  // Try to get the prefetched question (works in dev, may miss on Vercel serverless)
-  try {
-    const prefetched = await getPrefetchedQuestion(sessionId);
-    if (prefetched) {
-      console.log(`[next-question] Prefetch HIT for ${sessionId}`);
-      // Read step from session for metadata
-      const session = await prisma.learningSession.findUnique({
-        where: { id: sessionId },
-        select: { learningStep: true },
-      });
-      return NextResponse.json({
-        question: prefetched,
-        source: "prefetch",
-        learningStep: session?.learningStep ?? 2,
-      });
-    }
-  } catch (e) {
-    console.warn("[next-question] Prefetch error (non-critical):", e);
-  }
-
-  // Generate on-demand
-  console.log(`[next-question] Generating on-demand for ${sessionId}`);
-
+  // Load session + node first — needed for coordinate plane check and on-demand generation
   const session = await prisma.learningSession.findUnique({
     where: { id: sessionId },
     include: { student: true, currentNode: true },
@@ -105,6 +83,49 @@ export async function GET(request: Request) {
       `[next-question] Auto-advanced step 1→2 for ${sessionId}`
     );
   }
+
+  // ─── Coordinate Plane: Always use interactive grid — skip prefetch cache ───
+  const isCoordNode = isCoordinatePlaneNode(node.nodeCode, node.title, node.domain);
+  if (isCoordNode) {
+    // Fetch previous questions to avoid repeats
+    const previousResponses = await prisma.questionResponse.findMany({
+      where: { sessionId, nodeId: node.id },
+      select: { questionText: true },
+      orderBy: { createdAt: "desc" },
+    });
+    const previousQuestionTexts = previousResponses.map((r) => r.questionText);
+
+    // Discard any prefetched text MC — coordinate nodes always get interactive grid
+    try { await getPrefetchedQuestion(sessionId); } catch { /* discard */ }
+
+    const coordQuestion = pickCoordinatePlaneFallback(node.gradeLevel, previousQuestionTexts);
+    if (coordQuestion) {
+      console.log(`[next-question] Coordinate plane grid question for ${sessionId}`);
+      return NextResponse.json({
+        question: coordQuestion,
+        source: "on-demand",
+        learningStep: step,
+      });
+    }
+  }
+
+  // Try to get the prefetched question (works in dev, may miss on Vercel serverless)
+  try {
+    const prefetched = await getPrefetchedQuestion(sessionId);
+    if (prefetched) {
+      console.log(`[next-question] Prefetch HIT for ${sessionId}`);
+      return NextResponse.json({
+        question: prefetched,
+        source: "prefetch",
+        learningStep: step,
+      });
+    }
+  } catch (e) {
+    console.warn("[next-question] Prefetch error (non-critical):", e);
+  }
+
+  // Generate on-demand
+  console.log(`[next-question] Generating on-demand for ${sessionId}`);
 
   const stepType = stepToType(step);
 
@@ -139,20 +160,6 @@ export async function GET(request: Request) {
   const previousQuestions = previousQuestionTexts.length > 0
     ? previousQuestionTexts.join("\n- ")
     : undefined;
-
-  // ─── Coordinate Plane: Always use interactive grid for coordinate nodes ───
-  const isCoordNode = isCoordinatePlaneNode(node.nodeCode, node.title, node.domain);
-  if (isCoordNode) {
-    const coordQuestion = pickCoordinatePlaneFallback(node.gradeLevel, previousQuestionTexts);
-    if (coordQuestion) {
-      console.log(`[next-question] Coordinate plane question for ${sessionId}`);
-      return NextResponse.json({
-        question: coordQuestion,
-        source: "on-demand",
-        learningStep: step,
-      });
-    }
-  }
 
   // Generate step-aware question
   const prompt = stepPrompt.buildStepPrompt(promptParams, stepType, {

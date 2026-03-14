@@ -1774,7 +1774,7 @@ function SessionPage() {
                       ) : (
                         <>
                           <p className="text-lg font-bold text-gray-500">--</p>
-                          <p className="text-[10px] text-gray-500 leading-tight">Need 8+ Qs</p>
+                          <p className="text-[10px] text-gray-500 leading-tight">Keep practicing to master this topic!</p>
                         </>
                       )}
                     </div>
@@ -1799,12 +1799,12 @@ function SessionPage() {
                   {mastered.length > 0 ? (
                     <div className="mb-4">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="text-yellow-400 text-lg">&#11088;</span>
+                        <span className="text-yellow-400 text-lg">⭐</span>
                         <h3 className="font-semibold text-[#1F2937]">Mastered Today</h3>
                       </div>
                       {mastered.map((m) => (
                         <div key={m.nodeCode} className="flex items-center gap-2 py-1.5">
-                          <span className="text-yellow-400">&#10003;</span>
+                          <span className="text-yellow-400">✓</span>
                           <span className="text-[#1F2937] font-medium text-sm">{m.title}</span>
                           <span className="text-xs text-[#6B7280] ml-auto">{m.subject === "ENGLISH" ? "English" : "Math"}</span>
                         </div>
@@ -1883,7 +1883,7 @@ function SessionPage() {
                                 : "hover:bg-gray-50 cursor-pointer active:bg-gray-100"
                             }`}
                           >
-                            <span className="text-lg">{isEnglish ? "&#128214;" : "&#128290;"}</span>
+                            <span className="text-lg">{isEnglish ? "📖" : "📐"}</span>
                             <span className={`text-sm font-medium ${isEnglish ? "text-purple-400" : "text-green-400"}`}>
                               {isEnglish ? "English" : "Math"}
                             </span>
@@ -1892,7 +1892,7 @@ function SessionPage() {
                               {allMastered ? "All caught up!" : nu.title}
                             </span>
                             {!allMastered && (
-                              <span className="text-gray-500 text-xs">&#9654;</span>
+                              <span className="text-gray-500 text-xs">▶</span>
                             )}
                           </button>
                         );
@@ -1906,7 +1906,7 @@ function SessionPage() {
                   <details className="group">
                     <summary className="flex items-center justify-between bg-white rounded-2xl p-4 border border-[#E2E8F0] cursor-pointer list-none hover:bg-gray-50 transition-colors">
                       <span className="text-sm font-semibold text-[#6B7280]">See full progress →</span>
-                      <span className="text-gray-500 text-xs group-open:rotate-90 transition-transform">&#9654;</span>
+                      <span className="text-gray-500 text-xs group-open:rotate-90 transition-transform">▶</span>
                     </summary>
                     <div className="bg-white rounded-b-2xl p-5 border border-t-0 border-[#E2E8F0] -mt-2 space-y-3 text-left">
                       {s.gradeProgress.map((gp) => {
@@ -1982,8 +1982,8 @@ function SessionPage() {
                     </div>
                   )}
 
-                  {/* GPS / Dashboard */}
-                  {gpsNavigation && (
+                  {/* GPS / Dashboard — only show for parent sessions, never for child auth */}
+                  {!returnTo.startsWith("/kid") && gpsNavigation && (
                     <a
                       href={gpsNavigation.redirectUrl}
                       className="block w-full py-3.5 text-center text-base font-semibold text-white bg-gradient-to-r from-teal-500 to-cyan-600 rounded-2xl hover:from-teal-600 hover:to-cyan-700 transition-all"
@@ -1991,7 +1991,7 @@ function SessionPage() {
                       View GPS Dashboard
                     </a>
                   )}
-                  {!gpsNavigation && hasActivePlans && (
+                  {!returnTo.startsWith("/kid") && !gpsNavigation && hasActivePlans && (
                     <a
                       href={`/gps?studentId=${DEMO_STUDENT_ID}`}
                       className="block w-full py-3 text-center text-base font-semibold text-teal-400 bg-teal-500/10 border border-teal-500/20 rounded-2xl hover:bg-teal-500/20 transition-colors"

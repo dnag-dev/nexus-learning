@@ -55,7 +55,13 @@ export default function FluencyZonePicker({
       body: JSON.stringify({ action: "topics", studentId, subject }),
     })
       .then((r) => r.json())
-      .then((data) => setTopics(data.topics ?? []))
+      .then((data) => {
+        const GRADE_ORDER = ["K","G1","G2","G3","G4","G5","G6","G7","G8","G9","G10","G11","G12"];
+        const sorted = (data.topics ?? []).sort(
+          (a: FluencyTopic, b: FluencyTopic) => GRADE_ORDER.indexOf(a.gradeLevel) - GRADE_ORDER.indexOf(b.gradeLevel)
+        );
+        setTopics(sorted);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [studentId, subject]);

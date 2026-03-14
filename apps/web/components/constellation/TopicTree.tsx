@@ -365,7 +365,7 @@ export default function TopicTree({
                               ? "bg-purple-500/20 text-purple-400"
                               : node.nexusScore > 0
                                 ? "bg-yellow-500/20 text-yellow-400"
-                                : "bg-[#F3F4F6] text-[#9CA3AF]"
+                                : "bg-[#F3F4F6] text-[#6B7280] font-medium"
                         }`}>
                           {style.label}
                         </span>

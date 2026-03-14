@@ -82,8 +82,9 @@ export function Tier3Dashboard({
           marginTop: 16,
         }}
       >
-        <View
-          style={{
+        <Pressable
+          onPress={() => router.push("/(kid)/(tabs)/profile")}
+          style={({ pressed }) => ({
             flex: 1,
             backgroundColor: colors.surface,
             borderRadius: 12,
@@ -91,15 +92,17 @@ export function Tier3Dashboard({
             borderWidth: 1,
             borderColor: colors.border,
             alignItems: "center",
-          }}
+            opacity: pressed ? 0.8 : 1,
+          })}
         >
           <Text style={{ fontSize: 20, fontWeight: "700", color: colors.warning }}>
             {streak}
           </Text>
           <Text style={{ fontSize: 11, color: colors.textMuted }}>Streak</Text>
-        </View>
-        <View
-          style={{
+        </Pressable>
+        <Pressable
+          onPress={() => router.push("/(kid)/topic-tree")}
+          style={({ pressed }) => ({
             flex: 1,
             backgroundColor: colors.surface,
             borderRadius: 12,
@@ -107,15 +110,17 @@ export function Tier3Dashboard({
             borderWidth: 1,
             borderColor: colors.border,
             alignItems: "center",
-          }}
+            opacity: pressed ? 0.8 : 1,
+          })}
         >
           <Text style={{ fontSize: 20, fontWeight: "700", color: colors.success }}>
             {masteryCount}
           </Text>
           <Text style={{ fontSize: 11, color: colors.textMuted }}>Mastered</Text>
-        </View>
-        <View
-          style={{
+        </Pressable>
+        <Pressable
+          onPress={() => router.push("/(kid)/topic-tree")}
+          style={({ pressed }) => ({
             flex: 1,
             backgroundColor: colors.surface,
             borderRadius: 12,
@@ -123,13 +128,14 @@ export function Tier3Dashboard({
             borderWidth: 1,
             borderColor: colors.border,
             alignItems: "center",
-          }}
+            opacity: pressed ? 0.8 : 1,
+          })}
         >
           <Text style={{ fontSize: 20, fontWeight: "700", color: colors.primary }}>
             {masteryPercent}%
           </Text>
           <Text style={{ fontSize: 11, color: colors.textMuted }}>Progress</Text>
-        </View>
+        </Pressable>
       </View>
 
       {/* Mastery progress bar */}

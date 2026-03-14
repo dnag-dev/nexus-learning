@@ -119,10 +119,10 @@ export function Tier2Dashboard({
             Level {level} — {levelTitle}
           </Text>
         </View>
-        <View style={{ flexDirection: "row", gap: 8 }}>
+        <Pressable onPress={() => router.push("/(kid)/(tabs)/profile")} style={{ flexDirection: "row", gap: 8 }}>
           {streak > 0 && <StreakBadge streak={streak} size="sm" />}
           <XPBadge xp={xp} size="sm" />
-        </View>
+        </Pressable>
       </View>
 
       {/* Subject tabs */}
@@ -200,16 +200,18 @@ export function Tier2Dashboard({
             goal={0}
             showLabel={false}
           />
-          <Text
-            style={{
-              fontSize: 14,
-              fontWeight: "600",
-              color: colors.text,
-              marginTop: 8,
-            }}
-          >
-            {summaryText}
-          </Text>
+          <Pressable onPress={() => router.push("/(kid)/topic-tree")}>
+            <Text
+              style={{
+                fontSize: 14,
+                fontWeight: "600",
+                color: colors.text,
+                marginTop: 8,
+              }}
+            >
+              {summaryText}
+            </Text>
+          </Pressable>
         </Card>
       </View>
 

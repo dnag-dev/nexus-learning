@@ -486,7 +486,7 @@ export async function getStudentGamificationData(studentId: string) {
         id: b.id,
         badgeType: b.badgeType,
         category: b.category,
-        name: def?.name ?? b.badgeType.replace(/_/g, " "),
+        name: def?.name ?? b.badgeType.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" "),
         description: def?.description ?? "",
         icon: def?.icon ?? "🏅",
         earnedAt: b.earnedAt,

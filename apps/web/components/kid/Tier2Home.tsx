@@ -112,7 +112,7 @@ export default function Tier2Home() {
 
   // Map raw badges to display format
   const displayBadges = (gam?.badges ?? []).map((b) => {
-    const info = BADGE_DISPLAY[b.badgeType] || { name: b.badgeType, emoji: "🏅" };
+    const info = BADGE_DISPLAY[b.badgeType] || { name: b.badgeType.split('_').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' '), emoji: "🏅" };
     return { id: b.badgeType, name: info.name, emoji: info.emoji, earnedAt: b.earnedAt };
   });
 
@@ -203,10 +203,10 @@ export default function Tier2Home() {
         variant="mid"
       />
 
-      {/* 3 Stat Cards */}
+      {/* 3 Stat Cards — tappable links */}
       <div className="grid grid-cols-3 gap-3">
         {/* Level + XP */}
-        <div className="bg-white rounded-xl p-4 border border-[#E2E8F0] text-center">
+        <Link href="/kid/constellation" className="bg-white rounded-xl p-4 border border-[#E2E8F0] text-center hover:bg-gray-50 transition-colors">
           <p className="text-2xl font-bold text-purple-400">Lv. {level}</p>
           <div className="w-full h-1.5 bg-gray-200 rounded-full mt-2 overflow-hidden">
             <div
@@ -215,25 +215,25 @@ export default function Tier2Home() {
             />
           </div>
           <p className="text-xs text-[#6B7280] mt-1">{xp} XP</p>
-        </div>
+        </Link>
 
         {/* Streak */}
-        <div className="bg-white rounded-xl p-4 border border-[#E2E8F0] text-center">
+        <Link href="/kid/constellation" className="bg-white rounded-xl p-4 border border-[#E2E8F0] text-center hover:bg-gray-50 transition-colors">
           <p className="text-2xl font-bold text-orange-400">
             {streakDays > 0 ? `🔥 ${streakDays}` : "—"}
           </p>
           <p className="text-xs text-[#6B7280] mt-1">
             day streak
           </p>
-        </div>
+        </Link>
 
         {/* Mastered */}
-        <div className="bg-white rounded-xl p-4 border border-[#E2E8F0] text-center">
+        <Link href="/kid/constellation?tab=topic-tree&filter=mastered" className="bg-white rounded-xl p-4 border border-[#E2E8F0] text-center hover:bg-gray-50 transition-colors">
           <p className="text-2xl font-bold text-green-400">
             {totalMastered}
           </p>
           <p className="text-xs text-[#6B7280] mt-1">mastered</p>
-        </div>
+        </Link>
       </div>
 
       {/* Recent Badges */}
@@ -292,9 +292,9 @@ export default function Tier2Home() {
           Your Progress
         </h3>
         {goalName ? (
-          <p className="text-[#1F2937] text-sm font-medium mb-2">{goalName}</p>
+          <Link href="/kid/constellation?tab=topic-tree" className="text-[#1F2937] text-sm font-medium mb-2 block hover:text-purple-600 transition-colors">{goalName}</Link>
         ) : missionTitle ? (
-          <p className="text-[#1F2937] text-sm font-medium mb-2">Current: {missionTitle}</p>
+          <Link href="/kid/constellation?tab=topic-tree" className="text-[#1F2937] text-sm font-medium mb-2 block hover:text-purple-600 transition-colors">Current: {missionTitle}</Link>
         ) : (
           <p className="text-[#1F2937] text-sm font-medium mb-2">Learning Journey</p>
         )}

@@ -150,26 +150,26 @@ export default function Tier3Home() {
         variant="teen"
       />
 
-      {/* Stats Row */}
+      {/* Stats Row — tappable links */}
       <div className="grid grid-cols-4 gap-3">
-        <div className="bg-white rounded-xl p-4 border border-[#E2E8F0] text-center">
+        <Link href="/kid/constellation" className="bg-white rounded-xl p-4 border border-[#E2E8F0] text-center hover:bg-gray-50 transition-colors">
           <p className="text-xl font-bold text-purple-400">Lv. {currentLevel}</p>
           <p className="text-xs text-[#6B7280]">level</p>
-        </div>
-        <div className="bg-white rounded-xl p-4 border border-[#E2E8F0] text-center">
+        </Link>
+        <Link href="/kid/constellation" className="bg-white rounded-xl p-4 border border-[#E2E8F0] text-center hover:bg-gray-50 transition-colors">
           <p className="text-xl font-bold text-orange-400">
             {streakDays > 0 ? `🔥 ${streakDays}` : "0"}
           </p>
           <p className="text-xs text-[#6B7280]">streak</p>
-        </div>
-        <div className="bg-white rounded-xl p-4 border border-[#E2E8F0] text-center">
+        </Link>
+        <Link href="/kid/constellation?tab=topic-tree&filter=mastered" className="bg-white rounded-xl p-4 border border-[#E2E8F0] text-center hover:bg-gray-50 transition-colors">
           <p className="text-xl font-bold text-green-400">{totalMastered}</p>
           <p className="text-xs text-[#6B7280]">mastered</p>
-        </div>
-        <div className="bg-white rounded-xl p-4 border border-[#E2E8F0] text-center">
+        </Link>
+        <Link href="/kid/constellation" className="bg-white rounded-xl p-4 border border-[#E2E8F0] text-center hover:bg-gray-50 transition-colors">
           <p className="text-xl font-bold text-blue-400">{totalBadges}</p>
           <p className="text-xs text-[#6B7280]">badges</p>
-        </div>
+        </Link>
       </div>
 
       {/* Learning Progress */}

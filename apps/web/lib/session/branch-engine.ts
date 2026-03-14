@@ -117,17 +117,18 @@ export async function getTopicTree(
       const isCurrent = activeSession?.currentNodeId === nodeId;
       if (isCurrent) activeBranchId = branch.id;
 
+      const bktMastered = (mastery?.bktProbability ?? 0) >= 0.85;
       const nodeInfo: BranchNode = {
         nodeId: node.id,
         nodeCode: node.nodeCode,
         title: node.title,
         nexusScore: mastery?.nexusScore ?? 0,
-        trulyMastered: mastery?.trulyMastered ?? false,
+        trulyMastered: bktMastered,
         isCurrent,
       };
       nodes.push(nodeInfo);
 
-      if (mastery?.trulyMastered) nodesCompleted++;
+      if (bktMastered) nodesCompleted++;
     }
 
     const totalNodes = nodes.length;
@@ -239,7 +240,7 @@ export async function getNextBranchNode(
       where: { studentId_nodeId: { studentId, nodeId } },
     });
 
-    if (!mastery || !mastery.trulyMastered) {
+    if (!mastery || (mastery.bktProbability ?? 0) < 0.85) {
       const node = await prisma.knowledgeNode.findUnique({
         where: { id: nodeId },
         select: { nodeCode: true, title: true },
@@ -264,13 +265,13 @@ async function checkPrerequisitesMet(
     const prereqBranch = allBranches.find((b) => b.id === prereqId);
     if (!prereqBranch) return false;
 
-    // Check if all nodes in prerequisite branch are mastered
+    // Check if all nodes in prerequisite branch are mastered (BKT >= 0.85)
     for (const nodeId of prereqBranch.nodeIds) {
       const mastery = await prisma.masteryScore.findUnique({
         where: { studentId_nodeId: { studentId, nodeId } },
-        select: { trulyMastered: true },
+        select: { bktProbability: true },
       });
-      if (!mastery?.trulyMastered) return false;
+      if (!mastery || (mastery.bktProbability ?? 0) < 0.85) return false;
     }
   }
 

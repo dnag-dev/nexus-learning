@@ -25,7 +25,8 @@ An AI-powered adaptive tutoring platform for K-10 students called **Aauti Learn*
 - All student-facing pages wrapped in `<Suspense>` for `useSearchParams()` compatibility
 
 ## Database
-- Real user: `dinakara.nagalla@dnag.com`, parentId `cmlwdn6lh0000e2tl9a0yk97f`, child `cmlwdui9u0007psfkhf0kae23` (Ishan, G5)
+- Real user: `dinakara.nagalla@dnag.com`, parentId `cmlwdn6lh0000e2tl9a0yk97f`, child `cmlwdui9u0007psfkhf0kae23` (Ishan, G5) [LOCAL]
+- Prod IDs: Ishan `cmlyge7tv000113q0b662f9bk` (G5), Urvi `cmlyc9vu8000111dbyfr6cj8v` (G5), Urvi Nagalla `cmm8b7hdm0001fibhlo8ae74m` (G8)
 - Demo user: `parent@test.com`, parentId `demo-parent-1`, child `demo-student-1` (Sofia, K, PRO plan)
 - Prisma enums: `GradeLevel` (K, G1-G5), `AgeGroup` (EARLY_5_7, MID_8_10, UPPER_11_12), `UserRole` (PARENT, STUDENT, TEACHER, ADMIN)
 

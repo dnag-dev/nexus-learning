@@ -140,9 +140,9 @@ export async function GET(request: Request) {
     ? previousQuestionTexts.join("\n- ")
     : undefined;
 
-  // ─── Coordinate Plane: Sometimes return interactive questions for geometry nodes ───
+  // ─── Coordinate Plane: Always use interactive grid for coordinate nodes ───
   const isCoordNode = isCoordinatePlaneNode(node.nodeCode, node.title, node.domain);
-  if (isCoordNode && Math.random() < 0.8) {
+  if (isCoordNode) {
     const coordQuestion = pickCoordinatePlaneFallback(node.gradeLevel, previousQuestionTexts);
     if (coordQuestion) {
       console.log(`[next-question] Coordinate plane question for ${sessionId}`);

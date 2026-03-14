@@ -67,14 +67,11 @@ export default function PracticeQuestion({
   // confirmed = whether "Check Answer" has been clicked (triggers API call)
   const [localSelected, setLocalSelected] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState(false);
-  // Phase 10: Collapsible explanation for correct answers
-  const [showExplanation, setShowExplanation] = useState(false);
 
   // Reset local selection when question changes or phase resets to practice
   useEffect(() => {
     setLocalSelected(null);
     setConfirmed(false);
-    setShowExplanation(false);
   }, [question.questionText]);
 
   // Phase 10: Step 1 — select an option (no submission yet)
@@ -259,80 +256,87 @@ export default function PracticeQuestion({
         </div>
       )}
 
-      {/* ─── Phase 10: Wrong Answer Explanation (always shown) ─── */}
-      {showResult && wasWrong && question.explanation && (
+      {/* ─── Wrong Answer: Warm Explanation ─── */}
+      {showResult && wasWrong && (
         <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: "auto" }}
           transition={{ duration: 0.3, delay: 0.2 }}
           className="mb-6 overflow-hidden"
         >
-          <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-5">
-            <div className="space-y-3">
-              {/* What student chose vs correct */}
-              {selectedOptionObj && correctOption && (
-                <div className="space-y-2">
-                  <div className="flex items-start gap-2">
-                    <span className="text-red-400 text-sm mt-0.5">❌</span>
-                    <p className="text-sm text-red-600">
-                      <span className="font-medium">You chose:</span>{" "}
-                      <span className="text-[#1F2937]">{selectedOptionObj.text}</span>
-                    </p>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <span className="text-green-500 text-sm mt-0.5">✅</span>
-                    <p className="text-sm text-green-700">
-                      <span className="font-medium">Correct answer:</span>{" "}
-                      <span className="text-[#1F2937]">{correctOption.text}</span>
-                    </p>
-                  </div>
-                </div>
-              )}
-              {/* Why explanation */}
-              <div className="flex items-start gap-2 pt-1 border-t border-blue-100">
-                <span className="text-lg mt-0.5">💡</span>
-                <div>
-                  <p className="text-sm font-semibold text-blue-600 mb-1">Why?</p>
-                  <p className="text-sm text-[#374151] leading-relaxed">
-                    {question.explanation}
-                  </p>
-                </div>
+          <div style={{
+            background: "#FFF1F2",
+            border: "1.5px solid #FECDD3",
+            borderRadius: "12px",
+            padding: "14px 16px",
+          }}>
+            {/* Warm opener */}
+            <div style={{ fontSize: "15px", fontWeight: 600, color: "#881337", marginBottom: "6px" }}>
+              Not quite! 💙
+            </div>
+
+            {/* What they chose */}
+            {selectedOptionObj && (
+              <div style={{ fontSize: "13px", color: "#9F1239", marginBottom: "4px" }}>
+                You chose: {selectedOptionObj.text}
               </div>
+            )}
+
+            {/* Correct answer */}
+            {correctOption && (
+              <div style={{
+                fontSize: "13px",
+                fontWeight: 600,
+                color: "#15803D",
+                background: "#F0FDF4",
+                borderRadius: "8px",
+                padding: "6px 10px",
+                marginBottom: "8px",
+              }}>
+                ✅ Correct answer: {correctOption.text}
+              </div>
+            )}
+
+            {/* Explanation from Claude */}
+            {question.explanation && (
+              <div style={{ fontSize: "13px", color: "#374151", lineHeight: 1.6, marginBottom: "8px" }}>
+                {question.explanation}
+              </div>
+            )}
+
+            {/* Encouragement */}
+            <div style={{ fontSize: "12px", color: "#6B7280" }}>
+              Keep going — you&apos;re building this! 💪
             </div>
           </div>
         </motion.div>
       )}
 
-      {/* ─── Phase 10: Correct Answer Explanation (collapsible) ─── */}
-      {showResult && wasCorrect && question.explanation && (
-        <div className="mb-6 text-center">
-          <button
-            onClick={() => setShowExplanation(!showExplanation)}
-            className="text-sm text-[#6B7280] hover:text-[#1F2937] transition-colors"
-          >
-            {showExplanation ? "Hide explanation ▲" : "Want to know why? 💡"}
-          </button>
-          <AnimatePresence>
-            {showExplanation && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.2 }}
-                className="overflow-hidden mt-2"
-              >
-                <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 text-left">
-                  <div className="flex items-start gap-2">
-                    <span className="text-lg">💡</span>
-                    <p className="text-sm text-[#374151] leading-relaxed">
-                      {question.explanation}
-                    </p>
-                  </div>
-                </div>
-              </motion.div>
+      {/* ─── Correct Answer: Celebration + Collapsible Explanation ─── */}
+      {showResult && wasCorrect && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          transition={{ duration: 0.3, delay: 0.2 }}
+          className="mb-6 overflow-hidden"
+        >
+          <div style={{
+            background: "#F0FDF4",
+            border: "1.5px solid #86EFAC",
+            borderRadius: "12px",
+            padding: "12px 16px",
+          }}>
+            <div style={{ fontSize: "15px", fontWeight: 600, color: "#15803D", marginBottom: "4px" }}>
+              Correct! ⭐
+            </div>
+            {question.explanation && (
+              <details style={{ fontSize: "12px", color: "#374151" }}>
+                <summary style={{ cursor: "pointer", color: "#16A34A", fontWeight: 500 }}>Why? →</summary>
+                <div style={{ marginTop: "6px", lineHeight: 1.6 }}>{question.explanation}</div>
+              </details>
             )}
-          </AnimatePresence>
-        </div>
+          </div>
+        </motion.div>
       )}
 
       {/* ─── Hint (inline below choices — Steps 2-3 only) ─── */}

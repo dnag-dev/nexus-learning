@@ -9,8 +9,10 @@ export default function LandingScreen() {
   const profile = useAuthStore((s) => s.profile);
   const isParent = useAuthStore((s) => s.isParent);
 
+  const parentProfile = useAuthStore((s) => s.parentProfile);
+
   // Auto-redirect authenticated users to their dashboard
-  if (profile) {
+  if (profile || parentProfile) {
     const href = isParent
       ? "/(parent)/dashboard"
       : "/(kid)/dashboard";
@@ -80,6 +82,35 @@ export default function LandingScreen() {
                 style={{ color: isDark ? "#ffffff" : "#2D3436" }}
               >
                 I'm a Parent 👨‍👩‍👧
+              </Text>
+            </Pressable>
+          </Link>
+        </View>
+
+        {/* Sign up link */}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "center",
+            alignItems: "center",
+            marginTop: 20,
+          }}
+        >
+          <Text
+            style={{ fontSize: 14, color: isDark ? "#94a3b8" : "#636E72" }}
+          >
+            New here?{" "}
+          </Text>
+          <Link href="/parent-register" asChild>
+            <Pressable>
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontWeight: "700",
+                  color: isDark ? "#06b6d4" : "#00CEC9",
+                }}
+              >
+                Sign Up Free
               </Text>
             </Pressable>
           </Link>

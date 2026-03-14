@@ -1,7 +1,8 @@
 /**
- * Parent Login — email + password authentication.
+ * Parent Registration — create a new parent account.
  *
- * On success, navigates to the parent dashboard.
+ * Fields: name, email, password, confirm password.
+ * On success → navigates to parent dashboard.
  */
 
 import { useState, useRef } from "react";
@@ -13,6 +14,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  ScrollView,
 } from "react-native";
 import { router, Link } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -20,22 +22,52 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useTheme } from "../lib/theme";
 import { useAuthStore } from "../store/auth";
 
-export default function ParentLoginScreen() {
+export default function ParentRegisterScreen() {
   const { colors } = useTheme();
-  const { loginAsParent, isLoading, error, clearError } = useAuthStore();
+  const { registerAsParent, isLoading, error, clearError } = useAuthStore();
 
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [localError, setLocalError] = useState<string | null>(null);
+
+  const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
+  const confirmRef = useRef<TextInput>(null);
 
-  const canSubmit = email.trim().length > 0 && password.length > 0;
+  const displayError = localError || error;
 
-  const handleLogin = async () => {
+  const canSubmit =
+    name.trim().length > 0 &&
+    email.trim().length > 0 &&
+    password.length >= 6 &&
+    confirmPassword.length > 0;
+
+  const handleRegister = async () => {
     if (!canSubmit || isLoading) return;
     clearError();
+    setLocalError(null);
+
+    // Client-side validation
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      setLocalError("Please enter a valid email address");
+      return;
+    }
+
+    if (password.length < 6) {
+      setLocalError("Password must be at least 6 characters");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setLocalError("Passwords don't match");
+      return;
+    }
 
     try {
-      await loginAsParent(email.trim().toLowerCase(), password);
+      await registerAsParent(trimmedEmail, password, name.trim());
       router.replace("/(parent)/dashboard");
     } catch {
       // Error is set in the store
@@ -48,29 +80,30 @@ export default function ParentLoginScreen() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
       >
-        <View
-          style={{
-            flex: 1,
-            alignItems: "center",
+        <ScrollView
+          contentContainerStyle={{
+            flexGrow: 1,
             justifyContent: "center",
             paddingHorizontal: 24,
+            paddingVertical: 32,
           }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
           {/* Icon */}
-          <View
-            style={{
-              width: 80,
-              height: 80,
-              borderRadius: 40,
-              backgroundColor: colors.accentLight,
-              alignItems: "center",
-              justifyContent: "center",
-              marginBottom: 20,
-            }}
-          >
-            <Text style={{ fontSize: 40 }}>
-              {"\uD83D\uDC68\u200D\uD83D\uDC69\u200D\uD83D\uDC67"}
-            </Text>
+          <View style={{ alignItems: "center", marginBottom: 20 }}>
+            <View
+              style={{
+                width: 80,
+                height: 80,
+                borderRadius: 40,
+                backgroundColor: colors.accentLight,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Text style={{ fontSize: 40 }}>{"\u2728"}</Text>
+            </View>
           </View>
 
           <Text
@@ -78,23 +111,25 @@ export default function ParentLoginScreen() {
               fontSize: 26,
               fontWeight: "800",
               color: colors.text,
+              textAlign: "center",
               marginBottom: 4,
             }}
           >
-            Parent Login
+            Create Account
           </Text>
           <Text
             style={{
               fontSize: 14,
               color: colors.textSecondary,
+              textAlign: "center",
               marginBottom: 28,
             }}
           >
-            Track your child's learning progress
+            Start your child's learning journey
           </Text>
 
           {/* Error */}
-          {error && (
+          {displayError && (
             <View
               style={{
                 width: "100%",
@@ -111,10 +146,52 @@ export default function ParentLoginScreen() {
                   textAlign: "center",
                 }}
               >
-                {error}
+                {displayError}
               </Text>
             </View>
           )}
+
+          {/* Name input */}
+          <View style={{ width: "100%", marginBottom: 14 }}>
+            <Text
+              style={{
+                fontSize: 13,
+                fontWeight: "600",
+                color: colors.textSecondary,
+                marginBottom: 6,
+                marginLeft: 4,
+              }}
+            >
+              Your Name
+            </Text>
+            <TextInput
+              value={name}
+              onChangeText={(t) => {
+                setName(t);
+                if (displayError) {
+                  clearError();
+                  setLocalError(null);
+                }
+              }}
+              placeholder="e.g. Sarah"
+              placeholderTextColor={colors.textMuted}
+              autoCapitalize="words"
+              autoCorrect={false}
+              returnKeyType="next"
+              onSubmitEditing={() => emailRef.current?.focus()}
+              style={{
+                width: "100%",
+                backgroundColor: colors.surface,
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: 14,
+                paddingHorizontal: 16,
+                paddingVertical: 14,
+                fontSize: 16,
+                color: colors.text,
+              }}
+            />
+          </View>
 
           {/* Email input */}
           <View style={{ width: "100%", marginBottom: 14 }}>
@@ -130,10 +207,14 @@ export default function ParentLoginScreen() {
               Email
             </Text>
             <TextInput
+              ref={emailRef}
               value={email}
               onChangeText={(t) => {
                 setEmail(t);
-                if (error) clearError();
+                if (displayError) {
+                  clearError();
+                  setLocalError(null);
+                }
               }}
               placeholder="parent@example.com"
               placeholderTextColor={colors.textMuted}
@@ -158,7 +239,7 @@ export default function ParentLoginScreen() {
           </View>
 
           {/* Password input */}
-          <View style={{ width: "100%", marginBottom: 24 }}>
+          <View style={{ width: "100%", marginBottom: 14 }}>
             <Text
               style={{
                 fontSize: 13,
@@ -175,14 +256,17 @@ export default function ParentLoginScreen() {
               value={password}
               onChangeText={(t) => {
                 setPassword(t);
-                if (error) clearError();
+                if (displayError) {
+                  clearError();
+                  setLocalError(null);
+                }
               }}
-              placeholder="Enter your password"
+              placeholder="At least 6 characters"
               placeholderTextColor={colors.textMuted}
               secureTextEntry
-              textContentType="password"
-              returnKeyType="go"
-              onSubmitEditing={handleLogin}
+              textContentType="newPassword"
+              returnKeyType="next"
+              onSubmitEditing={() => confirmRef.current?.focus()}
               style={{
                 width: "100%",
                 backgroundColor: colors.surface,
@@ -197,9 +281,52 @@ export default function ParentLoginScreen() {
             />
           </View>
 
-          {/* Login button */}
+          {/* Confirm password */}
+          <View style={{ width: "100%", marginBottom: 24 }}>
+            <Text
+              style={{
+                fontSize: 13,
+                fontWeight: "600",
+                color: colors.textSecondary,
+                marginBottom: 6,
+                marginLeft: 4,
+              }}
+            >
+              Confirm Password
+            </Text>
+            <TextInput
+              ref={confirmRef}
+              value={confirmPassword}
+              onChangeText={(t) => {
+                setConfirmPassword(t);
+                if (displayError) {
+                  clearError();
+                  setLocalError(null);
+                }
+              }}
+              placeholder="Re-enter your password"
+              placeholderTextColor={colors.textMuted}
+              secureTextEntry
+              textContentType="newPassword"
+              returnKeyType="go"
+              onSubmitEditing={handleRegister}
+              style={{
+                width: "100%",
+                backgroundColor: colors.surface,
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: 14,
+                paddingHorizontal: 16,
+                paddingVertical: 14,
+                fontSize: 16,
+                color: colors.text,
+              }}
+            />
+          </View>
+
+          {/* Register button */}
           <Pressable
-            onPress={handleLogin}
+            onPress={handleRegister}
             disabled={!canSubmit || isLoading}
             style={({ pressed }) => ({
               width: "100%",
@@ -222,12 +349,12 @@ export default function ParentLoginScreen() {
                   color: "#ffffff",
                 }}
               >
-                Log In
+                Create Account
               </Text>
             )}
           </Pressable>
 
-          {/* Sign up link */}
+          {/* Already have an account */}
           <View
             style={{
               flexDirection: "row",
@@ -237,9 +364,9 @@ export default function ParentLoginScreen() {
             }}
           >
             <Text style={{ fontSize: 14, color: colors.textSecondary }}>
-              Don't have an account?{" "}
+              Already have an account?{" "}
             </Text>
-            <Link href="/parent-register" asChild>
+            <Link href="/parent-login" asChild>
               <Pressable>
                 <Text
                   style={{
@@ -248,7 +375,7 @@ export default function ParentLoginScreen() {
                     color: colors.accent,
                   }}
                 >
-                  Sign Up
+                  Log In
                 </Text>
               </Pressable>
             </Link>
@@ -259,6 +386,7 @@ export default function ParentLoginScreen() {
             <Pressable
               style={({ pressed }) => ({
                 paddingVertical: 12,
+                alignItems: "center",
                 opacity: pressed ? 0.7 : 1,
               })}
             >
@@ -273,7 +401,7 @@ export default function ParentLoginScreen() {
               </Text>
             </Pressable>
           </Link>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

@@ -10,6 +10,7 @@ import * as SecureStore from "expo-secure-store";
 import {
   login as apiLogin,
   getSession as apiGetSession,
+  parentRegister as apiParentRegister,
   parentLogin as apiParentLogin,
   getParentSession as apiGetParentSession,
 } from "@aauti/api-client";
@@ -58,6 +59,7 @@ interface AuthState {
 
   // Actions
   loginAsChild: (username: string, pin: string) => Promise<void>;
+  registerAsParent: (email: string, password: string, name?: string) => Promise<void>;
   loginAsParent: (email: string, password: string) => Promise<void>;
   restoreSession: () => Promise<void>;
   selectChild: (childId: string) => void;
@@ -111,6 +113,48 @@ export const useAuthStore = create<AuthState>((set, get) => {
       } catch (err) {
         const message =
           err instanceof Error ? err.message : "Login failed";
+        set({ isLoading: false, error: message });
+        throw err;
+      }
+    },
+
+    registerAsParent: async (email: string, password: string, name?: string) => {
+      set({ isLoading: true, error: null });
+      try {
+        const response = await apiParentRegister(email, password, name);
+
+        const token = response.token;
+        if (!token) {
+          throw new Error("No token received from server");
+        }
+
+        const parentProfile: ParentProfile = {
+          parentId: response.parentId,
+          email: response.email,
+          name: response.name,
+          plan: response.plan,
+          children: response.children,
+        };
+
+        // Persist token and profile
+        await SecureStore.setItemAsync(PARENT_TOKEN_KEY, token);
+        await SecureStore.setItemAsync(
+          PARENT_PROFILE_KEY,
+          JSON.stringify(parentProfile)
+        );
+
+        set({
+          token,
+          profile: null,
+          parentProfile,
+          selectedChildId: null,
+          isParent: true,
+          isLoading: false,
+          error: null,
+        });
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Registration failed";
         set({ isLoading: false, error: message });
         throw err;
       }

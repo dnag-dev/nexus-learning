@@ -10,7 +10,7 @@ export { configureApiClient, apiCall, apiPost, apiGet, ApiError } from "./client
 export type { ApiClientConfig } from "./client";
 
 // Auth
-export { login, getSession, parentLogin, getParentSession } from "./auth";
+export { login, getSession, parentRegister, parentLogin, getParentSession } from "./auth";
 export type {
   LoginRequest,
   LoginResponse,

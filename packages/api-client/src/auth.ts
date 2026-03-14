@@ -82,6 +82,22 @@ export async function getSession(): Promise<SessionResponse> {
 // ─── Parent Auth API Functions ───
 
 /**
+ * Register a new parent account with email + password.
+ * Returns same shape as login (parent info + JWT token + empty children).
+ */
+export async function parentRegister(
+  email: string,
+  password: string,
+  name?: string
+): Promise<ParentLoginResponse> {
+  return apiPost<ParentLoginResponse>("/api/auth/parent-register", {
+    email,
+    password,
+    name,
+  });
+}
+
+/**
  * Login with email + password.
  * Returns parent info + JWT token + children list.
  */

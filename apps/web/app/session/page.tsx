@@ -198,6 +198,10 @@ function SessionPage() {
   const router = useRouter();
   const DEMO_STUDENT_ID = searchParams.get("studentId") || "demo-student-1";
   const returnTo = searchParams.get("returnTo") || "/dashboard";
+  // ─── Child session detection (belt-and-suspenders: URL param + cookie) ───
+  const isChildSession =
+    returnTo.startsWith("/kid") ||
+    (typeof document !== "undefined" && document.cookie.includes("aauti-child-session"));
   const subjectParam = searchParams.get("subject") || "MATH";
   const planIdParam = searchParams.get("planId") || undefined;
   const nodeCodeParam = searchParams.get("nodeCode") || undefined;
@@ -1982,8 +1986,9 @@ function SessionPage() {
                     </div>
                   )}
 
-                  {/* GPS / Dashboard — only show for parent sessions, never for child auth */}
-                  {!returnTo.startsWith("/kid") && gpsNavigation && (
+                  {/* GPS / Dashboard — only show for parent sessions, never for child auth.
+                      Uses isChildSession (returnTo + cookie check) to prevent auth crossover. */}
+                  {!isChildSession && gpsNavigation && (
                     <a
                       href={gpsNavigation.redirectUrl}
                       className="block w-full py-3.5 text-center text-base font-semibold text-white bg-gradient-to-r from-teal-500 to-cyan-600 rounded-2xl hover:from-teal-600 hover:to-cyan-700 transition-all"
@@ -1991,7 +1996,7 @@ function SessionPage() {
                       View GPS Dashboard
                     </a>
                   )}
-                  {!returnTo.startsWith("/kid") && !gpsNavigation && hasActivePlans && (
+                  {!isChildSession && !gpsNavigation && hasActivePlans && (
                     <a
                       href={`/gps?studentId=${DEMO_STUDENT_ID}`}
                       className="block w-full py-3 text-center text-base font-semibold text-teal-400 bg-teal-500/10 border border-teal-500/20 rounded-2xl hover:bg-teal-500/20 transition-colors"

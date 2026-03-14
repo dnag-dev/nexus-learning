@@ -149,16 +149,23 @@ export function Tier2Dashboard({
             >
               {nextConcept.title}
             </Text>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 }}>
               <Text style={{ fontSize: 12, color: colors.textMuted }}>
                 {nextConcept.gradeLevel === "K"
                   ? "Kindergarten"
                   : `Grade ${nextConcept.gradeLevel}`}
               </Text>
+              <Text style={{ fontSize: 12, color: colors.textMuted }}>·</Text>
               <Text style={{ fontSize: 12, color: colors.textMuted }}>
-                {nextConcept.domain}
+                {subject === "math" ? "Math" : "English"}
               </Text>
             </View>
+            {totalCount > 0 && (
+              <Text style={{ fontSize: 12, color: colors.textMuted, marginBottom: 4 }}>
+                {masteryCount}/{totalCount} topics done this grade
+              </Text>
+            )}
+            <View style={{ marginBottom: 12 }} />
             <View
               style={{
                 backgroundColor: colors.primary,

@@ -37,6 +37,7 @@ interface GamData {
     nodeTitle: string;
     domain: string;
     subject: string;
+    gradeLevel: string;
     level: string;
     bktProbability: number;
   }>;
@@ -45,10 +46,11 @@ interface GamData {
 interface NextConceptData {
   title: string | null;
   goalName?: string | null;
+  unlocks?: string | null;
 }
 
 export default function Tier3Home() {
-  const { studentId, displayName } = useChild();
+  const { studentId, displayName, gradeLevel } = useChild();
   const [gam, setGam] = useState<GamData | null>(null);
   const [nextConceptData, setNextConceptData] = useState<NextConceptData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -94,7 +96,15 @@ export default function Tier3Home() {
     )
     .slice(0, 4);
 
+  // Grade progress
+  const gradeNodes = (gam?.masteryMap ?? []).filter(
+    (n) => n.gradeLevel === gradeLevel && n.subject === subject
+  );
+  const gradeMastered = gradeNodes.filter((n) => n.bktProbability >= 0.8).length;
+  const gradeTotal = gradeNodes.length;
+
   const nextConcept = nextConceptData?.title;
+  const nextUnlocks = nextConceptData?.unlocks;
   const goalName = nextConceptData?.goalName;
 
   return (
@@ -115,6 +125,15 @@ export default function Tier3Home() {
           <p className="text-sm text-[#6B7280]">
             {nextConcept ? `Next up: ${nextConcept}` : "Pick up where you left off."}
           </p>
+          <div className="text-xs text-[#9CA3AF] mt-0.5">
+            Grade {gradeLevel} · {subject === "MATH" ? "Math" : "English"}
+            {gradeTotal > 0 && ` · ${gradeMastered}/${gradeTotal} topics done`}
+          </div>
+          {nextUnlocks && (
+            <div className="text-xs text-[#9CA3AF] mt-0.5">
+              Unlocks: {nextUnlocks} →
+            </div>
+          )}
         </div>
         <Link
           href={`/session?studentId=${studentId}&subject=${subject}&returnTo=/kid`}

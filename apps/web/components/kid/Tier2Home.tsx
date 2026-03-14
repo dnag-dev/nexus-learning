@@ -52,19 +52,21 @@ interface GamData {
     longest: number;
   } | null;
   badges: Array<{ badgeType: string; category: string; earnedAt: string }>;
-  masteryMap: Array<{ level: string; domain: string; subject: string; bktProbability: number }>;
+  masteryMap: Array<{ level: string; domain: string; subject: string; gradeLevel: string; bktProbability: number }>;
 }
 
 interface NextConceptData {
   title: string | null;
+  nodeCode?: string;
   description?: string;
   estimatedMinutes?: number;
   unlocks?: string | null;
   goalName?: string | null;
+  gradeLevel?: string;
 }
 
 export default function Tier2Home() {
-  const { studentId, displayName, avatarPersonaId, level, xp: contextXp } = useChild();
+  const { studentId, displayName, avatarPersonaId, level, xp: contextXp, gradeLevel } = useChild();
   const [gam, setGam] = useState<GamData | null>(null);
   // Single source of truth: prefer fresh gamification XP over stale context value
   const xp = gam?.xp ?? contextXp;
@@ -120,6 +122,13 @@ export default function Tier2Home() {
   const missionEst = nextConcept?.estimatedMinutes ?? null;
   const missionUnlocks = nextConcept?.unlocks;
 
+  // Grade progress: how many topics done at student's grade for current subject
+  const gradeNodes = gam?.masteryMap?.filter(
+    (n) => n.gradeLevel === gradeLevel && n.subject === subject
+  ) ?? [];
+  const gradeMastered = gradeNodes.filter((n) => n.bktProbability >= 0.8).length;
+  const gradeTotal = gradeNodes.length;
+
   // Progress data
   const goalName = nextConcept?.goalName;
 
@@ -148,15 +157,24 @@ export default function Tier2Home() {
             <h2 className="text-xl font-bold text-[#1F2937] mb-1 pr-16">
               {missionTitle}
             </h2>
+            {/* Grade + subject context */}
+            <div className="text-xs text-[#6B7280] mt-0.5">
+              Grade {gradeLevel} · {subject === "MATH" ? "Math" : "English"}
+            </div>
+            {/* Grade progress */}
+            {gradeTotal > 0 && (
+              <div className="text-xs text-[#6B7280] mt-0.5">
+                {gradeMastered}/{gradeTotal} topics done this grade
+              </div>
+            )}
             {missionDesc && (
-              <p className="text-sm text-[#6B7280] mb-1 pr-16 line-clamp-2">
+              <p className="text-sm text-[#6B7280] mb-1 pr-16 line-clamp-2 mt-1">
                 {missionDesc}
               </p>
             )}
-            <div className="flex items-center gap-3 text-xs text-[#9CA3AF] mb-4">
+            <div className="flex items-center gap-3 text-xs text-[#9CA3AF] mb-4 mt-1">
               {missionEst && <span>Est. {missionEst} min</span>}
-              {missionEst && missionUnlocks && <span>&middot;</span>}
-              {missionUnlocks && <span>Unlocks: {missionUnlocks}</span>}
+              {missionUnlocks && <span>· Unlocks: {missionUnlocks} →</span>}
             </div>
           </>
         ) : (

@@ -51,7 +51,7 @@ async function handleTopics(body: { studentId: string; subject?: string }) {
     return NextResponse.json({ error: "studentId required" }, { status: 400 });
   }
 
-  const where: any = { studentId, bktProbability: { gte: 0.85 } };
+  const where: any = { studentId, trulyMastered: true };
 
   // Get mastery scores to find practiced topics
   const masteryScores = await prisma.masteryScore.findMany({

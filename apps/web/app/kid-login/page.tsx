@@ -97,28 +97,28 @@ export default function KidLoginPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#0D1B2A] flex flex-col items-center justify-center px-4">
-      {/* Stars background effect */}
+    <main className="min-h-screen bg-[#F8F9FF] flex flex-col items-center justify-center px-4">
+      {/* Subtle decorative dots */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[10%] left-[15%] w-1 h-1 bg-white/40 rounded-full animate-pulse" />
-        <div className="absolute top-[20%] right-[25%] w-1.5 h-1.5 bg-white/30 rounded-full animate-pulse delay-700" />
-        <div className="absolute top-[40%] left-[60%] w-1 h-1 bg-white/50 rounded-full animate-pulse delay-300" />
-        <div className="absolute top-[70%] left-[30%] w-1 h-1 bg-white/20 rounded-full animate-pulse delay-1000" />
-        <div className="absolute top-[15%] right-[10%] w-1 h-1 bg-white/35 rounded-full animate-pulse delay-500" />
-        <div className="absolute bottom-[20%] right-[40%] w-1.5 h-1.5 bg-white/25 rounded-full animate-pulse delay-200" />
-        <div className="absolute bottom-[35%] left-[20%] w-1 h-1 bg-white/45 rounded-full animate-pulse delay-800" />
+        <div className="absolute top-[10%] left-[15%] w-1.5 h-1.5 bg-aauti-primary/20 rounded-full animate-pulse" />
+        <div className="absolute top-[20%] right-[25%] w-2 h-2 bg-aauti-secondary/15 rounded-full animate-pulse delay-700" />
+        <div className="absolute top-[40%] left-[60%] w-1.5 h-1.5 bg-aauti-accent/20 rounded-full animate-pulse delay-300" />
+        <div className="absolute top-[70%] left-[30%] w-1 h-1 bg-aauti-primary/15 rounded-full animate-pulse delay-1000" />
+        <div className="absolute top-[15%] right-[10%] w-1.5 h-1.5 bg-aauti-success/20 rounded-full animate-pulse delay-500" />
+        <div className="absolute bottom-[20%] right-[40%] w-2 h-2 bg-aauti-secondary/10 rounded-full animate-pulse delay-200" />
+        <div className="absolute bottom-[35%] left-[20%] w-1.5 h-1.5 bg-aauti-primary/15 rounded-full animate-pulse delay-800" />
       </div>
 
       <div className="relative z-10 w-full max-w-sm space-y-8">
         {/* Avatar */}
         <div className="text-center">
-          <div className="w-28 h-28 mx-auto rounded-full bg-gradient-to-br from-aauti-primary/30 to-aauti-secondary/30 flex items-center justify-center border-2 border-white/10 shadow-lg shadow-aauti-primary/20">
+          <div className="w-28 h-28 mx-auto rounded-full bg-gradient-to-br from-aauti-primary/15 to-aauti-secondary/15 flex items-center justify-center border-2 border-[#E2E8F0] shadow-lg shadow-aauti-primary/10">
             <span className="text-6xl select-none">{COSMO_EMOJI}</span>
           </div>
-          <h1 className="mt-4 text-2xl font-bold text-white">
+          <h1 className="mt-4 text-2xl font-bold text-[#1F2937]">
             Welcome back, explorer! 🚀
           </h1>
-          <p className="mt-1 text-gray-400 text-sm">
+          <p className="mt-1 text-[#6B7280] text-sm">
             Enter your username and secret PIN
           </p>
         </div>
@@ -127,7 +127,7 @@ export default function KidLoginPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Username */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-[#1F2937] mb-2">
               ⭐ Username
             </label>
             <input
@@ -137,13 +137,13 @@ export default function KidLoginPage() {
               placeholder="e.g. arjun_star"
               autoComplete="username"
               autoFocus
-              className="w-full px-4 py-3 bg-[#1A2744] border border-white/10 rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-aauti-primary focus:border-aauti-primary outline-none transition-all text-lg"
+              className="w-full px-4 py-3 bg-white border border-[#E2E8F0] rounded-xl text-[#1F2937] placeholder-[#9CA3AF] focus:ring-2 focus:ring-aauti-primary focus:border-aauti-primary outline-none transition-all text-lg"
             />
           </div>
 
           {/* PIN */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-[#1F2937] mb-2">
               🔒 Secret PIN
             </label>
             <div className="flex gap-3 justify-center">
@@ -158,7 +158,7 @@ export default function KidLoginPage() {
                   value={digit}
                   onChange={(e) => handlePinChange(i, e.target.value)}
                   onKeyDown={(e) => handlePinKeyDown(i, e)}
-                  className="w-14 h-16 text-center text-2xl font-bold bg-[#1A2744] border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-aauti-primary focus:border-aauti-primary outline-none transition-all"
+                  className="w-14 h-16 text-center text-2xl font-bold bg-white border border-[#E2E8F0] rounded-xl text-[#1F2937] focus:ring-2 focus:ring-aauti-primary focus:border-aauti-primary outline-none transition-all"
                 />
               ))}
             </div>
@@ -166,8 +166,8 @@ export default function KidLoginPage() {
 
           {/* Error */}
           {error && (
-            <div className="text-center py-2 px-4 bg-red-500/10 border border-red-500/20 rounded-xl">
-              <p className="text-red-400 text-sm">{error}</p>
+            <div className="text-center py-2 px-4 bg-red-50 border border-red-200 rounded-xl">
+              <p className="text-red-600 text-sm">{error}</p>
             </div>
           )}
 
@@ -189,7 +189,7 @@ export default function KidLoginPage() {
         <div className="text-center">
           <Link
             href="/api/auth/login"
-            className="text-sm text-gray-500 hover:text-gray-300 transition-colors"
+            className="text-sm text-[#6B7280] hover:text-[#1F2937] transition-colors"
           >
             I&apos;m a parent →
           </Link>

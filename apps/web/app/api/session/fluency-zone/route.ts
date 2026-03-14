@@ -51,9 +51,9 @@ async function handleTopics(body: { studentId: string; subject?: string }) {
     return NextResponse.json({ error: "studentId required" }, { status: 400 });
   }
 
-  // Show any topic the student has practiced (BKT > 0.3 = at least "Familiar")
-  // Fluency Zone is speed practice — available for any topic with some progress
-  const where: any = { studentId, bktProbability: { gte: 0.3 } };
+  // Only show mastered topics (BKT >= 0.85) — speed drills are for concepts
+  // the student has already demonstrated proficiency in
+  const where: any = { studentId, bktProbability: { gte: 0.85 } };
 
   // Get mastery scores to find practiced topics
   const masteryScores = await prisma.masteryScore.findMany({

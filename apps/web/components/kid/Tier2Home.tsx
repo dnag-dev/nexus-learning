@@ -133,27 +133,27 @@ export default function Tier2Home() {
       />
 
       {/* Mission Briefing */}
-      <div className="bg-gradient-to-r from-[#1a1f3a] to-[#1e2a4a] rounded-2xl p-6 border-l-4 border-purple-500 relative overflow-hidden">
+      <div className="bg-white rounded-2xl p-6 border-l-4 border-purple-500 relative overflow-hidden shadow-sm border border-[#E2E8F0]">
         {/* Persona avatar — circular with gold ring */}
-        <div className="absolute top-4 right-4 w-[60px] h-[60px] rounded-full bg-[#0D1B2A] ring-2 ring-amber-400 flex items-center justify-center text-3xl">
+        <div className="absolute top-4 right-4 w-[60px] h-[60px] rounded-full bg-[#F8F9FF] ring-2 ring-amber-400 flex items-center justify-center text-3xl">
           {personaEmoji}
         </div>
 
-        <p className="text-xs text-purple-400 uppercase tracking-widest font-bold mb-2">
+        <p className="text-xs text-purple-600 uppercase tracking-widest font-bold mb-2">
           TODAY&apos;S MISSION
         </p>
 
         {missionTitle ? (
           <>
-            <h2 className="text-xl font-bold text-white mb-1 pr-16">
+            <h2 className="text-xl font-bold text-[#1F2937] mb-1 pr-16">
               {missionTitle}
             </h2>
             {missionDesc && (
-              <p className="text-sm text-gray-400 mb-1 pr-16 line-clamp-2">
+              <p className="text-sm text-[#6B7280] mb-1 pr-16 line-clamp-2">
                 {missionDesc}
               </p>
             )}
-            <div className="flex items-center gap-3 text-xs text-gray-500 mb-4">
+            <div className="flex items-center gap-3 text-xs text-[#9CA3AF] mb-4">
               {missionEst && <span>Est. {missionEst} min</span>}
               {missionEst && missionUnlocks && <span>&middot;</span>}
               {missionUnlocks && <span>Unlocks: {missionUnlocks}</span>}
@@ -161,10 +161,10 @@ export default function Tier2Home() {
           </>
         ) : (
           <>
-            <h2 className="text-xl font-bold text-white mb-1 pr-16">
+            <h2 className="text-xl font-bold text-[#1F2937] mb-1 pr-16">
               Hey {displayName}! Time to level up!
             </h2>
-            <p className="text-sm text-gray-400 mb-4 pr-16">
+            <p className="text-sm text-[#6B7280] mb-4 pr-16">
               Keep your streak going and master new concepts today.
             </p>
           </>
@@ -188,41 +188,41 @@ export default function Tier2Home() {
       {/* 3 Stat Cards */}
       <div className="grid grid-cols-3 gap-3">
         {/* Level + XP */}
-        <div className="bg-[#141d30] rounded-xl p-4 border border-white/5 text-center">
+        <div className="bg-white rounded-xl p-4 border border-[#E2E8F0] text-center">
           <p className="text-2xl font-bold text-purple-400">Lv. {level}</p>
-          <div className="w-full h-1.5 bg-gray-700 rounded-full mt-2 overflow-hidden">
+          <div className="w-full h-1.5 bg-gray-200 rounded-full mt-2 overflow-hidden">
             <div
               className="h-full bg-purple-500 rounded-full transition-all"
               style={{ width: `${xpProgress}%` }}
             />
           </div>
-          <p className="text-xs text-gray-500 mt-1">{xp} XP</p>
+          <p className="text-xs text-[#6B7280] mt-1">{xp} XP</p>
         </div>
 
         {/* Streak */}
-        <div className="bg-[#141d30] rounded-xl p-4 border border-white/5 text-center">
+        <div className="bg-white rounded-xl p-4 border border-[#E2E8F0] text-center">
           <p className="text-2xl font-bold text-orange-400">
             {streakDays > 0 ? `🔥 ${streakDays}` : "—"}
           </p>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-[#6B7280] mt-1">
             day streak
           </p>
         </div>
 
         {/* Mastered */}
-        <div className="bg-[#141d30] rounded-xl p-4 border border-white/5 text-center">
+        <div className="bg-white rounded-xl p-4 border border-[#E2E8F0] text-center">
           <p className="text-2xl font-bold text-green-400">
             {totalMastered}
           </p>
-          <p className="text-xs text-gray-500 mt-1">mastered</p>
+          <p className="text-xs text-[#6B7280] mt-1">mastered</p>
         </div>
       </div>
 
       {/* Recent Badges */}
       {displayBadges.length > 0 && (
-        <div className="bg-[#141d30] rounded-xl p-5 border border-white/5">
+        <div className="bg-white rounded-xl p-5 border border-[#E2E8F0]">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-gray-300">
+            <h3 className="text-sm font-semibold text-[#1F2937]">
               Recent Badges
             </h3>
             <Link
@@ -236,10 +236,10 @@ export default function Tier2Home() {
             {displayBadges.slice(-3).map((badge) => (
               <div
                 key={badge.id}
-                className="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-2"
+                className="flex items-center gap-2 bg-[#F3F4F6] rounded-lg px-3 py-2"
               >
                 <span className="text-lg">{badge.emoji}</span>
-                <span className="text-xs text-gray-300">{badge.name}</span>
+                <span className="text-xs text-[#1F2937]">{badge.name}</span>
               </div>
             ))}
           </div>
@@ -250,48 +250,48 @@ export default function Tier2Home() {
       <div className="grid grid-cols-3 gap-3">
         <Link
           href="/kid/constellation"
-          className="flex items-center justify-center gap-2 py-4 bg-[#141d30] rounded-xl border border-white/5 text-white font-medium hover:border-purple-500/30 transition-colors text-sm"
+          className="flex items-center justify-center gap-2 py-4 bg-white rounded-xl border border-[#E2E8F0] text-[#1F2937] font-medium hover:border-purple-500/30 transition-colors text-sm"
         >
           🌌 Constellation
         </Link>
         <Link
           href={`/kid/fluency-zone?studentId=${studentId}`}
-          className="flex items-center justify-center gap-2 py-4 bg-[#141d30] rounded-xl border border-white/5 text-white font-medium hover:border-cyan-500/30 transition-colors text-sm"
+          className="flex items-center justify-center gap-2 py-4 bg-white rounded-xl border border-[#E2E8F0] text-[#1F2937] font-medium hover:border-cyan-500/30 transition-colors text-sm"
         >
           ⚡ Fluency Zone
         </Link>
         <Link
           href="/kid/review"
-          className="flex items-center justify-center gap-2 py-4 bg-[#141d30] rounded-xl border border-white/5 text-white font-medium hover:border-purple-500/30 transition-colors text-sm"
+          className="flex items-center justify-center gap-2 py-4 bg-white rounded-xl border border-[#E2E8F0] text-[#1F2937] font-medium hover:border-purple-500/30 transition-colors text-sm"
         >
           📊 Review
         </Link>
       </div>
 
       {/* Your Progress */}
-      <div className="bg-[#141d30] rounded-xl p-5 border border-white/5">
-        <h3 className="text-sm font-semibold text-gray-300 mb-3">
+      <div className="bg-white rounded-xl p-5 border border-[#E2E8F0]">
+        <h3 className="text-sm font-semibold text-[#1F2937] mb-3">
           Your Progress
         </h3>
         {goalName ? (
-          <p className="text-white text-sm font-medium mb-2">{goalName}</p>
+          <p className="text-[#1F2937] text-sm font-medium mb-2">{goalName}</p>
         ) : missionTitle ? (
-          <p className="text-white text-sm font-medium mb-2">Current: {missionTitle}</p>
+          <p className="text-[#1F2937] text-sm font-medium mb-2">Current: {missionTitle}</p>
         ) : (
-          <p className="text-white text-sm font-medium mb-2">Learning Journey</p>
+          <p className="text-[#1F2937] text-sm font-medium mb-2">Learning Journey</p>
         )}
         <div className="grid grid-cols-3 gap-3 text-center">
           <div>
             <p className="text-lg font-bold text-purple-400">{totalMastered}</p>
-            <p className="text-[10px] text-gray-500 uppercase">Concepts Mastered</p>
+            <p className="text-[10px] text-[#6B7280] uppercase">Concepts Mastered</p>
           </div>
           <div>
             <p className="text-lg font-bold text-orange-400">{streakDays > 0 ? `🔥 ${streakDays}` : "0"}</p>
-            <p className="text-[10px] text-gray-500 uppercase">Day Streak</p>
+            <p className="text-[10px] text-[#6B7280] uppercase">Day Streak</p>
           </div>
           <div>
             <p className="text-lg font-bold text-green-400">{displayBadges.length}</p>
-            <p className="text-[10px] text-gray-500 uppercase">Badges Earned</p>
+            <p className="text-[10px] text-[#6B7280] uppercase">Badges Earned</p>
           </div>
         </div>
       </div>

@@ -214,7 +214,7 @@ export default function KidConstellationPage() {
       <div className="flex items-center justify-center py-20">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-white/60 text-sm">Loading your constellation...</p>
+          <p className="text-[#9CA3AF] text-sm">Loading your constellation...</p>
         </div>
       </div>
     );
@@ -244,15 +244,15 @@ export default function KidConstellationPage() {
       <div className="py-16 text-center">
         <Link
           href="/kid"
-          className="inline-block mb-8 text-sm text-gray-400 hover:text-white transition-colors"
+          className="inline-block mb-8 text-sm text-[#6B7280] hover:text-[#1F2937] transition-colors"
         >
           ← Back to Dashboard
         </Link>
         <div className="text-6xl mb-4">🌌</div>
-        <h2 className="text-2xl font-bold text-white mb-2">
+        <h2 className="text-2xl font-bold text-[#1F2937] mb-2">
           Your Constellation Awaits
         </h2>
-        <p className="text-white/60 max-w-md mx-auto mb-8">
+        <p className="text-[#9CA3AF] max-w-md mx-auto mb-8">
           Start a learning session to begin mapping your knowledge
           constellation.
         </p>
@@ -272,7 +272,7 @@ export default function KidConstellationPage() {
       <div className="flex items-center justify-between">
         <Link
           href="/kid"
-          className="text-sm text-gray-400 hover:text-white transition-colors"
+          className="text-sm text-[#6B7280] hover:text-[#1F2937] transition-colors"
         >
           ← Dashboard
         </Link>
@@ -286,7 +286,7 @@ export default function KidConstellationPage() {
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
             viewMode === "starmap"
               ? "bg-purple-600 text-white"
-              : "bg-white/5 text-gray-400 hover:text-white"
+              : "bg-[#F3F4F6] text-[#6B7280] hover:text-[#1F2937]"
           }`}
         >
           🌌 Star Map
@@ -296,7 +296,7 @@ export default function KidConstellationPage() {
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
             viewMode === "topictree"
               ? "bg-purple-600 text-white"
-              : "bg-white/5 text-gray-400 hover:text-white"
+              : "bg-[#F3F4F6] text-[#6B7280] hover:text-[#1F2937]"
           }`}
         >
           🌳 Topic Tree
@@ -322,7 +322,7 @@ export default function KidConstellationPage() {
               />
             </>
           ) : (
-            <div className="bg-[#1A2744] rounded-2xl border border-white/5 p-6">
+            <div className="bg-white rounded-2xl border border-[#E2E8F0] p-6">
               <TopicTree studentId={studentId} />
             </div>
           )}

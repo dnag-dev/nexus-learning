@@ -166,7 +166,7 @@ export default function FluencyDrill({
             <p className="text-sm font-semibold text-orange-400">
               FLUENCY DRILL
             </p>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-[#6B7280]">
               Build speed + accuracy
             </p>
           </div>
@@ -174,10 +174,10 @@ export default function FluencyDrill({
 
         {/* Consecutive streak */}
         <div className="text-right">
-          <p className="text-lg font-bold text-white">
+          <p className="text-lg font-bold text-[#1F2937]">
             {consecutive}/10
           </p>
-          <p className="text-[10px] text-gray-400 uppercase tracking-wider">
+          <p className="text-[10px] text-[#6B7280] uppercase tracking-wider">
             streak
           </p>
         </div>
@@ -193,7 +193,7 @@ export default function FluencyDrill({
                 ? "bg-green-500"
                 : i === consecutive
                   ? "bg-orange-400/50"
-                  : "bg-white/10"
+                  : "bg-gray-100"
             }`}
           />
         ))}
@@ -205,7 +205,7 @@ export default function FluencyDrill({
           {formatTime(elapsed)}s
         </p>
         {benchmarkMs && (
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-[#6B7280] mt-1">
             Target: {formatTime(benchmarkMs)}s
           </p>
         )}
@@ -214,7 +214,7 @@ export default function FluencyDrill({
       {/* Personal best */}
       {personalBest && (
         <div className="flex items-center justify-center gap-2 mb-4">
-          <span className="text-xs text-gray-500">Personal Best:</span>
+          <span className="text-xs text-[#9CA3AF]">Personal Best:</span>
           <span className="text-xs font-semibold text-yellow-400">
             {formatTime(personalBest)}s
           </span>
@@ -262,8 +262,8 @@ export default function FluencyDrill({
       )}
 
       {/* Question */}
-      <div className="bg-white/5 rounded-xl p-5 mb-4">
-        <p className="text-white text-lg leading-relaxed">
+      <div className="bg-[#F3F4F6] rounded-xl p-5 mb-4">
+        <p className="text-[#1F2937] text-lg leading-relaxed">
           {question.questionText}
         </p>
       </div>
@@ -271,7 +271,7 @@ export default function FluencyDrill({
       {/* Options */}
       <div className="grid grid-cols-2 gap-3 mb-6">
         {question.options.map((option) => {
-          let bgClass = "bg-white/5 hover:bg-white/10 border-white/10";
+          let bgClass = "bg-[#F3F4F6] hover:bg-gray-100 border-[#E2E8F0]";
           if (showResult && selectedOption === option.id) {
             bgClass = option.isCorrect
               ? "bg-green-500/20 border-green-500"
@@ -291,10 +291,10 @@ export default function FluencyDrill({
                   : "cursor-default"
               }`}
             >
-              <span className="text-xs font-bold text-gray-400 mr-2">
+              <span className="text-xs font-bold text-[#6B7280] mr-2">
                 {option.id}
               </span>
-              <span className="text-white">{option.text}</span>
+              <span className="text-[#1F2937]">{option.text}</span>
             </button>
           );
         })}

@@ -57,7 +57,7 @@ export default function TeachingCard({
                   ? "bg-aauti-primary"
                   : i === lessonStep - 1
                     ? "bg-aauti-primary/70"
-                    : "bg-white/10"
+                    : "bg-gray-100"
               }`}
             />
             <p className={`text-[10px] mt-1 text-center ${
@@ -77,7 +77,7 @@ export default function TeachingCard({
             <div className="w-3 h-3 rounded-full bg-aauti-primary animate-teaching-dot" style={{ animationDelay: "150ms" }} />
             <div className="w-3 h-3 rounded-full bg-aauti-primary animate-teaching-dot" style={{ animationDelay: "300ms" }} />
           </div>
-          <p className="text-gray-400 text-sm mt-4">Preparing your lesson...</p>
+          <p className="text-[#6B7280] text-sm mt-4">Preparing your lesson...</p>
         </div>
       ) : (
         /* ─── Content: Staggered Fade-In (richer: hook, definition, 2 examples, common mistake) ─── */
@@ -85,31 +85,31 @@ export default function TeachingCard({
           {/* Emoji + Hook Question */}
           <div className="text-center opacity-0 animate-fade-in-up" style={{ animationDelay: "0ms" }}>
             <div className="text-6xl mb-3">{content.emoji}</div>
-            <h2 className="text-2xl font-bold text-white leading-snug px-4">
+            <h2 className="text-2xl font-bold text-[#1F2937] leading-snug px-4">
               {content.hook}
             </h2>
           </div>
 
           {/* Explanation Card — clear definition */}
           <div
-            className="bg-[#1A2744] rounded-2xl p-6 border border-white/10 opacity-0 animate-fade-in-up"
+            className="bg-white rounded-2xl p-6 border border-[#E2E8F0] opacity-0 animate-fade-in-up"
             style={{ animationDelay: "300ms" }}
           >
-            <p className="text-white leading-relaxed text-lg">
+            <p className="text-[#1F2937] leading-relaxed text-lg">
               {content.explanation}
             </p>
           </div>
 
           {/* Example 1 — gold border */}
           <div
-            className="bg-[#1E2D4A] rounded-2xl p-5 border border-white/5 border-l-4 border-l-[#FDCB6E] opacity-0 animate-fade-in-up"
+            className="bg-white rounded-2xl p-5 border border-[#E2E8F0] border-l-4 border-l-[#FDCB6E] opacity-0 animate-fade-in-up"
             style={{ animationDelay: "500ms" }}
           >
             <div className="flex items-start gap-3">
               <span className="text-xl mt-0.5">💡</span>
               <div>
                 <p className="font-semibold text-[#FDCB6E] text-sm mb-1">Example 1</p>
-                <p className="text-white/90 leading-relaxed" dangerouslySetInnerHTML={{
+                <p className="text-[#1F2937] leading-relaxed" dangerouslySetInnerHTML={{
                   __html: content.example
                     .replace(/\*\*(.*?)\*\*/g, '<span class="font-bold text-[#FDCB6E]">$1</span>')
                 }} />
@@ -120,14 +120,14 @@ export default function TeachingCard({
           {/* Example 2 — blue border */}
           {content.example2 && (
             <div
-              className="bg-[#1E2D4A] rounded-2xl p-5 border border-white/5 border-l-4 border-l-blue-400 opacity-0 animate-fade-in-up"
+              className="bg-white rounded-2xl p-5 border border-[#E2E8F0] border-l-4 border-l-blue-400 opacity-0 animate-fade-in-up"
               style={{ animationDelay: "700ms" }}
             >
               <div className="flex items-start gap-3">
                 <span className="text-xl mt-0.5">💡</span>
                 <div>
                   <p className="font-semibold text-blue-400 text-sm mb-1">Example 2</p>
-                  <p className="text-white/90 leading-relaxed" dangerouslySetInnerHTML={{
+                  <p className="text-[#1F2937] leading-relaxed" dangerouslySetInnerHTML={{
                     __html: content.example2
                       .replace(/\*\*(.*?)\*\*/g, '<span class="font-bold text-blue-400">$1</span>')
                   }} />
@@ -146,9 +146,9 @@ export default function TeachingCard({
                 <span className="text-xl mt-0.5">⚠️</span>
                 <div>
                   <p className="font-semibold text-red-400 text-sm mb-1">Watch Out!</p>
-                  <p className="text-white/90 leading-relaxed">{content.commonMistake}</p>
+                  <p className="text-[#1F2937] leading-relaxed">{content.commonMistake}</p>
                   {content.commonMistakeWhy && (
-                    <p className="text-gray-400 text-sm mt-2">{content.commonMistakeWhy}</p>
+                    <p className="text-[#6B7280] text-sm mt-2">{content.commonMistakeWhy}</p>
                   )}
                 </div>
               </div>

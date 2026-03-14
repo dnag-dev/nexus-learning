@@ -71,19 +71,19 @@ export default function FluencyZonePicker({
     : topics;
 
   return (
-    <div className="min-h-screen bg-[#0a0f1c] text-white p-6">
+    <div className="min-h-screen bg-[#F8F9FF] text-[#1F2937] p-6">
       {/* Header */}
       <div className="max-w-lg mx-auto">
         <button
           onClick={onBack}
-          className="text-gray-400 hover:text-white mb-4 text-sm"
+          className="text-[#6B7280] hover:text-[#1F2937] mb-4 text-sm"
         >
           ← Back
         </button>
 
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold">⚡ Fluency Zone</h1>
-          <p className="text-gray-400 mt-1 text-sm">
+          <p className="text-[#6B7280] mt-1 text-sm">
             Pick a topic to practice for speed
           </p>
         </div>
@@ -95,7 +95,7 @@ export default function FluencyZonePicker({
             className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
               subject === "MATH"
                 ? "bg-purple-600 text-white"
-                : "bg-white/10 text-gray-400"
+                : "bg-[#F3F4F6] text-[#6B7280]"
             }`}
           >
             🔢 Math
@@ -105,7 +105,7 @@ export default function FluencyZonePicker({
             className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
               subject === "ENGLISH"
                 ? "bg-purple-600 text-white"
-                : "bg-white/10 text-gray-400"
+                : "bg-[#F3F4F6] text-[#6B7280]"
             }`}
           >
             📖 English
@@ -118,17 +118,17 @@ export default function FluencyZonePicker({
           placeholder="Search topics..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-sm text-white placeholder-gray-500 mb-4 focus:border-cyan-500 focus:outline-none"
+          className="w-full bg-[#F3F4F6] border border-[#E2E8F0] rounded-lg px-4 py-3 text-sm text-[#1F2937] placeholder-gray-400 mb-4 focus:border-cyan-500 focus:outline-none"
         />
 
         {/* Topic List */}
         {loading ? (
           <div className="text-center py-8">
-            <div className="animate-pulse text-gray-500">Loading topics...</div>
+            <div className="animate-pulse text-[#9CA3AF]">Loading topics...</div>
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-8">
-            <p className="text-gray-500 text-sm">
+            <p className="text-[#9CA3AF] text-sm">
               {topics.length === 0
                 ? "Practice some topics first to unlock Fluency Zone!"
                 : "No topics match your search."}
@@ -143,13 +143,13 @@ export default function FluencyZonePicker({
                 className={`w-full text-left p-3 rounded-xl transition-all ${
                   selectedNode === topic.nodeId
                     ? "bg-cyan-500/20 border border-cyan-500"
-                    : "bg-white/5 border border-white/5 hover:border-white/20"
+                    : "bg-[#F3F4F6] border border-[#E2E8F0] hover:border-gray-300"
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium">{topic.title}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">
+                    <p className="text-xs text-[#9CA3AF] mt-0.5">
                       {topic.gradeLevel} · {topic.domain}
                     </p>
                   </div>
@@ -166,7 +166,7 @@ export default function FluencyZonePicker({
 
         {/* Time Selection */}
         <div className="mb-6">
-          <p className="text-xs text-gray-400 uppercase tracking-wider mb-2 font-semibold">
+          <p className="text-xs text-[#6B7280] uppercase tracking-wider mb-2 font-semibold">
             Pick your time
           </p>
           <div className="flex gap-2">
@@ -177,7 +177,7 @@ export default function FluencyZonePicker({
                 className={`flex-1 py-3 rounded-lg text-sm font-medium transition-colors ${
                   selectedTime === opt.seconds
                     ? "bg-cyan-600 text-white"
-                    : "bg-white/10 text-gray-400 hover:bg-white/15"
+                    : "bg-[#F3F4F6] text-[#6B7280] hover:bg-gray-200"
                 }`}
               >
                 ⏱ {opt.label}
@@ -202,7 +202,7 @@ export default function FluencyZonePicker({
               ? "bg-gradient-to-r from-cyan-500/60 to-purple-600/60 text-white/80 cursor-wait"
               : selectedNode
                 ? "bg-gradient-to-r from-cyan-500 to-purple-600 text-white hover:from-cyan-400 hover:to-purple-500 shadow-lg shadow-cyan-500/25"
-                : "bg-white/10 text-gray-600 cursor-not-allowed"
+                : "bg-[#F3F4F6] text-[#9CA3AF] cursor-not-allowed"
           }`}
         >
           {starting

@@ -33,10 +33,10 @@ export default function Tier1Home() {
       </div>
 
       {/* Greeting */}
-      <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">
+      <h1 className="text-3xl sm:text-4xl font-bold text-[#1F2937] mb-2">
         Hey {displayName}! 👋
       </h1>
-      <p className="text-lg text-gray-400 mb-4">
+      <p className="text-lg text-[#6B7280] mb-4">
         Ready for some fun learning today?
       </p>
 
@@ -69,7 +69,7 @@ export default function Tier1Home() {
       {/* Phase 13: Fluency Zone button */}
       <Link
         href={`/kid/fluency-zone?studentId=${studentId}`}
-        className="mt-6 w-full max-w-sm py-3 bg-[#141d30] border border-white/10 text-white text-lg font-medium rounded-xl hover:border-cyan-500/30 transition-colors text-center block"
+        className="mt-6 w-full max-w-sm py-3 bg-white border border-[#E2E8F0] text-[#1F2937] text-lg font-medium rounded-xl hover:border-cyan-500/30 transition-colors text-center block shadow-sm"
       >
         ⚡ Speed Practice!
       </Link>
@@ -77,7 +77,7 @@ export default function Tier1Home() {
       {/* Tiny parent link */}
       <Link
         href="/dashboard"
-        className="mt-4 text-xs text-gray-600 hover:text-gray-400 transition-colors"
+        className="mt-4 text-xs text-[#9CA3AF] hover:text-[#6B7280] transition-colors"
       >
         Parent view →
       </Link>

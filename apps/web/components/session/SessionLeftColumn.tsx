@@ -39,12 +39,12 @@ export default function SessionLeftColumn({
   const personaName = persona?.name?.split(" ")[0] || "Cosmo";
 
   return (
-    <div className="hidden lg:flex fixed left-0 top-0 bottom-0 w-[200px] bg-[#0A1628] border-r border-white/5 flex-col items-center pt-20 pb-6 z-10">
+    <div className="hidden lg:flex fixed left-0 top-0 bottom-0 w-[200px] bg-[#F8F9FF] border-r border-[#E2E8F0] flex-col items-center pt-20 pb-6 z-10">
       {/* Persona Avatar — 60px with gold ring */}
-      <div className="w-[60px] h-[60px] rounded-full bg-[#0D1B2A] ring-2 ring-amber-400 flex items-center justify-center text-3xl mb-2">
+      <div className="w-[60px] h-[60px] rounded-full bg-[#F8F9FF] ring-2 ring-amber-400 flex items-center justify-center text-3xl mb-2">
         {avatarEmoji}
       </div>
-      <p className="text-sm text-gray-400 font-medium mb-8">
+      <p className="text-sm text-[#6B7280] font-medium mb-8">
         {personaName}
       </p>
 
@@ -71,7 +71,7 @@ export default function SessionLeftColumn({
               <div
                 className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
                   isCurrent
-                    ? "bg-purple-600 text-white ring-2 ring-purple-400 ring-offset-2 ring-offset-[#0A1628] animate-pulse"
+                    ? "bg-purple-600 text-white ring-2 ring-purple-400 ring-offset-2 ring-offset-[#F8F9FF] animate-pulse"
                     : isCompleted
                       ? "bg-amber-500 text-white"
                       : "border-2 border-gray-600 text-gray-500 bg-transparent"

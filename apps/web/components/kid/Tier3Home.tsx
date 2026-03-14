@@ -90,7 +90,7 @@ export default function Tier3Home() {
   const recentMastery = (gam?.masteryMap ?? [])
     .filter((n) =>
       (n.level === "PROFICIENT" || n.level === "ADVANCED" || n.level === "MASTERED") &&
-      n.domain === subject
+      n.subject === subject
     )
     .slice(0, 4);
 
@@ -109,10 +109,10 @@ export default function Tier3Home() {
       {/* Welcome + Continue */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-white">
+          <h1 className="text-xl font-bold text-[#1F2937]">
             Welcome back, {displayName}
           </h1>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-[#6B7280]">
             {nextConcept ? `Next up: ${nextConcept}` : "Pick up where you left off."}
           </p>
         </div>
@@ -133,45 +133,45 @@ export default function Tier3Home() {
 
       {/* Stats Row */}
       <div className="grid grid-cols-4 gap-3">
-        <div className="bg-[#141d30] rounded-xl p-4 border border-white/5 text-center">
+        <div className="bg-white rounded-xl p-4 border border-[#E2E8F0] text-center">
           <p className="text-xl font-bold text-purple-400">Lv. {currentLevel}</p>
-          <p className="text-xs text-gray-500">level</p>
+          <p className="text-xs text-[#6B7280]">level</p>
         </div>
-        <div className="bg-[#141d30] rounded-xl p-4 border border-white/5 text-center">
+        <div className="bg-white rounded-xl p-4 border border-[#E2E8F0] text-center">
           <p className="text-xl font-bold text-orange-400">
             {streakDays > 0 ? `🔥 ${streakDays}` : "0"}
           </p>
-          <p className="text-xs text-gray-500">streak</p>
+          <p className="text-xs text-[#6B7280]">streak</p>
         </div>
-        <div className="bg-[#141d30] rounded-xl p-4 border border-white/5 text-center">
+        <div className="bg-white rounded-xl p-4 border border-[#E2E8F0] text-center">
           <p className="text-xl font-bold text-green-400">{totalMastered}</p>
-          <p className="text-xs text-gray-500">mastered</p>
+          <p className="text-xs text-[#6B7280]">mastered</p>
         </div>
-        <div className="bg-[#141d30] rounded-xl p-4 border border-white/5 text-center">
+        <div className="bg-white rounded-xl p-4 border border-[#E2E8F0] text-center">
           <p className="text-xl font-bold text-blue-400">{totalBadges}</p>
-          <p className="text-xs text-gray-500">badges</p>
+          <p className="text-xs text-[#6B7280]">badges</p>
         </div>
       </div>
 
       {/* Learning Progress */}
       {recentMastery.length > 0 && (
-        <div className="bg-[#141d30] rounded-xl border border-white/5 overflow-hidden">
-          <div className="px-5 py-3 border-b border-white/5">
-            <h3 className="text-sm font-semibold text-gray-300">
+        <div className="bg-white rounded-xl border border-[#E2E8F0] overflow-hidden">
+          <div className="px-5 py-3 border-b border-[#E2E8F0]">
+            <h3 className="text-sm font-semibold text-[#1F2937]">
               Learning Progress
             </h3>
           </div>
-          <div className="divide-y divide-white/5">
+          <div className="divide-y divide-[#E2E8F0]">
             {recentMastery.map((node) => (
               <div
                 key={node.nodeCode}
                 className="px-5 py-3 flex items-center justify-between"
               >
                 <div>
-                  <p className="text-sm text-gray-300">
+                  <p className="text-sm text-[#1F2937]">
                     {node.nodeTitle}
                   </p>
-                  <p className="text-xs text-gray-600">
+                  <p className="text-xs text-[#6B7280]">
                     {node.domain === "MATH" ? "🔢 Math" : "📖 English"}
                   </p>
                 </div>
@@ -200,47 +200,47 @@ export default function Tier3Home() {
       <div className="grid grid-cols-2 gap-3">
         <Link
           href="/kid/constellation"
-          className="py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 text-sm rounded-lg text-center transition-colors border border-white/5"
+          className="py-2.5 bg-[#F3F4F6] hover:bg-gray-100 text-[#1F2937] text-sm rounded-lg text-center transition-colors border border-[#E2E8F0]"
         >
           🌌 Constellation
         </Link>
         <Link
           href={`/kid/fluency-zone?studentId=${studentId}`}
-          className="py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 text-sm rounded-lg text-center transition-colors border border-cyan-500/10 hover:border-cyan-500/30"
+          className="py-2.5 bg-[#F3F4F6] hover:bg-gray-100 text-[#1F2937] text-sm rounded-lg text-center transition-colors border border-cyan-500/10 hover:border-cyan-500/30"
         >
           ⚡ Fluency Zone
         </Link>
         <Link
           href="/goals"
-          className="py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 text-sm rounded-lg text-center transition-colors border border-white/5"
+          className="py-2.5 bg-[#F3F4F6] hover:bg-gray-100 text-[#1F2937] text-sm rounded-lg text-center transition-colors border border-[#E2E8F0]"
         >
           🎯 Goals
         </Link>
         <Link
           href="/kid/review"
-          className="py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 text-sm rounded-lg text-center transition-colors border border-white/5"
+          className="py-2.5 bg-[#F3F4F6] hover:bg-gray-100 text-[#1F2937] text-sm rounded-lg text-center transition-colors border border-[#E2E8F0]"
         >
           📊 Review
         </Link>
       </div>
 
       {/* Your Progress */}
-      <div className="bg-[#141d30] rounded-xl p-5 border border-white/5">
-        <h3 className="text-sm font-semibold text-gray-300 mb-3">
+      <div className="bg-white rounded-xl p-5 border border-[#E2E8F0]">
+        <h3 className="text-sm font-semibold text-[#1F2937] mb-3">
           Your Progress
         </h3>
         <div className="grid grid-cols-3 gap-3 text-center">
           <div>
             <p className="text-lg font-bold text-green-400">{totalMastered}</p>
-            <p className="text-[10px] text-gray-500 uppercase">Mastered</p>
+            <p className="text-[10px] text-[#6B7280] uppercase">Mastered</p>
           </div>
           <div>
             <p className="text-lg font-bold text-orange-400">{streakDays > 0 ? `🔥 ${streakDays}` : "0"}</p>
-            <p className="text-[10px] text-gray-500 uppercase">Streak</p>
+            <p className="text-[10px] text-[#6B7280] uppercase">Streak</p>
           </div>
           <div>
             <p className="text-lg font-bold text-blue-400">{totalBadges}</p>
-            <p className="text-[10px] text-gray-500 uppercase">Badges</p>
+            <p className="text-[10px] text-[#6B7280] uppercase">Badges</p>
           </div>
         </div>
       </div>

@@ -116,12 +116,12 @@ export default function PracticeQuestion({
         </div>
       )}
 
-      {/* ─── Question Card with Left Accent Border — dark surface ─── */}
+      {/* ─── Question Card with Left Accent Border ─── */}
       <div
-        className="bg-[#1A2744] rounded-2xl p-6 border border-white/10 mb-6 border-l-4"
+        className="bg-white rounded-2xl p-6 border border-[#E2E8F0] mb-6 border-l-4 shadow-sm"
         style={{ borderLeftColor: colors.border }}
       >
-        <p className="text-xl text-white leading-relaxed">
+        <p className="text-xl text-[#1F2937] leading-relaxed">
           {question.questionText}
         </p>
       </div>
@@ -156,8 +156,8 @@ export default function PracticeQuestion({
             // Phase 10: Selected but not yet confirmed — cyan highlight
             buttonStyle = "border-2 shadow-md ring-1 ring-cyan-400/30";
           } else {
-            // Default state — dark surface with subtle border
-            buttonStyle = "border-2 border-white/10 bg-[#1A2744]";
+            // Default state — light surface with subtle border
+            buttonStyle = "border-2 border-[#E2E8F0] bg-white";
           }
 
           return (
@@ -199,7 +199,7 @@ export default function PracticeQuestion({
                 >
                   {option.id}
                 </span>
-                <span className="text-white flex-1 font-medium">
+                <span className="text-[#1F2937] flex-1 font-medium">
                   {option.text}
                 </span>
                 {/* Phase 10: Checkmark icon on pre-confirm selected option */}
@@ -267,26 +267,26 @@ export default function PracticeQuestion({
                 <div className="space-y-2">
                   <div className="flex items-start gap-2">
                     <span className="text-red-400 text-sm mt-0.5">❌</span>
-                    <p className="text-sm text-red-300">
+                    <p className="text-sm text-red-600">
                       <span className="font-medium">You chose:</span>{" "}
-                      <span className="text-white/80">{selectedOptionObj.text}</span>
+                      <span className="text-[#1F2937]">{selectedOptionObj.text}</span>
                     </p>
                   </div>
                   <div className="flex items-start gap-2">
-                    <span className="text-green-400 text-sm mt-0.5">✅</span>
-                    <p className="text-sm text-green-300">
+                    <span className="text-green-500 text-sm mt-0.5">✅</span>
+                    <p className="text-sm text-green-700">
                       <span className="font-medium">Correct answer:</span>{" "}
-                      <span className="text-white/80">{correctOption.text}</span>
+                      <span className="text-[#1F2937]">{correctOption.text}</span>
                     </p>
                   </div>
                 </div>
               )}
               {/* Why explanation */}
-              <div className="flex items-start gap-2 pt-1 border-t border-white/5">
+              <div className="flex items-start gap-2 pt-1 border-t border-blue-100">
                 <span className="text-lg mt-0.5">💡</span>
                 <div>
-                  <p className="text-sm font-semibold text-blue-400 mb-1">Why?</p>
-                  <p className="text-sm text-gray-300 leading-relaxed">
+                  <p className="text-sm font-semibold text-blue-600 mb-1">Why?</p>
+                  <p className="text-sm text-[#374151] leading-relaxed">
                     {question.explanation}
                   </p>
                 </div>
@@ -301,7 +301,7 @@ export default function PracticeQuestion({
         <div className="mb-6 text-center">
           <button
             onClick={() => setShowExplanation(!showExplanation)}
-            className="text-sm text-gray-500 hover:text-gray-300 transition-colors"
+            className="text-sm text-[#6B7280] hover:text-[#1F2937] transition-colors"
           >
             {showExplanation ? "Hide explanation ▲" : "Want to know why? 💡"}
           </button>
@@ -317,7 +317,7 @@ export default function PracticeQuestion({
                 <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 text-left">
                   <div className="flex items-start gap-2">
                     <span className="text-lg">💡</span>
-                    <p className="text-sm text-gray-300 leading-relaxed">
+                    <p className="text-sm text-[#374151] leading-relaxed">
                       {question.explanation}
                     </p>
                   </div>
@@ -342,9 +342,9 @@ export default function PracticeQuestion({
                 className="overflow-hidden"
               >
                 <div className="bg-aauti-accent/15 border border-aauti-accent/25 rounded-xl p-4 text-sm">
-                  <p className="font-semibold mb-1 text-white">💡 Hint:</p>
-                  <p className="text-white/90">{hint.hint}</p>
-                  <p className="text-gray-300 mt-2 italic">
+                  <p className="font-semibold mb-1 text-[#1F2937]">💡 Hint:</p>
+                  <p className="text-[#1F2937]/90">{hint.hint}</p>
+                  <p className="text-[#6B7280] mt-2 italic">
                     {hint.encouragement}
                   </p>
                 </div>

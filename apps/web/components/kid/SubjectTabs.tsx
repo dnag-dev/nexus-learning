@@ -51,7 +51,7 @@ export default function SubjectTabs({
           className={`px-6 py-3 rounded-full text-base font-bold transition-all duration-200 ${
             subject === "MATH"
               ? "bg-blue-500 text-white shadow-lg shadow-blue-500/30 scale-105"
-              : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white"
+              : "bg-[#F3F4F6] text-[#6B7280] hover:bg-gray-200 hover:text-[#1F2937]"
           }`}
         >
           🔢 Math
@@ -61,7 +61,7 @@ export default function SubjectTabs({
           className={`px-6 py-3 rounded-full text-base font-bold transition-all duration-200 ${
             subject === "ENGLISH"
               ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 scale-105"
-              : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white"
+              : "bg-[#F3F4F6] text-[#6B7280] hover:bg-gray-200 hover:text-[#1F2937]"
           }`}
         >
           📖 English
@@ -73,13 +73,13 @@ export default function SubjectTabs({
   // ─── Teen variant (G8-G12): Clean underline tabs ───
   if (variant === "teen") {
     return (
-      <div className="flex gap-4 border-b border-white/10">
+      <div className="flex gap-4 border-b border-[#E2E8F0]">
         <button
           onClick={() => handleSwitch("MATH")}
           className={`pb-2 text-sm font-medium transition-all ${
             subject === "MATH"
               ? "text-purple-400 border-b-2 border-purple-400"
-              : "text-gray-500 hover:text-gray-300"
+              : "text-[#9CA3AF] hover:text-[#1F2937]"
           }`}
         >
           Math
@@ -89,7 +89,7 @@ export default function SubjectTabs({
           className={`pb-2 text-sm font-medium transition-all ${
             subject === "ENGLISH"
               ? "text-purple-400 border-b-2 border-purple-400"
-              : "text-gray-500 hover:text-gray-300"
+              : "text-[#9CA3AF] hover:text-[#1F2937]"
           }`}
         >
           English
@@ -100,13 +100,13 @@ export default function SubjectTabs({
 
   // ─── Mid variant (G4-G7): Compact pill tabs ───
   return (
-    <div className="flex gap-2 p-1 bg-white/5 rounded-lg w-fit">
+    <div className="flex gap-2 p-1 bg-[#F3F4F6] rounded-lg w-fit">
       <button
         onClick={() => handleSwitch("MATH")}
         className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
           subject === "MATH"
             ? "bg-purple-600 text-white shadow-sm"
-            : "text-gray-400 hover:text-white"
+            : "text-[#6B7280] hover:text-[#1F2937]"
         }`}
       >
         🔢 Math
@@ -116,7 +116,7 @@ export default function SubjectTabs({
         className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
           subject === "ENGLISH"
             ? "bg-purple-600 text-white shadow-sm"
-            : "text-gray-400 hover:text-white"
+            : "text-[#6B7280] hover:text-[#1F2937]"
         }`}
       >
         📖 English

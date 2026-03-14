@@ -231,7 +231,7 @@ export default function CoordinatePlane({
           y={PADDING}
           width={GRID_AREA}
           height={GRID_AREA}
-          fill="#0c1628"
+          fill="#F8F9FF"
           rx={4}
         />
 
@@ -260,7 +260,7 @@ export default function CoordinatePlane({
             y1={line.y1}
             x2={line.x2}
             y2={line.y2}
-            stroke={line.isAxis ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.08)"}
+            stroke={line.isAxis ? "rgba(0,0,0,0.4)" : "rgba(0,0,0,0.08)"}
             strokeWidth={line.isAxis ? 2 : 0.5}
           />
         ))}
@@ -269,12 +269,12 @@ export default function CoordinatePlane({
         {/* X-axis arrow */}
         <polygon
           points={`${PADDING + GRID_AREA + 5},${origin.y} ${PADDING + GRID_AREA - 5},${origin.y - 4} ${PADDING + GRID_AREA - 5},${origin.y + 4}`}
-          fill="rgba(255,255,255,0.4)"
+          fill="rgba(0,0,0,0.4)"
         />
         <text
           x={PADDING + GRID_AREA + 10}
           y={origin.y + 4}
-          fill="rgba(255,255,255,0.5)"
+          fill="rgba(0,0,0,0.5)"
           fontSize={12}
           fontWeight="bold"
         >
@@ -283,12 +283,12 @@ export default function CoordinatePlane({
         {/* Y-axis arrow */}
         <polygon
           points={`${origin.x},${PADDING - 5} ${origin.x - 4},${PADDING + 5} ${origin.x + 4},${PADDING + 5}`}
-          fill="rgba(255,255,255,0.4)"
+          fill="rgba(0,0,0,0.4)"
         />
         <text
           x={origin.x + 6}
           y={PADDING - 6}
-          fill="rgba(255,255,255,0.5)"
+          fill="rgba(0,0,0,0.5)"
           fontSize={12}
           fontWeight="bold"
         >
@@ -302,7 +302,7 @@ export default function CoordinatePlane({
             x={label.x}
             y={label.y}
             textAnchor="middle"
-            fill="rgba(255,255,255,0.35)"
+            fill="rgba(0,0,0,0.35)"
             fontSize={9}
             style={{ pointerEvents: "none" }}
           >
@@ -427,7 +427,7 @@ export default function CoordinatePlane({
 
       {/* Instruction text */}
       {!answered && !selectedPoint && (
-        <p className="text-center text-sm text-gray-400 mt-2">
+        <p className="text-center text-sm text-[#6B7280] mt-2">
           Click on the grid to place your point
         </p>
       )}

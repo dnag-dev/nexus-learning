@@ -145,8 +145,8 @@ function FluencyZoneContent() {
 
   if (!studentId) {
     return (
-      <div className="min-h-screen bg-[#0a0f1c] text-white flex items-center justify-center">
-        <p className="text-gray-500">Missing student ID</p>
+      <div className="min-h-screen bg-[#F8F9FF] text-[#1F2937] flex items-center justify-center">
+        <p className="text-[#9CA3AF]">Missing student ID</p>
       </div>
     );
   }
@@ -193,7 +193,7 @@ export default function FluencyZonePage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#0a0f1c] flex items-center justify-center">
+        <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center">
           <div className="text-4xl animate-bounce">⚡</div>
         </div>
       }

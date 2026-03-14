@@ -68,43 +68,43 @@ export default function SessionReviewDrawer({
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="fixed top-0 right-0 h-full w-[380px] max-w-[90vw] bg-[#0F1B2D] border-l border-white/10 z-50 flex flex-col"
+            className="fixed top-0 right-0 h-full w-[380px] max-w-[90vw] bg-white border-l border-[#E2E8F0] z-50 flex flex-col"
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[#E2E8F0]">
               <div>
-                <h2 className="text-base font-bold text-white">Session Review</h2>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <h2 className="text-base font-bold text-[#1F2937]">Session Review</h2>
+                <p className="text-xs text-[#9CA3AF] mt-0.5">
                   {answers.length} question{answers.length !== 1 ? "s" : ""} answered
                 </p>
               </div>
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-white text-xl leading-none px-2"
+                className="text-[#6B7280] hover:text-[#1F2937] text-xl leading-none px-2"
               >
                 ×
               </button>
             </div>
 
             {/* Summary bar */}
-            <div className="px-5 py-3 bg-white/5 border-b border-white/5 grid grid-cols-3 gap-3 text-center">
+            <div className="px-5 py-3 bg-[#F3F4F6] border-b border-[#E2E8F0] grid grid-cols-3 gap-3 text-center">
               <div>
-                <p className="text-lg font-bold text-white">{correctCount}/{answers.length}</p>
-                <p className="text-[10px] text-gray-500 uppercase tracking-wider">Correct</p>
+                <p className="text-lg font-bold text-[#1F2937]">{correctCount}/{answers.length}</p>
+                <p className="text-[10px] text-[#9CA3AF] uppercase tracking-wider">Correct</p>
               </div>
               <div>
-                <p className="text-lg font-bold text-white">{accuracy}%</p>
-                <p className="text-[10px] text-gray-500 uppercase tracking-wider">Accuracy</p>
+                <p className="text-lg font-bold text-[#1F2937]">{accuracy}%</p>
+                <p className="text-[10px] text-[#9CA3AF] uppercase tracking-wider">Accuracy</p>
               </div>
               <div>
-                <p className="text-lg font-bold text-white">{Math.round(currentMastery)}%</p>
-                <p className="text-[10px] text-gray-500 uppercase tracking-wider">Mastery</p>
+                <p className="text-lg font-bold text-[#1F2937]">{Math.round(currentMastery)}%</p>
+                <p className="text-[10px] text-[#9CA3AF] uppercase tracking-wider">Mastery</p>
               </div>
             </div>
 
             {/* Estimated remaining */}
             {estimatedRemaining > 0 && (
-              <div className="px-5 py-2 bg-cyan-500/5 border-b border-white/5 text-center">
+              <div className="px-5 py-2 bg-cyan-500/5 border-b border-[#E2E8F0] text-center">
                 <p className="text-xs text-cyan-400">
                   📍 ~{estimatedRemaining} question{estimatedRemaining !== 1 ? "s" : ""} to finish
                 </p>
@@ -115,7 +115,7 @@ export default function SessionReviewDrawer({
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
               {answers.length === 0 ? (
                 <div className="text-center py-12">
-                  <p className="text-gray-500 text-sm">No questions answered yet</p>
+                  <p className="text-[#9CA3AF] text-sm">No questions answered yet</p>
                 </div>
               ) : (
                 answers.map((answer, idx) => {
@@ -142,10 +142,10 @@ export default function SessionReviewDrawer({
                           {answer.isCorrect ? "✅" : "❌"}
                         </span>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs text-gray-500 mb-0.5">
+                          <p className="text-xs text-[#9CA3AF] mb-0.5">
                             Q{idx + 1} · {STEP_NAMES[answer.step] || "Practice"}
                           </p>
-                          <p className="text-sm text-white leading-snug line-clamp-2">
+                          <p className="text-sm text-[#1F2937] leading-snug line-clamp-2">
                             {answer.questionText}
                           </p>
                         </div>
@@ -161,14 +161,14 @@ export default function SessionReviewDrawer({
 
                       {/* Answer detail */}
                       <div className="mt-2 ml-7 text-xs">
-                        <p className="text-gray-400">
+                        <p className="text-[#6B7280]">
                           <span className="font-medium">You:</span>{" "}
                           <span className={answer.isCorrect ? "text-green-300" : "text-red-300"}>
                             {answer.selectedAnswer}
                           </span>
                         </p>
                         {!answer.isCorrect && (
-                          <p className="text-gray-400 mt-0.5">
+                          <p className="text-[#6B7280] mt-0.5">
                             <span className="font-medium">Correct:</span>{" "}
                             <span className="text-green-300">{answer.correctAnswer}</span>
                           </p>
@@ -192,7 +192,7 @@ export default function SessionReviewDrawer({
                                 exit={{ opacity: 0, height: 0 }}
                                 className="overflow-hidden"
                               >
-                                <p className="text-xs text-gray-400 leading-relaxed mt-1 bg-blue-500/5 rounded-lg p-2 border border-blue-500/10">
+                                <p className="text-xs text-[#6B7280] leading-relaxed mt-1 bg-blue-500/5 rounded-lg p-2 border border-blue-500/10">
                                   {answer.explanation}
                                 </p>
                               </motion.div>

@@ -75,7 +75,7 @@ function getNodeStyle(node: BranchNode, branchUnlocked: boolean): {
 } {
   if (!branchUnlocked) {
     return {
-      dotClass: "bg-white/10 cursor-not-allowed",
+      dotClass: "bg-gray-200 cursor-not-allowed",
       label: "Locked",
       actionLabel: "🔒 Complete prerequisites first",
     };
@@ -102,7 +102,7 @@ function getNodeStyle(node: BranchNode, branchUnlocked: boolean): {
     };
   }
   return {
-    dotClass: "bg-white/20 cursor-pointer hover:bg-white/40 hover:ring-2 hover:ring-white/30",
+    dotClass: "bg-gray-300 cursor-pointer hover:bg-gray-400 hover:ring-2 hover:ring-gray-300",
     label: "Available",
     actionLabel: "Start learning →",
   };
@@ -184,7 +184,7 @@ export default function TopicTree({
 
   if (branches.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">
+      <div className="text-center py-8 text-[#9CA3AF]">
         <p className="text-lg">No topic branches yet</p>
         <p className="text-sm mt-1">Complete more lessons to unlock branches!</p>
       </div>
@@ -207,8 +207,8 @@ export default function TopicTree({
                   ? "bg-green-500/10 border-green-500/30"
                   : selectedBranch === branch.id
                     ? "bg-purple-500/15 border-purple-500/40"
-                    : "bg-white/5 border-white/10 hover:bg-white/8"
-                : "bg-white/2 border-white/5 opacity-50"
+                    : "bg-[#F3F4F6] border-[#E2E8F0] hover:bg-gray-100"
+                : "bg-gray-50 border-[#E2E8F0] opacity-50"
             } ${compact ? "p-3" : "p-4"}`}
           >
             {/* Branch header — clickable to expand/collapse */}
@@ -239,12 +239,12 @@ export default function TopicTree({
                 {branch.isAdvanced && branch.unlocked && !branch.completed && (
                   <span className="text-sm">⭐</span>
                 )}
-                <h3 className={`font-semibold text-white ${compact ? "text-sm" : "text-base"}`}>
+                <h3 className={`font-semibold text-[#1F2937] ${compact ? "text-sm" : "text-base"}`}>
                   {branch.name}
                 </h3>
                 {/* Expand indicator */}
                 {branch.unlocked && !compact && (
-                  <span className={`text-xs text-gray-500 transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`}>
+                  <span className={`text-xs text-[#9CA3AF] transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`}>
                     ▶
                   </span>
                 )}
@@ -253,19 +253,19 @@ export default function TopicTree({
                 branch.completed
                   ? "text-green-400"
                   : branch.unlocked
-                    ? "text-gray-400"
-                    : "text-gray-600"
+                    ? "text-[#6B7280]"
+                    : "text-[#9CA3AF]"
               }`}>
                 {branch.nodesCompleted}/{branch.totalNodes}
               </span>
             </div>
 
             {!compact && (
-              <p className="text-xs text-gray-400 mb-3">{branch.description}</p>
+              <p className="text-xs text-[#6B7280] mb-3">{branch.description}</p>
             )}
 
             {/* Progress bar */}
-            <div className="h-1.5 bg-white/5 rounded-full overflow-hidden mb-2">
+            <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden mb-2">
               <motion.div
                 className={`h-full rounded-full ${
                   branch.completed ? "bg-green-500" : "bg-purple-500"
@@ -295,13 +295,13 @@ export default function TopicTree({
                       />
                       {/* Enhanced tooltip on hover */}
                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-20 pointer-events-none">
-                        <div className="bg-gray-900 border border-white/10 text-white text-[10px] px-3 py-2 rounded-lg whitespace-nowrap shadow-xl">
+                        <div className="bg-white border border-[#E2E8F0] text-[#1F2937] text-[10px] px-3 py-2 rounded-lg whitespace-nowrap shadow-xl">
                           <p className="font-medium text-xs">{node.title}</p>
                           <p className={`text-[10px] mt-0.5 ${
                             node.trulyMastered ? "text-green-400" :
                             node.isCurrent ? "text-purple-400" :
                             node.nexusScore > 0 ? "text-yellow-400" :
-                            "text-gray-400"
+                            "text-[#6B7280]"
                           }`}>
                             {style.label}
                             {node.nexusScore > 0 && !node.trulyMastered && (
@@ -310,7 +310,7 @@ export default function TopicTree({
                               </span>
                             )}
                           </p>
-                          <p className="text-gray-500 text-[9px] mt-1 border-t border-white/5 pt-1">
+                          <p className="text-[#9CA3AF] text-[9px] mt-1 border-t border-[#E2E8F0] pt-1">
                             {style.actionLabel}
                           </p>
                         </div>
@@ -328,7 +328,7 @@ export default function TopicTree({
                 animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="mt-3 pt-3 border-t border-white/5 space-y-1"
+                className="mt-3 pt-3 border-t border-[#E2E8F0] space-y-1"
               >
                 {branch.nodes.map((node) => {
                   const style = getNodeStyle(node, branch.unlocked);
@@ -338,7 +338,7 @@ export default function TopicTree({
                       key={node.nodeId}
                       className={`flex items-center justify-between px-3 py-2 rounded-lg transition-all ${
                         action !== "locked"
-                          ? "hover:bg-white/5 cursor-pointer"
+                          ? "hover:bg-gray-50 cursor-pointer"
                           : "opacity-50"
                       }`}
                       onClick={() => handleNodeClick(node, branch.unlocked)}
@@ -348,13 +348,13 @@ export default function TopicTree({
                           node.trulyMastered ? "bg-green-500" :
                           node.isCurrent ? "bg-purple-500" :
                           node.nexusScore > 0 ? "bg-yellow-500" :
-                          "bg-white/20"
+                          "bg-gray-300"
                         }`} />
-                        <span className="text-sm text-gray-300">{node.title}</span>
+                        <span className="text-sm text-[#6B7280]">{node.title}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         {node.nexusScore > 0 && (
-                          <span className="text-[10px] text-gray-500">
+                          <span className="text-[10px] text-[#9CA3AF]">
                             {Math.round(node.nexusScore)}%
                           </span>
                         )}
@@ -365,7 +365,7 @@ export default function TopicTree({
                               ? "bg-purple-500/20 text-purple-400"
                               : node.nexusScore > 0
                                 ? "bg-yellow-500/20 text-yellow-400"
-                                : "bg-white/5 text-gray-500"
+                                : "bg-[#F3F4F6] text-[#9CA3AF]"
                         }`}>
                           {style.label}
                         </span>

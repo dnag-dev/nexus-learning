@@ -184,7 +184,7 @@ function MasteryMeter({
             cy={center}
             r={radius}
             fill="none"
-            stroke="rgba(255,255,255,0.12)"
+            stroke="rgba(0,0,0,0.08)"
             strokeWidth={strokeWidth}
           />
 
@@ -220,12 +220,12 @@ function MasteryMeter({
               initial={{ scale: 1.3, opacity: 0.7 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.3, ease: "easeOut" as const }}
-              className={`${isLarge ? "text-2xl" : "text-base"} font-extrabold text-white`}
+              className={`${isLarge ? "text-2xl" : "text-base"} font-extrabold text-[#1F2937]`}
             >
               {probability}%
             </motion.span>
           </AnimatePresence>
-          <span className={`${isLarge ? "text-xs" : "text-[10px]"} text-gray-400`}>
+          <span className={`${isLarge ? "text-xs" : "text-[10px]"} text-[#6B7280]`}>
             Mastery
           </span>
         </div>
@@ -233,11 +233,11 @@ function MasteryMeter({
 
       {isLarge && (
         <div className="text-center mt-1.5 space-y-1">
-          <span className="text-xs text-gray-400">
+          <span className="text-xs text-[#6B7280]">
             85% to master
           </span>
           {/* Phase 8: Mastery clarity — show gain/loss per answer */}
-          <div className="text-[10px] text-gray-500 leading-tight">
+          <div className="text-[10px] text-[#9CA3AF] leading-tight">
             <span className="text-green-400">✅ Correct ≈ +15%</span>
             {" · "}
             <span className="text-red-400">❌ Wrong ≈ -10%</span>
@@ -302,13 +302,13 @@ export default function SessionStats({
         >
           {level}
         </span>
-        <p className="text-xs text-gray-400 mt-2">
+        <p className="text-xs text-[#6B7280] mt-2">
           {levelNum} of 5 &middot; {phaseLabel}
         </p>
       </div>
 
       {/* Divider */}
-      <div className="h-px bg-white/5" />
+      <div className="h-px bg-[#E2E8F0]" />
 
       {/* Section 2: Mastery Meter (most prominent — no label, self-explanatory) */}
       <div className="text-center">
@@ -321,35 +321,35 @@ export default function SessionStats({
       </div>
 
       {/* Divider */}
-      <div className="h-px bg-white/5" />
+      <div className="h-px bg-[#E2E8F0]" />
 
       {/* Section 3: Streak — mini card */}
-      <div className={`bg-white/5 rounded-xl p-3 border border-white/5 ${streakAnim}`}>
+      <div className={`bg-[#F3F4F6] rounded-xl p-3 border border-[#E2E8F0] ${streakAnim}`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-lg">🔥</span>
-            <span className="text-sm text-gray-400 font-medium">Streak</span>
+            <span className="text-sm text-[#6B7280] font-medium">Streak</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="text-xl font-bold text-white">{correctStreak}</span>
-            <span className="text-xs text-gray-500">in a row</span>
+            <span className="text-xl font-bold text-[#1F2937]">{correctStreak}</span>
+            <span className="text-xs text-[#9CA3AF]">in a row</span>
           </div>
         </div>
       </div>
 
       {/* Section 4: Concepts Mastered Today — mini card */}
-      <div className="bg-white/5 rounded-xl p-3 border border-white/5">
+      <div className="bg-[#F3F4F6] rounded-xl p-3 border border-[#E2E8F0]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-lg">⭐</span>
-            <span className="text-sm text-gray-400 font-medium">Mastered</span>
+            <span className="text-sm text-[#6B7280] font-medium">Mastered</span>
           </div>
           <AnimatePresence mode="wait">
             <motion.span
               key={conceptsMasteredThisSession}
               initial={{ scale: 1.4, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="text-xl font-bold text-white"
+              className="text-xl font-bold text-[#1F2937]"
             >
               {conceptsMasteredThisSession}
             </motion.span>
@@ -358,14 +358,14 @@ export default function SessionStats({
       </div>
 
       {/* Section 5: Next Milestone — mini card */}
-      <div className="bg-white/5 rounded-xl p-3 border border-white/5">
+      <div className="bg-[#F3F4F6] rounded-xl p-3 border border-[#E2E8F0]">
         <div className="flex items-center gap-2.5">
           <span className="text-2xl">{milestone.icon}</span>
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">
+            <p className="text-[10px] uppercase tracking-wider text-[#9CA3AF] font-semibold">
               Next Milestone
             </p>
-            <p className="text-sm text-gray-300 leading-snug">
+            <p className="text-sm text-[#6B7280] leading-snug">
               {milestone.label}
             </p>
           </div>
@@ -374,8 +374,8 @@ export default function SessionStats({
 
       {/* Bottom spacer + XP earned — mini card */}
       <div className="mt-auto">
-        <div className="bg-white/5 rounded-xl p-3 border border-white/5 text-center">
-          <p className="text-xs text-gray-400">Session XP</p>
+        <div className="bg-[#F3F4F6] rounded-xl p-3 border border-[#E2E8F0] text-center">
+          <p className="text-xs text-[#6B7280]">Session XP</p>
           <p className="text-lg font-bold text-aauti-primary">+{sessionXPEarned}</p>
         </div>
       </div>
@@ -403,7 +403,7 @@ export function MobileStatsRow({
   const milestone = getNextMilestone(totalMasteredAllTime, conceptsMasteredThisSession, earnedBadgeIds);
 
   return (
-    <div className="border-b border-white/5 bg-[#0F1B2D]/95 backdrop-blur-sm">
+    <div className="border-b border-[#E2E8F0] bg-white/95 backdrop-blur-sm">
       {/* Compact row — always visible */}
       <button
         onClick={onToggle}
@@ -423,12 +423,12 @@ export function MobileStatsRow({
           {/* Streak */}
           <div className="flex items-center gap-1">
             <span className="text-sm">🔥</span>
-            <span className="font-medium text-white">{correctStreak}</span>
+            <span className="font-medium text-[#1F2937]">{correctStreak}</span>
           </div>
           {/* Concepts */}
           <div className="flex items-center gap-1">
             <span className="text-sm">⭐</span>
-            <span className="font-medium text-white">{conceptsMasteredThisSession}</span>
+            <span className="font-medium text-[#1F2937]">{conceptsMasteredThisSession}</span>
           </div>
         </div>
 
@@ -436,7 +436,7 @@ export function MobileStatsRow({
         <motion.svg
           animate={{ rotate: isExpanded ? 180 : 0 }}
           transition={{ duration: 0.2 }}
-          className="w-4 h-4 text-gray-500"
+          className="w-4 h-4 text-[#9CA3AF]"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -466,7 +466,7 @@ export function MobileStatsRow({
                   size="sm"
                 />
                 {/* Phase 8: Mobile mastery clarity */}
-                <p className="text-[9px] text-gray-500 mt-1 text-center leading-tight">
+                <p className="text-[9px] text-[#9CA3AF] mt-1 text-center leading-tight">
                   <span className="text-green-400">✅+15%</span>{" "}
                   <span className="text-red-400">❌-10%</span>
                 </p>
@@ -479,10 +479,10 @@ export function MobileStatsRow({
                 >
                   {level}
                 </span>
-                <p className="text-[10px] text-gray-500 mt-1">
+                <p className="text-[10px] text-[#9CA3AF] mt-1">
                   {getLevelNumber(level)} of 5
                 </p>
-                <p className="text-[10px] text-gray-300 font-medium">
+                <p className="text-[10px] text-[#6B7280] font-medium">
                   {getPhaseLabel(phase)}
                 </p>
               </div>
@@ -490,7 +490,7 @@ export function MobileStatsRow({
               {/* Next Milestone */}
               <div className="flex flex-col items-center justify-center text-center">
                 <span className="text-lg">{milestone.icon}</span>
-                <p className="text-[10px] text-gray-400 leading-tight mt-0.5">
+                <p className="text-[10px] text-[#6B7280] leading-tight mt-0.5">
                   {milestone.label}
                 </p>
               </div>

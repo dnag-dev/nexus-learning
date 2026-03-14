@@ -141,17 +141,17 @@ export default function LearnPanel({
   const panelContent = (
     <>
       {/* Header */}
-      <div className="flex items-center gap-3 px-5 py-4 border-b border-white/10 shrink-0">
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-[#E2E8F0] shrink-0">
         <span className="text-xl">📚</span>
         <div className="flex-1 min-w-0">
-          <h2 className="text-base font-semibold text-white truncate">
+          <h2 className="text-base font-semibold text-[#1F2937] truncate">
             Learn More
           </h2>
-          <p className="text-xs text-gray-400 truncate">{nodeTitle}</p>
+          <p className="text-xs text-[#6B7280] truncate">{nodeTitle}</p>
         </div>
         <button
           onClick={closePanel}
-          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors text-gray-400 hover:text-white"
+          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors text-[#6B7280] hover:text-[#1F2937]"
           aria-label="Close panel"
         >
           ✕
@@ -159,7 +159,7 @@ export default function LearnPanel({
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-white/10 shrink-0">
+      <div className="flex border-b border-[#E2E8F0] shrink-0">
         {TABS.map((tab) => (
           <button
             key={tab.id}
@@ -167,7 +167,7 @@ export default function LearnPanel({
             className={`flex-1 flex items-center justify-center gap-1.5 py-3 text-sm font-medium transition-colors ${
               activeTab === tab.id
                 ? "text-aauti-primary border-b-2 border-aauti-primary"
-                : "text-gray-500 hover:text-gray-300"
+                : "text-[#9CA3AF] hover:text-[#6B7280]"
             }`}
           >
             <span>{tab.icon}</span>
@@ -194,14 +194,14 @@ export default function LearnPanel({
                 style={{ animationDelay: "200ms" }}
               />
             </div>
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-[#6B7280]">
               Preparing your study guide...
             </p>
           </div>
         ) : error ? (
           <div className="text-center py-12">
             <p className="text-3xl mb-3">😕</p>
-            <p className="text-sm text-gray-400 mb-4">{error}</p>
+            <p className="text-sm text-[#6B7280] mb-4">{error}</p>
             <button
               onClick={() => {
                 setContent(null);
@@ -294,7 +294,7 @@ export default function LearnPanel({
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="fixed top-0 left-0 bottom-0 z-50 w-[400px] bg-[#0D1B2A] border-r border-white/10 shadow-2xl flex flex-col"
+            className="fixed top-0 left-0 bottom-0 z-50 w-[400px] bg-[#F8F9FF] border-r border-[#E2E8F0] shadow-2xl flex flex-col"
             role="dialog"
             aria-label="Learn More panel"
           >
@@ -312,7 +312,7 @@ export default function LearnPanel({
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="fixed bottom-0 left-0 right-0 z-50 h-[85vh] bg-[#0D1B2A] border-t border-white/10 shadow-2xl flex flex-col rounded-t-3xl"
+            className="fixed bottom-0 left-0 right-0 z-50 h-[85vh] bg-[#F8F9FF] border-t border-[#E2E8F0] shadow-2xl flex flex-col rounded-t-3xl"
             role="dialog"
             aria-label="Learn More panel"
           >

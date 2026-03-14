@@ -184,7 +184,7 @@ function StepProgressBar({ step }: { step: number }) {
 export default function SessionPageWrapper() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[#0D1B2A] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center">
         <div className="w-12 h-12 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin" />
       </div>
     }>
@@ -1019,7 +1019,7 @@ function SessionPage() {
           animate="animate"
           exit="exit"
           transition={pageTransition}
-          className="min-h-screen bg-[#0D1B2A] flex items-center justify-center px-4"
+          className="min-h-screen bg-[#F8F9FF] flex items-center justify-center px-4"
         >
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
@@ -1048,7 +1048,7 @@ function SessionPage() {
           animate="animate"
           exit="exit"
           transition={pageTransition}
-          className="min-h-screen bg-[#0D1B2A]"
+          className="min-h-screen bg-[#F8F9FF]"
         >
           <SessionHeader
             personaId={personaId}
@@ -1148,7 +1148,7 @@ function SessionPage() {
           animate="animate"
           exit="exit"
           transition={pageTransition}
-          className="min-h-screen bg-[#0D1B2A]"
+          className="min-h-screen bg-[#F8F9FF]"
         >
           <SessionHeader
             personaId={personaId}
@@ -1284,8 +1284,8 @@ function SessionPage() {
                   )}
 
                   {/* Question Text */}
-                  <div className="bg-[#1A2744] rounded-2xl p-6 border border-white/10 mb-6 border-l-4 border-l-cyan-500">
-                    <p className="text-xl text-white leading-relaxed">
+                  <div className="bg-white rounded-2xl p-6 border border-[#E2E8F0] mb-6 border-l-4 border-l-cyan-500">
+                    <p className="text-xl text-[#1F2937] leading-relaxed">
                       {question.questionText}
                     </p>
                   </div>
@@ -1430,7 +1430,7 @@ function SessionPage() {
           animate="animate"
           exit="exit"
           transition={pageTransition}
-          className="min-h-screen bg-[#0D1B2A]"
+          className="min-h-screen bg-[#F8F9FF]"
         >
           <SessionHeader
             personaId={personaId}
@@ -1525,7 +1525,7 @@ function SessionPage() {
           animate="animate"
           exit="exit"
           transition={pageTransition}
-          className="min-h-screen bg-[#0D1B2A]"
+          className="min-h-screen bg-[#F8F9FF]"
         >
           <SessionHeader
             personaId={personaId}
@@ -1555,10 +1555,10 @@ function SessionPage() {
                   size="sm"
                 />
                 <div>
-                  <p className="font-semibold text-white">
+                  <p className="font-semibold text-[#1F2937]">
                     Let&apos;s try a different approach!
                   </p>
-                  <p className="text-gray-300 mt-1">
+                  <p className="text-[#6B7280] mt-1">
                     {feedback?.message ?? "This topic can be tricky. Let me help you."}
                   </p>
                 </div>
@@ -1573,7 +1573,7 @@ function SessionPage() {
               </button>
               <button
                 onClick={endSession}
-                className="py-3 px-6 border border-white/10 rounded-xl text-gray-300"
+                className="py-3 px-6 border border-[#E2E8F0] rounded-xl text-[#6B7280]"
               >
                 Take a Break
               </button>
@@ -1591,7 +1591,7 @@ function SessionPage() {
           animate="animate"
           exit="exit"
           transition={pageTransition}
-          className="min-h-screen bg-[#0D1B2A] flex items-center justify-center px-4"
+          className="min-h-screen bg-[#F8F9FF] flex items-center justify-center px-4"
         >
           <div className="max-w-lg">
             <div className="text-center mb-6 flex items-center justify-center">
@@ -1605,8 +1605,8 @@ function SessionPage() {
                 onTalkingChange={handleTalkingChange}
               />
             </div>
-            <div className="bg-[#1A2744] rounded-2xl p-6 border border-white/10 mb-6">
-              <p className="text-lg text-white leading-relaxed text-center">
+            <div className="bg-white rounded-2xl p-6 border border-[#E2E8F0] mb-6">
+              <p className="text-lg text-[#1F2937] leading-relaxed text-center">
                 {checkinResponse ?? checkin.checkinMessage}
               </p>
             </div>
@@ -1626,7 +1626,7 @@ function SessionPage() {
                         setPhase("practice");
                       }, 2500);
                     }}
-                    className="w-full p-4 text-left text-white bg-[#1A2744] border-2 border-white/10 rounded-xl hover:border-aauti-primary transition-colors"
+                    className="w-full p-4 text-left text-[#1F2937] bg-white border-2 border-[#E2E8F0] rounded-xl hover:border-aauti-primary transition-colors"
                   >
                     {option}
                   </button>
@@ -1646,7 +1646,7 @@ function SessionPage() {
           animate="animate"
           exit="exit"
           transition={pageTransition}
-          className="min-h-screen bg-[#0D1B2A]"
+          className="min-h-screen bg-[#F8F9FF]"
         >
           {(() => {
             const s = summary as {
@@ -1705,7 +1705,7 @@ function SessionPage() {
                     />
                   </div>
 
-                  <h1 className="text-2xl font-bold text-white mb-1">
+                  <h1 className="text-2xl font-bold text-[#1F2937] mb-1">
                     Session Complete!
                   </h1>
 
@@ -1718,11 +1718,11 @@ function SessionPage() {
 
                   {/* 5 Stats Row */}
                   <div className="grid grid-cols-5 gap-2 mt-4">
-                    <div className="bg-[#1A2744] rounded-xl p-2.5 border border-white/10">
+                    <div className="bg-white rounded-xl p-2.5 border border-[#E2E8F0]">
                       <p className="text-lg font-bold text-aauti-primary">{questionsAnswered}</p>
                       <p className="text-[10px] text-gray-400 leading-tight">Questions</p>
                     </div>
-                    <div className="bg-[#1A2744] rounded-xl p-2.5 border border-white/10">
+                    <div className="bg-white rounded-xl p-2.5 border border-[#E2E8F0]">
                       {enoughForAccuracy ? (
                         <>
                           <p className="text-lg font-bold text-aauti-success">{s.accuracy ?? 0}%</p>
@@ -1735,15 +1735,15 @@ function SessionPage() {
                         </>
                       )}
                     </div>
-                    <div className="bg-[#1A2744] rounded-xl p-2.5 border border-white/10">
+                    <div className="bg-white rounded-xl p-2.5 border border-[#E2E8F0]">
                       <p className="text-lg font-bold text-yellow-400">{mastered.length}</p>
                       <p className="text-[10px] text-gray-400 leading-tight">Mastered</p>
                     </div>
-                    <div className="bg-[#1A2744] rounded-xl p-2.5 border border-white/10">
+                    <div className="bg-white rounded-xl p-2.5 border border-[#E2E8F0]">
                       <p className="text-lg font-bold text-purple-400">+{sessionXP}</p>
                       <p className="text-[10px] text-gray-400 leading-tight">XP</p>
                     </div>
-                    <div className="bg-[#1A2744] rounded-xl p-2.5 border border-white/10">
+                    <div className="bg-white rounded-xl p-2.5 border border-[#E2E8F0]">
                       <p className="text-lg font-bold text-cyan-400">{s.durationMinutes ?? 0}m</p>
                       <p className="text-[10px] text-gray-400 leading-tight">Time</p>
                     </div>
@@ -1751,48 +1751,48 @@ function SessionPage() {
                 </div>
 
                 {/* ═══ SECTION 2: TODAY'S WIN + GOAL PROGRESS (25%) ═══ */}
-                <div className="bg-gradient-to-br from-[#1A2744] to-[#1e2a4a] rounded-2xl p-5 border border-white/10">
+                <div className="bg-white rounded-2xl p-5 border border-[#E2E8F0] shadow-sm">
                   {/* Mastered Today */}
                   {mastered.length > 0 ? (
                     <div className="mb-4">
                       <div className="flex items-center gap-2 mb-2">
                         <span className="text-yellow-400 text-lg">&#11088;</span>
-                        <h3 className="font-semibold text-white">Mastered Today</h3>
+                        <h3 className="font-semibold text-[#1F2937]">Mastered Today</h3>
                       </div>
                       {mastered.map((m) => (
                         <div key={m.nodeCode} className="flex items-center gap-2 py-1.5">
                           <span className="text-yellow-400">&#10003;</span>
-                          <span className="text-white font-medium text-sm">{m.title}</span>
-                          <span className="text-xs text-gray-500 ml-auto">{m.subject === "ENGLISH" ? "English" : "Math"}</span>
+                          <span className="text-[#1F2937] font-medium text-sm">{m.title}</span>
+                          <span className="text-xs text-[#6B7280] ml-auto">{m.subject === "ENGLISH" ? "English" : "Math"}</span>
                         </div>
                       ))}
                     </div>
                   ) : (
                     <div className="mb-4">
-                      <h3 className="font-semibold text-white mb-1">Progress Made</h3>
+                      <h3 className="font-semibold text-[#1F2937] mb-1">Progress Made</h3>
                       {s.currentNode?.title ? (
-                        <p className="text-gray-300 text-sm">
-                          You made progress on <span className="text-white font-medium">{s.currentNode.title}</span> — keep going to reach mastery!
+                        <p className="text-[#6B7280] text-sm">
+                          You made progress on <span className="text-[#1F2937] font-medium">{s.currentNode.title}</span> — keep going to reach mastery!
                         </p>
                       ) : (
-                        <p className="text-gray-400 text-sm">No new concepts mastered — keep practicing to reach mastery!</p>
+                        <p className="text-[#6B7280] text-sm">No new concepts mastered — keep practicing to reach mastery!</p>
                       )}
                     </div>
                   )}
 
                   {/* Goal Progress — the most important number */}
                   {goalProg && (
-                    <div className="pt-3 border-t border-white/10">
+                    <div className="pt-3 border-t border-[#E2E8F0]">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm text-gray-300">{goalProg.label}</span>
-                        <span className="text-sm font-bold text-white">
+                        <span className="text-sm text-[#6B7280]">{goalProg.label}</span>
+                        <span className="text-sm font-bold text-[#1F2937]">
                           {goalProg.previousPct}% → {goalProg.currentPct}%
                           {goalProg.change > 0 && (
                             <span className="text-green-400 ml-1">&#9650;{goalProg.change}%</span>
                           )}
                         </span>
                       </div>
-                      <div className="relative h-3 bg-white/10 rounded-full overflow-hidden">
+                      <div className="relative h-3 bg-gray-200 rounded-full overflow-hidden">
                         {/* Previous value (dim) */}
                         <motion.div
                           className="absolute inset-y-0 left-0 bg-aauti-primary/30 rounded-full"
@@ -1817,8 +1817,8 @@ function SessionPage() {
 
                 {/* ═══ SECTION 3: WHAT'S NEXT (15%) ═══ */}
                 {s.nextUpNodes && s.nextUpNodes.length > 0 && (
-                  <div className="bg-[#1A2744] rounded-2xl p-5 border border-white/10 text-left">
-                    <h3 className="font-semibold text-white mb-3">What&apos;s Next</h3>
+                  <div className="bg-white rounded-2xl p-5 border border-[#E2E8F0] text-left">
+                    <h3 className="font-semibold text-[#1F2937] mb-3">What&apos;s Next</h3>
                     <div className="space-y-2">
                       {s.nextUpNodes.map((nu) => {
                         const isEnglish = nu.subject === "ENGLISH";
@@ -1837,7 +1837,7 @@ function SessionPage() {
                             className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors text-left ${
                               allMastered
                                 ? "opacity-60 cursor-default"
-                                : "hover:bg-white/5 cursor-pointer active:bg-white/10"
+                                : "hover:bg-gray-50 cursor-pointer active:bg-gray-100"
                             }`}
                           >
                             <span className="text-lg">{isEnglish ? "&#128214;" : "&#128290;"}</span>
@@ -1845,7 +1845,7 @@ function SessionPage() {
                               {isEnglish ? "English" : "Math"}
                             </span>
                             <span className="text-gray-500 text-sm">→</span>
-                            <span className="text-sm text-white flex-1">
+                            <span className="text-sm text-[#1F2937] flex-1">
                               {allMastered ? "All caught up!" : nu.title}
                             </span>
                             {!allMastered && (
@@ -1861,11 +1861,11 @@ function SessionPage() {
                 {/* ═══ SECTION 4: YOUR PROGRESS (collapsed by default) ═══ */}
                 {s.gradeProgress && s.gradeProgress.length > 0 && (
                   <details className="group">
-                    <summary className="flex items-center justify-between bg-[#1A2744] rounded-2xl p-4 border border-white/10 cursor-pointer list-none hover:bg-[#1e2d48] transition-colors">
-                      <span className="text-sm font-semibold text-gray-300">See full progress →</span>
+                    <summary className="flex items-center justify-between bg-white rounded-2xl p-4 border border-[#E2E8F0] cursor-pointer list-none hover:bg-gray-50 transition-colors">
+                      <span className="text-sm font-semibold text-[#6B7280]">See full progress →</span>
                       <span className="text-gray-500 text-xs group-open:rotate-90 transition-transform">&#9654;</span>
                     </summary>
-                    <div className="bg-[#1A2744] rounded-b-2xl p-5 border border-t-0 border-white/10 -mt-2 space-y-3 text-left">
+                    <div className="bg-white rounded-b-2xl p-5 border border-t-0 border-[#E2E8F0] -mt-2 space-y-3 text-left">
                       {s.gradeProgress.map((gp) => {
                         const isEnglish = gp.subject === "ENGLISH";
                         const barColor = isEnglish ? "bg-purple-500" : "bg-green-500";
@@ -1960,7 +1960,7 @@ function SessionPage() {
                     href={returnTo}
                     className={`block w-full py-3.5 text-center text-base font-semibold rounded-2xl transition-colors ${
                       gpsNavigation
-                        ? "text-gray-300 bg-transparent border border-white/10 hover:bg-white/5"
+                        ? "text-gray-300 bg-transparent border border-[#E2E8F0] hover:bg-white/5"
                         : "text-white bg-aauti-primary hover:bg-aauti-primary/90"
                     }`}
                   >

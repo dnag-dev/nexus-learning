@@ -109,7 +109,7 @@ export default function TopicSearchInput({
   if (variant === "young") {
     return (
       <div className="w-full max-w-sm mx-auto space-y-3">
-        <p className="text-center text-gray-400 text-sm">
+        <p className="text-center text-[#6B7280] text-sm">
           Or pick something to learn:
         </p>
         <div className="flex flex-wrap justify-center gap-2">
@@ -117,7 +117,7 @@ export default function TopicSearchInput({
             <button
               key={chip}
               onClick={() => handleChipClick(chip)}
-              className="px-4 py-2.5 bg-white/10 hover:bg-purple-500/30 text-white rounded-full text-sm font-medium transition-all hover:scale-105"
+              className="px-4 py-2.5 bg-[#F3F4F6] hover:bg-purple-500/20 text-[#1F2937] rounded-full text-sm font-medium transition-all hover:scale-105"
             >
               {chip}
             </button>
@@ -133,10 +133,10 @@ export default function TopicSearchInput({
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             placeholder={PLACEHOLDER_TEXT.young}
-            className={`w-full px-4 py-3 bg-white/5 border rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none transition-all ${
+            className={`w-full px-4 py-3 bg-white border rounded-xl text-[#1F2937] placeholder-[#9CA3AF] text-sm focus:outline-none transition-all ${
               isFocused
-                ? "border-purple-500/50 bg-white/8"
-                : "border-white/10"
+                ? "border-purple-500/50 bg-gray-50"
+                : "border-[#E2E8F0]"
             } ${searchError ? "border-red-500/50" : ""}`}
           />
           {query.length >= 2 && (
@@ -170,10 +170,10 @@ export default function TopicSearchInput({
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             placeholder={PLACEHOLDER_TEXT.teen}
-            className={`w-full px-4 py-2.5 bg-white/5 border rounded-lg text-white placeholder-gray-500 text-sm focus:outline-none transition-all ${
+            className={`w-full px-4 py-2.5 bg-white border rounded-lg text-[#1F2937] placeholder-[#9CA3AF] text-sm focus:outline-none transition-all ${
               isFocused
-                ? "border-purple-500/40 bg-white/8"
-                : "border-white/10"
+                ? "border-purple-500/40 bg-gray-50"
+                : "border-[#E2E8F0]"
             } ${searchError ? "border-red-500/50" : ""}`}
           />
           {query.length >= 2 && (
@@ -196,7 +196,7 @@ export default function TopicSearchInput({
                   e.preventDefault(); // prevent blur
                   handleChipClick(chip);
                 }}
-                className="px-2.5 py-1 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white rounded text-xs transition-colors"
+                className="px-2.5 py-1 bg-[#F3F4F6] hover:bg-gray-200 text-[#6B7280] hover:text-[#1F2937] rounded text-xs transition-colors"
               >
                 {chip}
               </button>
@@ -226,10 +226,10 @@ export default function TopicSearchInput({
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           placeholder={PLACEHOLDER_TEXT.mid}
-          className={`w-full pl-9 pr-16 py-2.5 bg-white/5 border rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none transition-all ${
+          className={`w-full pl-9 pr-16 py-2.5 bg-white border rounded-xl text-[#1F2937] placeholder-[#9CA3AF] text-sm focus:outline-none transition-all ${
             isFocused
-              ? "border-purple-500/50 bg-white/8"
-              : "border-white/10"
+              ? "border-purple-500/50 bg-gray-50"
+              : "border-[#E2E8F0]"
           } ${searchError ? "border-red-500/50" : ""}`}
         />
         {query.length >= 2 && (
@@ -252,7 +252,7 @@ export default function TopicSearchInput({
                 e.preventDefault();
                 handleChipClick(chip);
               }}
-              className="px-3 py-1.5 bg-white/5 hover:bg-purple-500/20 text-gray-400 hover:text-white rounded-lg text-xs font-medium transition-all"
+              className="px-3 py-1.5 bg-[#F3F4F6] hover:bg-purple-500/10 text-[#6B7280] hover:text-[#1F2937] rounded-lg text-xs font-medium transition-all"
             >
               {chip}
             </button>

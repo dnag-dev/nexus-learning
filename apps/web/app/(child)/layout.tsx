@@ -92,10 +92,10 @@ export default function ChildLayout({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0D1B2A] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F8F9FF] flex items-center justify-center">
         <div className="text-center space-y-3">
           <div className="text-5xl animate-bounce">🚀</div>
-          <p className="text-gray-400 animate-pulse">Loading your world...</p>
+          <p className="text-[#6B7280] animate-pulse">Loading your world...</p>
         </div>
       </div>
     );
@@ -109,19 +109,19 @@ export default function ChildLayout({
 
   return (
     <ChildContext.Provider value={{ ...profile, refreshProfile }}>
-      <div className="min-h-screen bg-[#0D1B2A]">
+      <div className="min-h-screen bg-[#F8F9FF]">
         {/* Top Bar */}
-        <header className="bg-[#0F1B2D]/90 backdrop-blur-sm border-b border-white/5 px-4 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-50">
+        <header className="bg-white/90 backdrop-blur-sm border-b border-[#E2E8F0] px-4 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-50">
           {/* Left: Avatar + Name */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-aauti-primary/30 to-aauti-secondary/30 flex items-center justify-center border border-white/10">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-aauti-primary/20 to-aauti-secondary/20 flex items-center justify-center border border-[#E2E8F0]">
               <span className="text-xl select-none">{emoji}</span>
             </div>
             <div>
-              <span className="text-white font-semibold text-sm">
+              <span className="text-[#1F2937] font-semibold text-sm">
                 {profile.displayName}
               </span>
-              <span className="block text-gray-500 text-xs">
+              <span className="block text-[#6B7280] text-xs">
                 Level {profile.level}
               </span>
             </div>
@@ -129,14 +129,14 @@ export default function ChildLayout({
 
           {/* Right: XP + Logout */}
           <div className="flex items-center gap-4">
-            <div className="hidden sm:flex items-center gap-2 bg-white/5 rounded-full px-3 py-1.5">
-              <span className="text-aauti-accent text-xs font-medium">
+            <div className="hidden sm:flex items-center gap-2 bg-[#FFC800]/10 rounded-full px-3 py-1.5">
+              <span className="text-[#FF9600] text-xs font-medium">
                 ⭐ {profile.xp.toLocaleString()} XP
               </span>
             </div>
             <button
               onClick={handleLogout}
-              className="text-gray-500 hover:text-gray-300 transition-colors text-sm"
+              className="text-[#6B7280] hover:text-[#1F2937] transition-colors text-sm"
               title="Sign out"
             >
               👋

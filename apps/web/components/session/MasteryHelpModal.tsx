@@ -93,17 +93,17 @@ export default function MasteryHelpModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="fixed inset-x-4 top-[10%] md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-[480px] max-h-[80vh] overflow-y-auto bg-[#0F1B2D] border border-white/10 rounded-2xl shadow-2xl z-50"
+            className="fixed inset-x-4 top-[10%] md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-[480px] max-h-[80vh] overflow-y-auto bg-white border border-[#E2E8F0] rounded-2xl shadow-2xl z-50"
           >
             <div className="p-6">
               {/* Header */}
               <div className="flex items-center justify-between mb-5">
-                <h2 className="text-lg font-bold text-white">
+                <h2 className="text-lg font-bold text-[#1F2937]">
                   How Mastery Works
                 </h2>
                 <button
                   onClick={onClose}
-                  className="text-gray-400 hover:text-white text-xl leading-none"
+                  className="text-[#6B7280] hover:text-[#1F2937] text-xl leading-none"
                 >
                   ×
                 </button>
@@ -116,7 +116,7 @@ export default function MasteryHelpModal({
                   <h3 className="text-sm font-semibold text-purple-400 mb-2">
                     What does the percentage mean?
                   </h3>
-                  <p className="text-sm text-gray-300 leading-relaxed">
+                  <p className="text-sm text-[#6B7280] leading-relaxed">
                     The mastery percentage shows how well you know a topic.
                     When it reaches <span className="text-yellow-400 font-semibold">85%</span>,
                     you&apos;ve mastered the concept and can move on!
@@ -132,19 +132,19 @@ export default function MasteryHelpModal({
                     {STEPS.map((s) => (
                       <div
                         key={s.step}
-                        className="flex items-start gap-3 py-2 px-3 rounded-lg bg-white/5"
+                        className="flex items-start gap-3 py-2 px-3 rounded-lg bg-[#F3F4F6]"
                       >
                         <span className="text-lg flex-shrink-0">{s.emoji}</span>
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-white">
+                            <span className="text-sm font-medium text-[#1F2937]">
                               Step {s.step}: {s.name}
                             </span>
-                            <span className="text-[10px] text-gray-500 bg-white/5 px-1.5 py-0.5 rounded">
+                            <span className="text-[10px] text-[#9CA3AF] bg-[#F3F4F6] px-1.5 py-0.5 rounded">
                               {s.range}
                             </span>
                           </div>
-                          <p className="text-xs text-gray-400 mt-0.5">
+                          <p className="text-xs text-[#6B7280] mt-0.5">
                             {s.description}
                           </p>
                         </div>
@@ -158,7 +158,7 @@ export default function MasteryHelpModal({
                   <h3 className="text-sm font-semibold text-green-400 mb-1">
                     Wrong answers are okay! 💚
                   </h3>
-                  <p className="text-xs text-gray-300 leading-relaxed">
+                  <p className="text-xs text-[#6B7280] leading-relaxed">
                     Getting something wrong doesn&apos;t reset your progress.
                     Your mastery might drop a little, but it never goes below 5%.
                     Every wrong answer teaches the system what to help you with next.
@@ -170,7 +170,7 @@ export default function MasteryHelpModal({
                   <h3 className="text-sm font-semibold text-purple-400 mb-1">
                     The progress ring
                   </h3>
-                  <p className="text-xs text-gray-300 leading-relaxed">
+                  <p className="text-xs text-[#6B7280] leading-relaxed">
                     The gold ring around your avatar fills up as your mastery grows.
                     The red dot marks 85% — when the ring reaches it, you&apos;ve mastered the topic!
                     After mastering, you can review anytime to keep your skills sharp.
@@ -228,15 +228,15 @@ function OnboardingTooltip({ onClose }: { onClose: () => void }) {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
         transition={{ duration: 0.2 }}
-        className="fixed bottom-6 inset-x-4 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-[400px] bg-[#1A2744] border border-purple-500/30 rounded-2xl shadow-2xl z-50 p-5"
+        className="fixed bottom-6 inset-x-4 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:w-[400px] bg-white border border-purple-500/30 rounded-2xl shadow-2xl z-50 p-5"
       >
         <div className="flex items-start gap-3">
           <span className="text-2xl flex-shrink-0">🤖</span>
           <div className="flex-1">
-            <h3 className="text-sm font-semibold text-white mb-1">
+            <h3 className="text-sm font-semibold text-[#1F2937] mb-1">
               {current.title}
             </h3>
-            <p className="text-xs text-gray-300 leading-relaxed">
+            <p className="text-xs text-[#6B7280] leading-relaxed">
               {current.body}
             </p>
           </div>
@@ -250,7 +250,7 @@ function OnboardingTooltip({ onClose }: { onClose: () => void }) {
               <div
                 key={i}
                 className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                  i === step ? "bg-purple-500" : "bg-white/20"
+                  i === step ? "bg-purple-500" : "bg-gray-200"
                 }`}
               />
             ))}
@@ -260,7 +260,7 @@ function OnboardingTooltip({ onClose }: { onClose: () => void }) {
           <div className="flex gap-2">
             <button
               onClick={onClose}
-              className="text-xs text-gray-500 hover:text-gray-300"
+              className="text-xs text-[#9CA3AF] hover:text-[#6B7280]"
             >
               Skip
             </button>

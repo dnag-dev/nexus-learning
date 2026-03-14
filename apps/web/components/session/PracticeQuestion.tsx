@@ -137,27 +137,29 @@ export default function PracticeQuestion({
           let iconOverlay: React.ReactNode = null;
 
           if (showResult && isSelected && option.isCorrect) {
-            // Correct answer selected — green
-            buttonStyle = "bg-aauti-success/15 border-2 border-aauti-success";
-            badgeBg = "#00B894";
-            iconOverlay = <span className="text-aauti-success text-lg">✅</span>;
-          } else if (showResult && isSelected && !option.isCorrect) {
-            // Wrong answer selected — red
-            buttonStyle = "bg-aauti-danger/15 border-2 border-aauti-danger";
-            badgeBg = "#D63031";
-            iconOverlay = <span className="text-aauti-danger text-lg">❌</span>;
-          } else if (showResult && option.isCorrect) {
-            // Correct answer not selected — show the right answer
-            buttonStyle = "bg-aauti-success/10 border-2 border-aauti-success/50";
-            badgeBg = "#00B894";
+            // Confirmed correct — green
+            buttonStyle = "border-2 border-[#3DB54A] bg-[#F0FDF4]";
+            badgeBg = "#3DB54A";
             badgeText = "#FFFFFF";
-            iconOverlay = <span className="text-aauti-success text-sm">✅</span>;
+            iconOverlay = <span className="text-[#3DB54A] text-lg">✅</span>;
+          } else if (showResult && isSelected && !option.isCorrect) {
+            // Confirmed wrong — red
+            buttonStyle = "border-2 border-[#FF4B4B] bg-[#FFF1F2]";
+            badgeBg = "#FF4B4B";
+            badgeText = "#FFFFFF";
+            iconOverlay = <span className="text-[#FF4B4B] text-lg">❌</span>;
+          } else if (showResult && option.isCorrect) {
+            // Correct answer revealed (after wrong submission)
+            buttonStyle = "border-2 border-[#3DB54A] bg-[#F0FDF4] opacity-90";
+            badgeBg = "#3DB54A";
+            badgeText = "#FFFFFF";
+            iconOverlay = <span className="text-[#3DB54A] text-sm">✅</span>;
           } else if (isSelected && !showResult) {
-            // Phase 10: Selected but not yet confirmed — cyan highlight
-            buttonStyle = "border-2 shadow-md ring-1 ring-cyan-400/30";
+            // Selected but not yet confirmed — blue highlight
+            buttonStyle = "border-2 border-[#1CB0F6] bg-[#EFF6FF] shadow-md";
           } else {
-            // Default state — light surface with subtle border
-            buttonStyle = "border-2 border-[#E2E8F0] bg-white";
+            // Unselected — white with subtle border
+            buttonStyle = "border-[1.5px] border-[#E2E8F0] bg-white";
           }
 
           return (
@@ -170,8 +172,8 @@ export default function PracticeQuestion({
                 {
                   ...(isSelected && !showResult
                     ? {
-                        borderColor: "#06b6d4", // cyan-500 for pre-confirm selection
-                        backgroundColor: "rgba(6, 182, 212, 0.08)",
+                        borderColor: "#1CB0F6",
+                        backgroundColor: "#EFF6FF",
                       }
                     : {}),
                 } as React.CSSProperties
@@ -193,7 +195,7 @@ export default function PracticeQuestion({
                 <span
                   className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shadow-sm transition-transform group-hover:scale-110"
                   style={{
-                    backgroundColor: isSelected && !showResult ? "#06b6d4" : badgeBg,
+                    backgroundColor: isSelected && !showResult ? "#1CB0F6" : badgeBg,
                     color: isSelected && !showResult ? "#FFFFFF" : badgeText,
                   }}
                 >
@@ -204,7 +206,7 @@ export default function PracticeQuestion({
                 </span>
                 {/* Phase 10: Checkmark icon on pre-confirm selected option */}
                 {isSelected && !showResult && !confirmed && (
-                  <span className="text-cyan-400 text-sm font-bold">✓</span>
+                  <span className="text-[#1CB0F6] text-sm font-bold">✓</span>
                 )}
                 {/* Result icons after submission */}
                 {iconOverlay}
@@ -231,7 +233,12 @@ export default function PracticeQuestion({
               <button
                 onClick={handleConfirm}
                 disabled={isLoading}
-                className="w-full py-3.5 text-base font-semibold text-white bg-gradient-to-r from-cyan-500 to-blue-600 rounded-2xl hover:from-cyan-600 hover:to-blue-700 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all duration-200 shadow-lg disabled:opacity-50"
+                className="w-full py-3.5 text-[15px] font-bold text-white rounded-xl hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 active:translate-y-0.5 active:shadow-none"
+                style={{
+                  background: "#1CB0F6",
+                  boxShadow: "0 4px 0 #0A85C7",
+                  border: "none",
+                }}
               >
                 Check Answer ✓
               </button>

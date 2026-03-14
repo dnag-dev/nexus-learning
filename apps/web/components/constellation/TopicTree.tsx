@@ -119,7 +119,7 @@ export default function TopicTree({
   const [branches, setBranches] = useState<TopicBranchInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
-  const [expandedBranch, setExpandedBranch] = useState<string | null>(null);
+  const [expandedBranches, setExpandedBranches] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const url = domain
@@ -129,11 +129,18 @@ export default function TopicTree({
     fetch(url)
       .then((r) => r.json())
       .then((data) => {
-        setBranches(data.branches ?? []);
+        const branchList: TopicBranchInfo[] = data.branches ?? [];
+        setBranches(branchList);
+        // Auto-expand all unlocked branches so nodes are visible and clickable
+        const expanded = new Set<string>();
+        for (const b of branchList) {
+          if (b.unlocked) expanded.add(b.id);
+        }
         if (data.activeBranchId) {
           setSelectedBranch(data.activeBranchId);
-          setExpandedBranch(data.activeBranchId);
+          expanded.add(data.activeBranchId);
         }
+        setExpandedBranches(expanded);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -187,7 +194,7 @@ export default function TopicTree({
   return (
     <div className={compact ? "space-y-3" : "space-y-4"}>
       {branches.map((branch) => {
-        const isExpanded = expandedBranch === branch.id;
+        const isExpanded = expandedBranches.has(branch.id);
 
         return (
           <motion.div
@@ -209,7 +216,12 @@ export default function TopicTree({
               className="flex items-center justify-between mb-2 cursor-pointer"
               onClick={() => {
                 if (branch.unlocked) {
-                  setExpandedBranch(isExpanded ? null : branch.id);
+                  setExpandedBranches((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(branch.id)) next.delete(branch.id);
+                    else next.add(branch.id);
+                    return next;
+                  });
                   if (onSelectBranch && !branch.completed) {
                     onSelectBranch(branch.id);
                     setSelectedBranch(branch.id);
